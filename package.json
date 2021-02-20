@@ -1,0 +1,11 @@
+{
+  "name": "wasp-discord-bot",
+  "version": "1.0.0",
+  "description": "WaspBot (Discord)",
+  "main": "bot.js",
+  "author": "Martin Sosic (Wasp-lang)",
+  "dependencies": {
+    "discord.js": "^12.5.1",
+    "winston": "^3.3.3"
+  }
+}
