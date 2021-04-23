@@ -2,10 +2,16 @@
   "name": "wasp-discord-bot",
   "version": "1.0.0",
   "description": "WaspBot (Discord)",
-  "main": "bot.js",
+  "main": "src/bot.js",
   "author": "Martin Sosic (Wasp-lang)",
   "dependencies": {
+    "asciichart": "^1.5.25",
+    "axios": "^0.21.1",
     "discord.js": "^12.5.1",
+    "image-charts": "^5.6.17",
+    "lodash": "^4.17.21",
+    "moment": "^2.29.1",
+    "node-schedule": "^2.0.0",
     "winston": "^3.3.3"
   }
 }
