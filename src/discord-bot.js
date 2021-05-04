@@ -17,9 +17,13 @@ const start = () => {
 
   bot.on('ready', async (evt) => {
     logger.info(`Logged in as: ${bot.user.tag}.`)
-    // Send analytics report on Monday at 00:30.
-    const job = schedule.scheduleJob('30 0 * * 1', async () => {
-      await sendAnalyticsReport(bot)
+    // Send weekly analytics report on Monday at 00:30.
+    schedule.scheduleJob('30 0 * * 1', async () => {
+      await sendAnalyticsReport(bot, 'weekly')
+    })
+    // Send daily analytics report every day at 00:30.
+    schedule.scheduleJob('30 0 * * *', async () => {
+      await sendAnalyticsReport(bot, 'daily')
     })
   })
 
@@ -47,17 +51,33 @@ const start = () => {
       }
     }
 
-    if (msg.content === '!analytics' && msg.channel.id.toString() === REPORTS_CHANNEL_ID) {
-      await sendAnalyticsReport(bot)
+    if (msg.content.startsWith('!analytics') && msg.channel.id.toString() === REPORTS_CHANNEL_ID) {
+      if (msg.content.includes('weekly')) {
+        await sendAnalyticsReport(bot, 'weekly')
+      } else {
+        await sendAnalyticsReport(bot, 'daily')
+      }
     }
   })
 }
 
-const sendAnalyticsReport = async (bot) => {
-  const report = await analytics.generateReport()
+const sendAnalyticsReport = async (bot, period) => {
+  let reportPromise, periodText
+  if (period == 'weekly') {
+    reportPromise = analytics.generateWeeklyReport()
+    periodText = 'WEEKLY'
+  } else if (period == 'daily') {
+    reportPromise = analytics.generateDailyReport()
+    periodText = 'DAILY'
+  }
+
   const guild = await bot.guilds.fetch(GUILD_ID)
   const waspTeamTextChannel = guild.channels.resolve(REPORTS_CHANNEL_ID)
-  waspTeamTextChannel.send('=============== WEEKLY ANALYTICS REPORT ===============')
+
+  waspTeamTextChannel.send(`Generating report...`)
+
+  const report = await reportPromise
+  waspTeamTextChannel.send(`=============== ${periodText} ANALYTICS REPORT ===============`)
   for (const metric of report) {
     const text = metric.text.join('\n')
     const chartImageUrl = metric.chart.toURL()

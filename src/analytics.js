@@ -13,12 +13,21 @@ ourDistinctIds = [
   'e7cd9e56-2766-4eb6-9e5c-44ecb9014690'
 ]
 
-const generateReport = async () => {
+
+const generateWeeklyReport = () => generateReport(
+  moment().subtract(3, 'months').day('Sunday').endOf('day'),
+  moment.duration(1, 'weeks')
+)
+
+const generateDailyReport = () => generateReport(
+  moment().subtract(14, 'days').endOf('day'),
+  moment.duration(1, 'days')
+)
+
+const generateReport = async (startDate, period) => {
 
   // TODO: Track how long it took to run the analysis.
   // TODO: Optimize stuff below, I ignored performance for now since we don't yet have amount of events where it would matter.
-
-  firstSunday = moment().subtract(3, 'months').day('Sunday')
 
   const events = (await fetchEvents('https://app.posthog.com/api/event/?event=cli'))
         .filter(e => !ourDistinctIds.includes(e.distinct_id) )
@@ -57,10 +66,9 @@ const generateReport = async () => {
   const numProjectsCreatedPerPeriodCumm = []
   const numProjectsBuiltPerPeriodCumm = []
   const numUniqueUsersPerPeriod = []
-  const initialPeriodEnd = moment(firstSunday).endOf('day')
-  const periodDuration = moment.duration(1, 'weeks')
+  const periodDuration = period
   {
-    let periodEnd = initialPeriodEnd
+    let periodEnd = startDate
     while (periodEnd.isBefore(moment.now())) {
       const numCreatedProjects = numProjectsCreatedUntilDatetime(periodEnd)
       const numBuiltProjects = numProjectsBuiltUntilDatetime(periodEnd)
@@ -106,19 +114,19 @@ const generateReport = async () => {
       text: ['Number of Wasp projects created:',
              `- During last ${periodAsText}: ` + elemFromBehind(numProjectsCreatedPerPeriod, 0).count,
              '- Total: ' + numProjectsTotal],
-      chart: chartImage(numProjectsCreatedPerPeriod, `Num projects created (90 days, ${periodAsText})`, 'bars')
+      chart: chartImage(numProjectsCreatedPerPeriod, `Num projects created (per ${periodAsText})`, 'bars')
     },
     {
       text: ['Number of Wasp projects built:',
              `- During last ${periodAsText}: ` + elemFromBehind(numProjectsBuiltPerPeriod, 0).count,
              '- Total: ' + numProjectsBuiltTotal],
-      chart: chartImage(numProjectsBuiltPerPeriod, `Num projects built (90 days, ${periodAsText})`, 'bars')
+      chart: chartImage(numProjectsBuiltPerPeriod, `Num projects built (per ${periodAsText})`, 'bars')
     },
     {
       text: ['Number of unique active users:',
              `- During last ${periodAsText}: ` + elemFromBehind(numUniqueUsersPerPeriod, 0).count,
              '- Total: ' + numUniqueUsersTotal],
-      chart: chartImage(numUniqueUsersPerPeriod, `Num unique active users (90 days, ${periodAsText})`, 'bars')
+      chart: chartImage(numUniqueUsersPerPeriod, `Num unique active users (per ${periodAsText})`, 'bars')
     },
   ]
 
@@ -135,7 +143,19 @@ const fetchEvents = async (url) => {
 }
 
 if (require.main === module) {
-  generateReport().then(report => {
+  generateWeeklyReport().then(report => {
+    console.log('\n\nWEEKLY REPORT')
+    for (const metric of report) {
+      console.log()
+      for (const textLine of metric.text) {
+        console.log(textLine)
+      }
+      console.log('- Chart: ', metric.chart.toURL())
+    }
+  })
+
+  generateDailyReport().then(report => {
+    console.log('\n\nDAILY REPORT')
     for (const metric of report) {
       console.log()
       for (const textLine of metric.text) {
@@ -147,5 +167,7 @@ if (require.main === module) {
 }
 
 module.exports = {
-  generateReport
+  generateReport,
+  generateWeeklyReport,
+  generateDailyReport
 }
