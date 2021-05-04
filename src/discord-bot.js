@@ -7,7 +7,7 @@ const analytics = require('./analytics')
 
 const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN
 const GUILD_ID = '686873244791210014'
-const WASP_TEAM_CHANNEL_ID = '835130205928030279'
+const REPORTS_CHANNEL_ID = '835130205928030279'
 const GUEST_ROLE_ID = '812299047175716934'
 const INTRODUCTIONS_CHANNEL_ID = '689916376542085170'
 
@@ -47,7 +47,7 @@ const start = () => {
       }
     }
 
-    if (msg.content === '!analytics' && msg.channel.id.toString() === WASP_TEAM_CHANNEL_ID) {
+    if (msg.content === '!analytics' && msg.channel.id.toString() === REPORTS_CHANNEL_ID) {
       await sendAnalyticsReport(bot)
     }
   })
@@ -56,7 +56,7 @@ const start = () => {
 const sendAnalyticsReport = async (bot) => {
   const report = await analytics.generateReport()
   const guild = await bot.guilds.fetch(GUILD_ID)
-  const waspTeamTextChannel = guild.channels.resolve(WASP_TEAM_CHANNEL_ID)
+  const waspTeamTextChannel = guild.channels.resolve(REPORTS_CHANNEL_ID)
   waspTeamTextChannel.send('=============== WEEKLY ANALYTICS REPORT ===============')
   for (const metric of report) {
     const text = metric.text.join('\n')

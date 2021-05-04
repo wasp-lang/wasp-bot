@@ -54,33 +54,35 @@ const generateReport = async () => {
   const numProjectsBuiltTotal = Object.values(eventsByProject).filter(events => events.some(e => e.properties.is_build)).length
   const numUniqueUsersTotal = new Set(events.map(e => e.distinct_id)).size
 
-  const numProjectsCreatedPerWeekCumm = []
-  const numProjectsBuiltPerWeekCumm = []
-  const numUniqueUsersPerWeek = []
+  const numProjectsCreatedPerPeriodCumm = []
+  const numProjectsBuiltPerPeriodCumm = []
+  const numUniqueUsersPerPeriod = []
+  const initialPeriodEnd = moment(firstSunday).endOf('day')
+  const periodDuration = moment.duration(1, 'weeks')
   {
-    let sunday = moment(firstSunday).endOf('day')
-    while (sunday.isBefore(moment.now())) {
-      const numCreatedProjects = numProjectsCreatedUntilDatetime(sunday)
-      const numBuiltProjects = numProjectsBuiltUntilDatetime(sunday)
-      const numUniqueUsers = numUniqueUsersInPeriod(moment(sunday).subtract(7, 'days'), sunday)
-      numProjectsCreatedPerWeekCumm.push({ weekEnd: sunday.format('YY-MM-DD'), count: numCreatedProjects })
-      numProjectsBuiltPerWeekCumm.push({ weekEnd: sunday.format('YY-MM-DD'), count: numBuiltProjects})
-      numUniqueUsersPerWeek.push({ weekEnd: sunday.format('YY-MM-DD'), count: numUniqueUsers})
-      sunday.add(7, 'days')
+    let periodEnd = initialPeriodEnd
+    while (periodEnd.isBefore(moment.now())) {
+      const numCreatedProjects = numProjectsCreatedUntilDatetime(periodEnd)
+      const numBuiltProjects = numProjectsBuiltUntilDatetime(periodEnd)
+      const numUniqueUsers = numUniqueUsersInPeriod(moment(periodEnd).subtract(periodDuration), periodEnd)
+      numProjectsCreatedPerPeriodCumm.push({ periodEnd: periodEnd.format('YY-MM-DD'), count: numCreatedProjects })
+      numProjectsBuiltPerPeriodCumm.push({ periodEnd: periodEnd.format('YY-MM-DD'), count: numBuiltProjects})
+      numUniqueUsersPerPeriod.push({ periodEnd: periodEnd.format('YY-MM-DD'), count: numUniqueUsers})
+      periodEnd.add(periodDuration)
     }
   }
 
   const cummulativeToDiff = (data) => {
     return data.slice(1).reduce(
-      ({ lastCount, newData }, { weekEnd, count }) => {
-        return { lastCount: count, newData: [...newData, { weekEnd, count: count - lastCount }] }
+      ({ lastCount, newData }, { periodEnd, count }) => {
+        return { lastCount: count, newData: [...newData, { periodEnd, count: count - lastCount }] }
       },
       { lastCount: data[0].count, newData: [] }
     ).newData
   }
 
-  const numProjectsCreatedPerWeek = cummulativeToDiff(numProjectsCreatedPerWeekCumm)
-  const numProjectsBuiltPerWeek = cummulativeToDiff(numProjectsBuiltPerWeekCumm)
+  const numProjectsCreatedPerPeriod = cummulativeToDiff(numProjectsCreatedPerPeriodCumm)
+  const numProjectsBuiltPerPeriod = cummulativeToDiff(numProjectsBuiltPerPeriodCumm)
 
   const chartImage = (data, title, type='line') => {
     const chart = ImageCharts()
@@ -88,7 +90,7 @@ const generateReport = async () => {
           .chtt(title) // Title.
           .chd('a:' + data.map(x => x.count).join(',')) // Data.
           .chl(data.map(x => x.count).join('|')) // Value labels on bars.
-          .chxl('0:|' + data.map(x => x.weekEnd).join('|')) // X axis labels.
+          .chxl('0:|' + data.map(x => x.periodEnd).join('|')) // X axis labels.
           .chxs('0,s,min45max45') // On x-axis (0), skip some labels (s) and use 45 degress angle (min45max45).
           .chs('700x400') // Size.
           .chg('20,20') // Solid or dotted grid lines.
@@ -98,24 +100,25 @@ const generateReport = async () => {
   }
   const elemFromBehind = (arr, i) => arr[arr.length - 1 - i]
 
+  const periodAsText = periodDuration.locale("en").humanize()
   report = [
     {
       text: ['Number of Wasp projects created:',
-             '- During last week: ' + elemFromBehind(numProjectsCreatedPerWeek, 0).count,
+             `- During last ${periodAsText}: ` + elemFromBehind(numProjectsCreatedPerPeriod, 0).count,
              '- Total: ' + numProjectsTotal],
-      chart: chartImage(numProjectsCreatedPerWeek, 'Num projects created (90 days, weeks)', 'bars')
+      chart: chartImage(numProjectsCreatedPerPeriod, `Num projects created (90 days, ${periodAsText})`, 'bars')
     },
     {
       text: ['Number of Wasp projects built:',
-             '- During last week: ' + elemFromBehind(numProjectsBuiltPerWeek, 0).count,
+             `- During last ${periodAsText}: ` + elemFromBehind(numProjectsBuiltPerPeriod, 0).count,
              '- Total: ' + numProjectsBuiltTotal],
-      chart: chartImage(numProjectsBuiltPerWeek, 'Num projects built (90 days, weeks)', 'bars')
+      chart: chartImage(numProjectsBuiltPerPeriod, `Num projects built (90 days, ${periodAsText})`, 'bars')
     },
     {
       text: ['Number of unique active users:',
-             '- During last week: ' + elemFromBehind(numUniqueUsersPerWeek, 0).count,
+             `- During last ${periodAsText}: ` + elemFromBehind(numUniqueUsersPerPeriod, 0).count,
              '- Total: ' + numUniqueUsersTotal],
-      chart: chartImage(numUniqueUsersPerWeek, 'Num unique weekly active users (90 days)', 'bars')
+      chart: chartImage(numUniqueUsersPerPeriod, `Num unique active users (90 days, ${periodAsText})`, 'bars')
     },
   ]
 
