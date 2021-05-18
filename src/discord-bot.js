@@ -1,5 +1,7 @@
 const Discord = require('discord.js')
-const schedule = require('node-schedule');
+const schedule = require('node-schedule')
+const Quote = require('inspirational-quotes')
+const oneLinerJoke = require('one-liner-joke')
 
 const logger = require('./logger')
 const analytics = require('./analytics')
@@ -8,8 +10,11 @@ const analytics = require('./analytics')
 const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN
 const GUILD_ID = '686873244791210014'
 const REPORTS_CHANNEL_ID = '835130205928030279'
+const DAILY_STANDUP_CHANNEL_ID = '842082539720146975'
 const GUEST_ROLE_ID = '812299047175716934'
 const INTRODUCTIONS_CHANNEL_ID = '689916376542085170'
+
+const timezone = 'Europe/Zagreb'
 
 const start = () => {
   const bot = new Discord.Client({})
@@ -17,13 +22,20 @@ const start = () => {
 
   bot.on('ready', async (evt) => {
     logger.info(`Logged in as: ${bot.user.tag}.`)
-    // Send weekly analytics report on Monday at 00:30.
-    schedule.scheduleJob('30 0 * * 1', async () => {
+
+    // Send weekly analytics report on Monday at 7:00 am.
+    schedule.scheduleJob({dayOfWeek: 1, hour: 7, tz: timezone}, async () => {
       await sendAnalyticsReport(bot, 'weekly')
     })
-    // Send daily analytics report every day at 00:30.
-    schedule.scheduleJob('30 0 * * *', async () => {
+
+    // Send daily analytics report every day at 7:00.
+    schedule.scheduleJob({hour: 7, tz: timezone}, async () => {
       await sendAnalyticsReport(bot, 'daily')
+    })
+
+    // Initiate daily standup every day at 9:00.
+    schedule.scheduleJob({hour: 9, tz: timezone}, async () => {
+      await initiateDailyStandup(bot)
     })
   })
 
@@ -86,6 +98,21 @@ const sendAnalyticsReport = async (bot, period) => {
     waspTeamTextChannel.send(text, embed)
   }
   waspTeamTextChannel.send('=======================================================')
+}
+
+const initiateDailyStandup = async (bot) => {
+  const guild = await bot.guilds.fetch(GUILD_ID)
+  const dailyStandupChannel = guild.channels.resolve(DAILY_STANDUP_CHANNEL_ID)
+
+  const fun = Math.random() < 0.5
+        ? (q => `${q.text} | ${q.author}`)(Quote.getQuote())
+        : oneLinerJoke.getRandomJoke().body
+
+  dailyStandupChannel.send(
+    'Time for daily standup!'
+    + '\nHow was your day yesterday, what are you working on today, and what are the challenges you are encountering?'
+    + '\n\nDaily fun/wisdom: ' + fun
+  )
 }
 
 module.exports = {
