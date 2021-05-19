@@ -24,17 +24,17 @@ const start = () => {
     logger.info(`Logged in as: ${bot.user.tag}.`)
 
     // Send weekly analytics report on Monday at 7:00 am.
-    schedule.scheduleJob({dayOfWeek: 1, hour: 7, tz: timezone}, async () => {
+    schedule.scheduleJob({dayOfWeek: 1, hour: 7, minute: 0, tz: timezone}, async () => {
       await sendAnalyticsReport(bot, 'weekly')
     })
 
     // Send daily analytics report every day at 7:00.
-    schedule.scheduleJob({hour: 7, tz: timezone}, async () => {
+    schedule.scheduleJob({hour: 7, minute: 0, tz: timezone}, async () => {
       await sendAnalyticsReport(bot, 'daily')
     })
 
     // Initiate daily standup every day at 9:00.
-    schedule.scheduleJob({hour: 9, tz: timezone}, async () => {
+    schedule.scheduleJob({dayOfWeek: [1,2,3,4,5], hour: 9, minute: 0, tz: timezone}, async () => {
       await initiateDailyStandup(bot)
     })
   })
