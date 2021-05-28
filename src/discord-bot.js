@@ -1,7 +1,6 @@
 const Discord = require('discord.js')
 const schedule = require('node-schedule')
 const Quote = require('inspirational-quotes')
-const oneLinerJoke = require('one-liner-joke')
 
 const logger = require('./logger')
 const analytics = require('./analytics')
@@ -104,14 +103,12 @@ const initiateDailyStandup = async (bot) => {
   const guild = await bot.guilds.fetch(GUILD_ID)
   const dailyStandupChannel = guild.channels.resolve(DAILY_STANDUP_CHANNEL_ID)
 
-  const fun = Math.random() < 0.5
-        ? (q => `${q.text} | ${q.author}`)(Quote.getQuote())
-        : oneLinerJoke.getRandomJoke().body
+  const wisdom = (q => `${q.text} | ${q.author}`)(Quote.getQuote())
 
   dailyStandupChannel.send(
     'Time for daily standup!'
     + '\nHow was your day yesterday, what are you working on today, and what are the challenges you are encountering?'
-    + '\n\nDaily fun/wisdom: ' + fun
+    + '\n\nDaily fun/wisdom: ' + wisdom
   )
 }
 

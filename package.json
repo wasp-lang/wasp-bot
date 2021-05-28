@@ -13,7 +13,6 @@
     "lodash": "^4.17.21",
     "moment": "^2.29.1",
     "node-schedule": "^2.0.0",
-    "one-liner-joke": "^1.2.0",
     "winston": "^3.3.3"
   }
 }
