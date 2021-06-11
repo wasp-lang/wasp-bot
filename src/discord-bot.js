@@ -32,8 +32,8 @@ const start = () => {
       await sendAnalyticsReport(bot, 'daily')
     })
 
-    // Initiate daily standup every day at 9:00.
-    schedule.scheduleJob({dayOfWeek: [1,2,3,4,5], hour: 9, minute: 0, tz: timezone}, async () => {
+    // Initiate daily standup every day at 8:00.
+    schedule.scheduleJob({dayOfWeek: [1,2,3,4,5], hour: 8, minute: 0, tz: timezone}, async () => {
       await initiateDailyStandup(bot)
     })
   })
