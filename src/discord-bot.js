@@ -47,9 +47,11 @@ const start = () => {
     const member = msg.guild.member(msg.author)
 
     if (msg.channel.id.toString() === INTRODUCTIONS_CHANNEL_ID && member.roles.cache.get(GUEST_ROLE_ID)) {
-      const trimmedMsg = msg.content.trim().length
-      if (trimmedMsg < 20 ) {
-        return msg.reply(`\n✅ Please write another introduction at least 2️⃣0️⃣ characters long.\n❌ DON'T EDIT your old message, I'm not a very smart bot🤖! \nThanks 🙏`)
+      const trimmedMsg = msg.content.trim().length;
+      if (trimmedMsg < 20) {
+        return msg.reply(
+          `\n👋 Great to have you here! Pls introduce yourself with a message that's at least 2️⃣0️⃣ characters long and I will give you full access to the server. \n❌ BTW editing your old message won't work b/c I'm not a very smart bot🤖. Doh!`
+        );
       }
       try {
         await member.roles.remove(GUEST_ROLE_ID)
