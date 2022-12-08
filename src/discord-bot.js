@@ -39,28 +39,26 @@ const start = () => {
   })
 
   bot.on('message', async msg => {
-    if (msg.content.startsWith('!intro ')) {
-      if (msg.channel.id.toString() !== INTRODUCTIONS_CHANNEL_ID) {
-        const introductionsChannelName = msg.guild.channels.resolve(INTRODUCTIONS_CHANNEL_ID).name
-        return msg.reply(`Please use !intro command in the ${introductionsChannelName} channel!`)
-      }
+    // Ignore messages from the bot itself.
+    if (msg.author.id === bot.user.id) {
+      return;
+    }
+    
+    const member = msg.guild.member(msg.author)
 
-      const introMsg = msg.content.substring('!intro '.length).trim()
-      const minMsgLength = 20
-      if (introMsg.length < minMsgLength) {
-        return msg.reply(`Please write introduction at least ${minMsgLength} characters long!`)
+    if (msg.channel.id.toString() === INTRODUCTIONS_CHANNEL_ID && member.roles.cache.get(GUEST_ROLE_ID)) {
+      const trimmedMsg = msg.content.trim().length
+      if (trimmedMsg < 20 ) {
+        return msg.reply(`\n✅ Please write another introduction at least 2️⃣0️⃣ characters long.\n❌ DON'T EDIT your old message, I'm not a very smart bot🤖! \nThanks 🙏`)
       }
-
-      const member = msg.guild.member(msg.author)
       try {
-        if (member.roles.cache.get(GUEST_ROLE_ID)) {
-          await member.roles.remove(GUEST_ROLE_ID)
-          return msg.reply('Nice getting to know you! You are no longer a guest and have full access, welcome!')
-        }
+        await member.roles.remove(GUEST_ROLE_ID)
+        return msg.reply('Nice getting to know you ☕️! You now have full access to the Wasp Discord 🐝. Welcome!')
       } catch (error) {
         return msg.reply(`Error: ${error}`)
       }
     }
+
 
     if (msg.content.startsWith('!analytics') && msg.channel.id.toString() === REPORTS_CHANNEL_ID) {
       if (msg.content.includes('weekly')) {
