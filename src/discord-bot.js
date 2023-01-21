@@ -1,6 +1,7 @@
 const Discord = require('discord.js')
 const schedule = require('node-schedule')
 const Quote = require('inspirational-quotes')
+const retry = require('async-retry')
 
 const logger = require('./logger')
 const analytics = require('./analytics')
@@ -22,14 +23,29 @@ const start = () => {
   bot.on('ready', async (evt) => {
     logger.info(`Logged in as: ${bot.user.tag}.`)
 
-    // Send weekly analytics report on Monday at 7:00 am.
-    schedule.scheduleJob({dayOfWeek: 1, hour: 7, minute: 0, tz: timezone}, async () => {
-      await sendAnalyticsReport(bot, 'weekly')
-    })
-
-    // Send daily analytics report every day at 7:00.
+    // Every day at 7:00 am, send analytics reports.
     schedule.scheduleJob({hour: 7, minute: 0, tz: timezone}, async () => {
-      await sendAnalyticsReport(bot, 'daily')
+      // By prefetching events, we can reuse them when generating multiple reports and not just daily ones.
+      // We retry it a couple of times because Posthog's API can sometimes be flaky.
+      // I am guessing that more events we will have, the worse it will get, because we will be fetching more of them,
+      // so in that case we might have to revisit our fetching strategy and cache intermediate results.
+      const events = await retry(async () => {
+        return analytics.fetchAllCliEvents()
+      }, {retries: 3})
+
+      // Send total and daily analytics report every day.
+      await sendAnalyticsReport(bot, 'total', events)
+      await sendAnalyticsReport(bot, 'daily', events)
+
+      // It today is Monday, also send weekly analytics report.
+      if (moment().isoWeekday() === 1) {
+        await sendAnalyticsReport(bot, 'weekly', events)
+      }
+
+      // It today is first day of the month, also send monthly analytics report.
+      if (moment().date() === 1) {
+        await sendAnalyticsReport(bot, 'monthly', events)
+      }
     })
 
     // Initiate daily standup every day at 8:00.
@@ -43,7 +59,7 @@ const start = () => {
     if (msg.author.id === bot.user.id) {
       return;
     }
-    
+
     const member = msg.guild.member(msg.author)
 
     if (msg.channel.id.toString() === INTRODUCTIONS_CHANNEL_ID && member.roles.cache.get(GUEST_ROLE_ID)) {
@@ -61,39 +77,51 @@ const start = () => {
       }
     }
 
-
     if (msg.content.startsWith('!analytics') && msg.channel.id.toString() === REPORTS_CHANNEL_ID) {
       if (msg.content.includes('weekly')) {
         await sendAnalyticsReport(bot, 'weekly')
-      } else {
+      } else if (msg.content.includes('monthly')) {
+        await sendAnalyticsReport(bot, 'monthly')
+      } else if (msg.content.includes('daily')) {
         await sendAnalyticsReport(bot, 'daily')
+      } else {
+        await sendAnalyticsReport(bot, 'total')
       }
     }
   })
 }
 
-const sendAnalyticsReport = async (bot, period) => {
-  let reportPromise, periodText
-  if (period == 'weekly') {
-    reportPromise = analytics.generateWeeklyReport()
-    periodText = 'WEEKLY'
-  } else if (period == 'daily') {
-    reportPromise = analytics.generateDailyReport()
-    periodText = 'DAILY'
+const sendAnalyticsReport = async (bot, reportType, prefetchedEvents = undefined) => {
+  let reportPromise, reportTitle
+  if (reportType == 'monthly') {
+    reportPromise = analytics.generateMonthlyReport(prefetchedEvents)
+    reportTitle = 'MONTHLY'
+  } else if (reportType == 'weekly') {
+    reportPromise = analytics.generateWeeklyReport(prefetchedEvents)
+    reportTitle = 'WEEKLY'
+  } else if (reportType == 'daily') {
+    reportPromise = analytics.generateDailyReport(prefetchedEvents)
+    reportTitle = 'DAILY'
+  } else if (reportType == 'total') {
+    reportPromise = analytics.generateTotalReport(prefetchedEvents)
+    reportTitle = 'TOTAL'
   }
-
   const guild = await bot.guilds.fetch(GUILD_ID)
   const waspTeamTextChannel = guild.channels.resolve(REPORTS_CHANNEL_ID)
 
   waspTeamTextChannel.send(`Generating report...`)
 
   const report = await reportPromise
-  waspTeamTextChannel.send(`=============== ${periodText} ANALYTICS REPORT ===============`)
+  waspTeamTextChannel.send(`=============== ${reportTitle} ANALYTICS REPORT ===============`)
   for (const metric of report) {
-    const text = metric.text.join('\n')
-    const chartImageUrl = metric.chart.toURL()
-    const embed = new Discord.MessageEmbed()
-    embed.setImage(chartImageUrl)
+    const text = metric.text?.join('\n')
+
+    let embed = undefined
+    if (metric.chart) {
+      embed = new Discord.MessageEmbed()
+      embed.setImage(metric.chart.toURL())
+    }
+
     waspTeamTextChannel.send(text, embed)
   }
   waspTeamTextChannel.send('=======================================================')
