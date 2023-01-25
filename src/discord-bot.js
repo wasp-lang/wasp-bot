@@ -89,6 +89,27 @@ const start = () => {
       }
     }
   })
+
+  bot.on('messageUpdate', async (oldMessage, newMessage) => {
+    const member = newMessage.guild.member(newMessage.author);
+
+    if (
+      newMessage.channel.id.toString() === INTRODUCTIONS_CHANNEL_ID &&
+      member.roles.cache.get(GUEST_ROLE_ID) &&
+      oldMessage.content.length < 20
+    ) {
+      const trimmedMsg = newMessage.content.trim().length;
+
+      if (trimmedMsg >= 20) {
+        try {
+          await member.roles.remove(GUEST_ROLE_ID);
+          return newMessage.reply('Nice getting to know you ☕️! You now have full access to the Wasp Discord 🐝. Welcome!');
+        } catch (error) {
+          return newMessage.reply(`Error: ${error}`);
+        }
+      }
+    }
+  });
 }
 
 const sendAnalyticsReport = async (bot, reportType, prefetchedEvents = undefined) => {
