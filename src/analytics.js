@@ -6,6 +6,16 @@ const Table = require('cli-table')
 
 const POSTHOG_KEY = process.env.WASP_POSTHOG_KEY
 
+const actors = {
+  user: 'user',
+  replit: 'replit',
+  ci: 'ci',
+  gitpod: 'gitpod',
+  codespaces: 'codespaces',
+}
+
+const nonUserActorsList = [actors.gitpod, actors.replit, actors.codespaces, actors.ci];
+
 // Here we set moment to use ISO-8601, Europe locale.
 moment.updateLocale("en", { week: {
   dow: 1, // First day of week is Monday
@@ -92,7 +102,7 @@ async function generatePeriodProjectsReport (numPeriods, periodName, prefetchedE
   const events = prefetchedEvents || await fetchEventsForReportGenerator()
 
   const eventsByActor = organizeEventsByActor(events)
-  const userEvents = eventsByActor["user"] || []
+  const userEvents = eventsByActor[actors.user] || []
 
   const periods = calcLastNPeriods(numPeriods, periodName)
 
@@ -134,29 +144,22 @@ async function generateUserActivityReport (numPeriods, periodName, prefetchedEve
   const events = prefetchedEvents || await fetchEventsForReportGenerator()
 
   const eventsByActor = organizeEventsByActor(events)
-  const ciEvents = eventsByActor["ci"] || []
-  const gitpodEvents = eventsByActor["gitpod"] || []
-  const replitEvents = eventsByActor["replit"] || []
-  const userEvents = eventsByActor["user"] || []
+  const userEvents = eventsByActor[actors.user] || []
 
   const periods = calcLastNPeriods(numPeriods, periodName)
 
-  // Couple of statistics that cover only the last of periods.
-  const numUniqueCiUsersInLastPeriod = uniqueUserIdsInPeriod(ciEvents, elemFromBehind(periods, 0)).length
-  const numUniqueGitpodUsersInLastPeriod = uniqueUserIdsInPeriod(gitpodEvents, elemFromBehind(periods, 0)).length
-  const numUniqueReplitUsersInLastPeriod = uniqueUserIdsInPeriod(replitEvents, elemFromBehind(periods, 0)).length
+  const numUniqueByActorInLastPeriod = getNumUniqueByActorInLastPeriod(periods);
 
   const uniqueUsersPerPeriodByAge = calcUniqueUsersPerPeriodByAge(userEvents, periods)
+
+  const actorsOutput = getActorNamesAndValuesFromReport(numUniqueByActorInLastPeriod);
 
   report = [ {
     text: [
       'Number of unique active users:',
       `- During last ${periodName}: `
         + _.sum(Object.values(uniqueUsersPerPeriodByAge.series).map(s => elemFromBehind(s, 0))),
-      '  - Replit / Gitpod / CI: '
-        + (numUniqueReplitUsersInLastPeriod + ' / '
-           + numUniqueGitpodUsersInLastPeriod + ' / '
-           + numUniqueCiUsersInLastPeriod),
+      `  - ${actorsOutput.names}: ${actorsOutput.values}`
     ],
     chart: buildChartImageUrl(
       uniqueUsersPerPeriodByAge,
@@ -168,16 +171,24 @@ async function generateUserActivityReport (numPeriods, periodName, prefetchedEve
   return report
 }
 
+function getNumUniqueByActorInLastPeriod(periods, actors = nonUserActorsList) {
+  const result = {};
+  for (let actor in actors) {
+    const events = eventsByActor[actor] || []
+    result[actor] = uniqueUserIdsInPeriod(events, elemFromBehind(periods, 0)).length
+  }
+  return result;
+}
+
 // Generates report for some general statistics that cover the whole (total) time (all of the events).
 async function generateTotalReport (prefetchedEvents = undefined) {
   // All events, sort by time (starting with oldest), with events caused by Wasp team members filtered out.
   const events = prefetchedEvents || await fetchEventsForReportGenerator()
 
   const eventsByActor = organizeEventsByActor(events)
-  const ciEvents = eventsByActor["ci"] || []
-  const gitpodEvents = eventsByActor["gitpod"] || []
-  const replitEvents = eventsByActor["replit"] || []
-  const userEvents = eventsByActor["user"] || []
+  const userEvents = eventsByActor[actors.user] || []
+  const numTotalByActor = getNumTotalByActor(eventsByActor)
+  const actorsOutput = getActorNamesAndValuesFromReport(numTotalByActor);
 
   const userEventsByProject = groupEventsByProject(userEvents)
 
@@ -185,21 +196,25 @@ async function generateTotalReport (prefetchedEvents = undefined) {
   const numProjectsBuiltTotal = Object.values(userEventsByProject)
         .filter(events => events.some(e => e.properties.is_build)).length
   const numUniqueUsersTotal = new Set(userEvents.map(e => e.distinct_id)).size
-  const numUniqueReplitUsersTotal = new Set(replitEvents.map(e => e.distinct_id)).size
-  const numUniqueGitpodUsersTotal = new Set(gitpodEvents.map(e => e.distinct_id)).size
-  const numUniqueCIUsersTotal = new Set(ciEvents.map(e => e.distinct_id)).size
 
   const report = [
     { text: [
       'Number of unique projects in total: ' + numProjectsTotal,
       'Number of unique projects built in total: ' + numProjectsBuiltTotal,
       'Number of unique users in total: ' + numUniqueUsersTotal,
-      'Number of unique Replit / Gitpod / CI users in total: ' + (
-        numUniqueReplitUsersTotal + ' / ' + numUniqueGitpodUsersTotal + ' / ' + numUniqueCIUsersTotal
-      )
+      `Number of unique ${actorsOutput.names} users in total: ${actorsOutput.values}`
     ] }
   ]
   return report
+}
+
+function getNumTotalByActor(eventsByActor, actors = nonUserActorsList) {
+  const result = {};
+  for (let actor in actors) {
+    const events = eventsByActor[actor] || []
+    result[actor] = new Set(events.map(e => e.distinct_id)).size
+  }
+  return result;
 }
 
 async function generateCohortRetentionReport (numPeriods, periodName, prefetchedEvents = undefined) {
@@ -208,7 +223,7 @@ async function generateCohortRetentionReport (numPeriods, periodName, prefetched
   // All events, sort by time (starting with oldest), with events caused by Wasp team members filtered out.
   const events = prefetchedEvents || await fetchEventsForReportGenerator()
 
-  const userEvents = organizeEventsByActor(events)["user"] || []
+  const userEvents = organizeEventsByActor(events)[actors.user] || []
 
   const periods = calcLastNPeriods(numPeriods, periodName)
 
@@ -329,16 +344,17 @@ async function fetchEvents (url) {
   return results.concat(restOfResults)
 }
 
-// Organize events by the actors / source: Replit, Gitpod, CI, or the normal usage ("user").
+// Organize events by the actors / source: Replit, Gitpod, Github Codepsaces, CI, or the normal usage (actors.user).
 // We are most interested in normal usage, which is why we want to do this separation,
 // but we also do some analysis on the rest of events.
 function organizeEventsByActor (events) {
   return _.groupBy(events, e => {
     const contextValues = e.properties.context?.split(" ").map(v => v.toLowerCase()) || []
-    if (contextValues.includes("ci")) return "ci"
-    if (contextValues.includes("gitpod")) return "gitpod"
-    if (contextValues.includes("replit")) return "replit"
-    return "user"
+    if (contextValues.includes(actors.ci)) return actors.ci
+    if (contextValues.includes(actors.gitpod)) return actors.gitpod
+    if (contextValues.includes(actors.codespaces)) return actors.codespaces
+    if (contextValues.includes(actors.replit)) return actors.replit
+    return actors.user
   })
 }
 
@@ -471,6 +487,27 @@ function sum (numbers) { return numbers.reduce((s, x) => s + x, 0) }
 
 // elemFromBehind([1,2,3], 0) == 3
 function elemFromBehind (arr, i) { return arr[arr.length - 1 - i] }
+
+const actorNames = {
+  [actors.user]: 'User',
+  [actors.replit]: 'Replit',
+  [actors.ci]: 'CI',
+  [actors.gitpod]: 'Gitpod',
+  [actors.codespaces]: 'Github Codespaces',
+}
+
+// Generates two strings from given report:
+// - names: A / B / C
+// - values: 1 / 2 / 3
+function getActorNamesAndValuesFromReport (report, actors = nonUserActorsList) {
+  const names = [];
+  const values = [];
+  for (const actor of actors) {
+    names.push(actorNames[actor])
+    values.push(report[actor])
+  }
+  return { names: names.join(' / '), values: values.join(' / ') }
+}
 
 module.exports = {
   fetchEventsForReportGenerator,
