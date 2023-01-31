@@ -14,7 +14,7 @@ const actors = {
   codespaces: 'codespaces',
 }
 
-const nonUserActorsList = [actors.gitpod, actors.replit, actors.codespaces, actors.ci];
+const nonUserActors = [actors.gitpod, actors.replit, actors.codespaces, actors.ci];
 
 // Here we set moment to use ISO-8601, Europe locale.
 moment.updateLocale("en", { week: {
@@ -152,14 +152,14 @@ async function generateUserActivityReport (numPeriods, periodName, prefetchedEve
 
   const uniqueUsersPerPeriodByAge = calcUniqueUsersPerPeriodByAge(userEvents, periods)
 
-  const actorsOutput = getActorNamesAndValuesFromReport(numUniqueByActorInLastPeriod);
+  const nonUserActorsOutput = getActorNamesAndValuesFromReport(numUniqueByActorInLastPeriod);
 
   report = [ {
     text: [
       'Number of unique active users:',
       `- During last ${periodName}: `
         + _.sum(Object.values(uniqueUsersPerPeriodByAge.series).map(s => elemFromBehind(s, 0))),
-      `  - ${actorsOutput.names}: ${actorsOutput.values}`
+      `  - ${nonUserActorsOutput.names}: ${nonUserActorsOutput.values}`
     ],
     chart: buildChartImageUrl(
       uniqueUsersPerPeriodByAge,
@@ -171,7 +171,7 @@ async function generateUserActivityReport (numPeriods, periodName, prefetchedEve
   return report
 }
 
-function getNumUniqueByActorInLastPeriod(periods, actors = nonUserActorsList) {
+function getNumUniqueByActorInLastPeriod(periods, actors = nonUserActors) {
   const result = {};
   for (let actor in actors) {
     const events = eventsByActor[actor] || []
@@ -188,7 +188,7 @@ async function generateTotalReport (prefetchedEvents = undefined) {
   const eventsByActor = organizeEventsByActor(events)
   const userEvents = eventsByActor[actors.user] || []
   const numTotalByActor = getNumTotalByActor(eventsByActor)
-  const actorsOutput = getActorNamesAndValuesFromReport(numTotalByActor);
+  const nonUserActorsOutput = getActorNamesAndValuesFromReport(numTotalByActor);
 
   const userEventsByProject = groupEventsByProject(userEvents)
 
@@ -202,13 +202,13 @@ async function generateTotalReport (prefetchedEvents = undefined) {
       'Number of unique projects in total: ' + numProjectsTotal,
       'Number of unique projects built in total: ' + numProjectsBuiltTotal,
       'Number of unique users in total: ' + numUniqueUsersTotal,
-      `Number of unique ${actorsOutput.names} users in total: ${actorsOutput.values}`
+      `Number of unique ${nonUserActorsOutput.names} users in total: ${nonUserActorsOutput.values}`
     ] }
   ]
   return report
 }
 
-function getNumTotalByActor(eventsByActor, actors = nonUserActorsList) {
+function getNumTotalByActor(eventsByActor, actors = nonUserActors) {
   const result = {};
   for (let actor in actors) {
     const events = eventsByActor[actor] || []
@@ -499,7 +499,7 @@ const actorNames = {
 // Generates two strings from given report:
 // - names: A / B / C
 // - values: 1 / 2 / 3
-function getActorNamesAndValuesFromReport (report, actors = nonUserActorsList) {
+function getActorNamesAndValuesFromReport (report, actors = nonUserActors) {
   const names = [];
   const values = [];
   for (const actor of actors) {
