@@ -173,7 +173,7 @@ async function generateUserActivityReport (numPeriods, periodName, prefetchedEve
 
 function getNumUniqueByActorInLastPeriod(periods, actors = nonUserActors) {
   const result = {};
-  for (let actor in actors) {
+  for (let actor of actors) {
     const events = eventsByActor[actor] || []
     result[actor] = uniqueUserIdsInPeriod(events, elemFromBehind(periods, 0)).length
   }
@@ -210,7 +210,7 @@ async function generateTotalReport (prefetchedEvents = undefined) {
 
 function getNumTotalByActor(eventsByActor, actors = nonUserActors) {
   const result = {};
-  for (let actor in actors) {
+  for (let actor of actors) {
     const events = eventsByActor[actor] || []
     result[actor] = new Set(events.map(e => e.distinct_id)).size
   }
