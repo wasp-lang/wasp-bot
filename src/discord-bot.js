@@ -72,7 +72,7 @@ const handleMessage = async (bot, msg) => {
     const trimmedMsg = msg.content.trim().length;
     if (trimmedMsg < 20) {
       return msg.reply(
-        `\n👋 Great to have you here! Pls introduce yourself with a message that's at least 2️⃣0️⃣ characters long and I will give you full access to the server. \n❌ BTW editing your old message won't work b/c I'm not a very smart bot🤖. Doh!`
+        `\n👋 Great to have you here! Pls introduce yourself with a message that's at least 2️⃣0️⃣ characters long and I will give you full access to the server.`
       );
     }
     try {
