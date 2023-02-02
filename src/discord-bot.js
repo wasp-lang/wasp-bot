@@ -4,7 +4,9 @@ const Quote = require('inspirational-quotes')
 const retry = require('async-retry')
 const moment = require('moment')
 
-const logger = require('./logger')
+require('dotenv').config()
+
+const logger = require('./utils/logger')
 const analytics = require('./analytics')
 
 
@@ -21,7 +23,7 @@ const start = () => {
   const bot = new Discord.Client({})
   bot.login(BOT_TOKEN)
 
-  bot.on('ready', async (evt) => {
+  bot.on('ready', async () => {
     logger.info(`Logged in as: ${bot.user.tag}.`)
 
     // Every day at 7:00 am, send analytics reports.
