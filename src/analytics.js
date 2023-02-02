@@ -95,7 +95,7 @@ async function generatePeriodProjectsReport (numPeriods, periodName, prefetchedE
   const events = prefetchedEvents || await fetchEventsForReportGenerator()
 
   const eventsByActor = organizeEventsByActor(events)
-  const userEvents = eventsByActor[actors.user] || []
+  const userEvents = eventsByActor[actors.user.id] || []
 
   const periods = calcLastNPeriods(numPeriods, periodName)
 
@@ -139,7 +139,7 @@ async function generateUserActivityReport (numPeriods, periodName, prefetchedEve
 
   const eventsByActor = organizeEventsByActor(events)
 
-  const userEvents = eventsByActor[actors.user] || []
+  const userEvents = eventsByActor[actors.user.id] || []
   const uniqueUsersPerPeriodByAge = calcUniqueUsersPerPeriodByAge(userEvents, periods)
 
   const uniqueUsersByActorInPeriod = getUniqueUsersByActorInPeriod(periods, eventsByActor);
@@ -162,11 +162,11 @@ async function generateUserActivityReport (numPeriods, periodName, prefetchedEve
   return report
 }
 
-function getUniqueUsersByActorInPeriod(periods, eventsByActor, actors = nonUserActors) {
+function getUniqueUsersByActorInPeriod(periods, eventsByActor) {
   const uniqueUsersByActorInPeriod = {};
-  for (let actor of actors) {
-    const events = eventsByActor[actor] || []
-    uniqueUsersByActorInPeriod[actor] = uniqueUserIdsInPeriod(events, elemFromBehind(periods, 0)).length
+  for (let actor of nonUserActors) {
+    const events = eventsByActor[actor.id] || []
+    uniqueUsersByActorInPeriod[actor.id] = uniqueUserIdsInPeriod(events, elemFromBehind(periods, 0)).length
   }
   return uniqueUsersByActorInPeriod;
 }
@@ -178,7 +178,7 @@ async function generateTotalReport (prefetchedEvents = undefined) {
 
   const eventsByActor = organizeEventsByActor(events)
 
-  const userEvents = eventsByActor[actors.user] || []
+  const userEvents = eventsByActor[actors.user.id] || []
   const userEventsByProject = groupEventsByProject(userEvents)
 
   const totalUniqueUsersByActor = getTotalUniqueUsersByActor(eventsByActor)
@@ -200,11 +200,11 @@ async function generateTotalReport (prefetchedEvents = undefined) {
   return report
 }
 
-function getTotalUniqueUsersByActor(eventsByActor, actors = nonUserActors) {
+function getTotalUniqueUsersByActor(eventsByActor) {
   const totalUniqueUsersByActor = {};
-  for (let actor of actors) {
-    const events = eventsByActor[actor] || []
-    totalUniqueUsersByActor[actor] = new Set(events.map(e => e.distinct_id)).size
+  for (let actor of nonUserActors) {
+    const events = eventsByActor[actor.id] || []
+    totalUniqueUsersByActor[actor.id] = new Set(events.map(e => e.distinct_id)).size
   }
   return totalUniqueUsersByActor;
 }
@@ -215,7 +215,7 @@ async function generateCohortRetentionReport (numPeriods, periodName, prefetched
   // All events, sort by time (starting with oldest), with events caused by Wasp team members filtered out.
   const events = prefetchedEvents || await fetchEventsForReportGenerator()
 
-  const userEvents = organizeEventsByActor(events)[actors.user] || []
+  const userEvents = organizeEventsByActor(events)[actors.user.id] || []
 
   const periods = calcLastNPeriods(numPeriods, periodName)
 
@@ -342,11 +342,12 @@ async function fetchEvents (url) {
 function organizeEventsByActor (events) {
   return _.groupBy(events, e => {
     const contextValues = e.properties.context?.split(" ").map(v => v.toLowerCase()) || []
-    if (contextValues.includes(actors.ci)) return actors.ci
-    if (contextValues.includes(actors.gitpod)) return actors.gitpod
-    if (contextValues.includes(actors.codespaces)) return actors.codespaces
-    if (contextValues.includes(actors.replit)) return actors.replit
-    return actors.user
+    for (let actor of nonUserActors) {
+      if (contextValues.includes(actor.contextKey)) {
+        return actor.id;
+      }
+    }
+    return actors.user.id;
   })
 }
 
