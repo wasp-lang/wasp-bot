@@ -5,7 +5,8 @@
   "main": "src/bot.js",
   "author": "Martin Sosic (Wasp-lang)",
   "scripts": {
-    "testAnalytics": "node ./src/analytics.js"
+    "calcAnalytics": "node ./src/analytics.js",
+    "startBot": "node ./src/bot.js"
   },
   "dependencies": {
     "asciichart": "^1.5.25",

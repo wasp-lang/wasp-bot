@@ -142,7 +142,7 @@ async function generateUserActivityReport (numPeriods, periodName, prefetchedEve
   const userEvents = eventsByActor[actors.user.id] || []
   const uniqueUsersPerPeriodByAge = calcUniqueUsersPerPeriodByAge(userEvents, periods)
 
-  const uniqueUsersByActorInPeriod = getUniqueUsersByActorInPeriod(periods, eventsByActor);
+  const uniqueUsersByActorInPeriod = calcUniqueUsersByActorInPeriod(periods, eventsByActor);
   const nonUserActorsOutput = getActorsOutputFromCounts(uniqueUsersByActorInPeriod);
 
   const report = [ {
@@ -162,7 +162,7 @@ async function generateUserActivityReport (numPeriods, periodName, prefetchedEve
   return report
 }
 
-function getUniqueUsersByActorInPeriod(periods, eventsByActor) {
+function calcUniqueUsersByActorInPeriod(periods, eventsByActor) {
   const uniqueUsersByActorInPeriod = {};
   for (let actor of nonUserActors) {
     const events = eventsByActor[actor.id] || []
@@ -181,7 +181,7 @@ async function generateTotalReport (prefetchedEvents = undefined) {
   const userEvents = eventsByActor[actors.user.id] || []
   const userEventsByProject = groupEventsByProject(userEvents)
 
-  const totalUniqueUsersByActor = getTotalUniqueUsersByActor(eventsByActor)
+  const totalUniqueUsersByActor = calcTotalUniqueUsersByActor(eventsByActor)
   const nonUserActorsOutput = getActorsOutputFromCounts(totalUniqueUsersByActor);
 
   const numProjectsTotal = Object.keys(userEventsByProject).length
@@ -200,7 +200,7 @@ async function generateTotalReport (prefetchedEvents = undefined) {
   return report
 }
 
-function getTotalUniqueUsersByActor(eventsByActor) {
+function calcTotalUniqueUsersByActor(eventsByActor) {
   const totalUniqueUsersByActor = {};
   for (let actor of nonUserActors) {
     const events = eventsByActor[actor.id] || []
