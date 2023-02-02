@@ -1,6 +1,6 @@
 // Defines all the actors that can send telemetry data to PostHog
 // - "id" is used internally
-// - "contextKey" is used to identify the actor in the event context
+// - "contextKey" is used to identify the actor from the Posthog event context field
 // - "name" is used to display the actor in the output
 const actors = {
     user: { id: "user", contextKey: "user", name: "User" },
