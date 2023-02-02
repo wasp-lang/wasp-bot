@@ -1,29 +1,33 @@
+// TODO: we should probably refactor naming here
+// - actor could be renamed to context
+// - user actor could be renamed to local context
+const userActorKey = 'user';
 // Defines all the actors that can send telemetry data to PostHog
-// - "id" is used internally
 // - "contextKey" is used to identify the actor in the event context
 // - "name" is used to display the actor in the output
 const actors = {
-    user: { id: "user", contextKey: "user", name: "User" },
-    replit: { id: "replit", contextKey: "replit", name: "Replit" },
-    gitpod: { id: "gitpod", contextKey: "gitpod", name: "Gitpod" },
+    // TODO: user is a special case, we should probably remove it in the future
+    [userActorKey]: { name: "User" },
+    replit: { contextKey: "replit", name: "Replit" },
+    gitpod: { contextKey: "gitpod", name: "Gitpod" },
     codespaces: {
-        id: "codespaces",
         contextKey: "codespaces",
         name: "GH Codespaces"
     },
-    ci: { id: "ci", contextKey: "ci", name: "CI" }
+    ci: { contextKey: "ci", name: "CI" }
 };
 
-const nonUserActors = Object.values(actors).filter(
-    (actor) => actor.id !== "user"
+const nonUserActors = Object.fromEntries(
+    Object.entries(actors).filter(([, actor]) => actor !== actors.user)
 );
 
 // Given [1, 2, 3] and ["gitpod", "replit", "ci"]
 // returns a string "[Gitpod: 1] [Replit: 2] [CI: 3]"
-function getActorsOutputFromCounts(counts) {
+function getPrettyActorMetrics(metricsByActor) {
     const output = [];
-    for (const actor of nonUserActors) {
-        output.push(`[${actor.name}: ${counts[actor.id]}]`);
+    for (const [actorKey, metric] of Object.entries(metricsByActor)) {
+        const actor = actors[actorKey];
+        output.push(`[${actor.name}: ${metric}]`);
     }
     return output.join(" ");
 }
@@ -31,5 +35,6 @@ function getActorsOutputFromCounts(counts) {
 module.exports = {
     actors,
     nonUserActors,
-    getActorsOutputFromCounts
+    userActorKey,
+    getPrettyActorMetrics
 };
