@@ -55,43 +55,47 @@ const start = () => {
     })
   })
 
-  bot.on('message', async msg => {
-    // Ignore messages from the bot itself.
-    if (msg.author.id === bot.user.id) {
-      return;
-    }
+  bot.on('message', async msg => handleMessage(bot, msg))
 
-    const member = msg.guild.member(msg.author)
+  bot.on('messageUpdate', async (oldMessage, newMessage) => handleMessage(bot, newMessage))
+}
 
-    if (msg.channel.id.toString() === INTRODUCTIONS_CHANNEL_ID && member.roles.cache.get(GUEST_ROLE_ID)) {
-      const trimmedMsg = msg.content.trim().length;
-      if (trimmedMsg < 20) {
-        return msg.reply(
-          `\n👋 Great to have you here! Pls introduce yourself with a message that's at least 2️⃣0️⃣ characters long and I will give you full access to the server. \n❌ BTW editing your old message won't work b/c I'm not a very smart bot🤖. Doh!`
-        );
-      }
-      try {
-        await member.roles.remove(GUEST_ROLE_ID)
-        return msg.reply('Nice getting to know you ☕️! You now have full access to the Wasp Discord 🐝. Welcome!')
-      } catch (error) {
-        return msg.reply(`Error: ${error}`)
-      }
-    }
+const handleMessage = async (bot, msg) => {
+  // Ignore messages from the bot itself.
+  if (msg.author.id === bot.user.id) {
+    return;
+  }
 
-    if (msg.content.startsWith('!analytics') && msg.channel.id.toString() === REPORTS_CHANNEL_ID) {
-      if (msg.content.includes('weekly')) {
-        await sendAnalyticsReport(bot, 'weekly')
-      } else if (msg.content.includes('monthly')) {
-        await sendAnalyticsReport(bot, 'monthly')
-      } else if (msg.content.includes('daily')) {
-        await sendAnalyticsReport(bot, 'daily')
-      } else if (msg.content.includes('total'))  {
-        await sendAnalyticsReport(bot, 'total')
-      } else {
-        await sendAnalyticsHelp(bot)
-      }
+  const member = msg.guild.member(msg.author)
+
+  if (msg.channel.id.toString() === INTRODUCTIONS_CHANNEL_ID && member.roles.cache.get(GUEST_ROLE_ID)) {
+    const trimmedMsg = msg.content.trim().length;
+    if (trimmedMsg < 20) {
+      return msg.reply(
+        `\n👋 Great to have you here! Pls introduce yourself with a message that's at least 2️⃣0️⃣ characters long and I will give you full access to the server.`
+      );
     }
-  })
+    try {
+      await member.roles.remove(GUEST_ROLE_ID)
+      return msg.reply('Nice getting to know you ☕️! You now have full access to the Wasp Discord 🐝. Welcome!')
+    } catch (error) {
+      return msg.reply(`Error: ${error}`)
+    }
+  }
+
+  if (msg.content.startsWith('!analytics') && msg.channel.id.toString() === REPORTS_CHANNEL_ID) {
+    if (msg.content.includes('weekly')) {
+      await sendAnalyticsReport(bot, 'weekly')
+    } else if (msg.content.includes('monthly')) {
+      await sendAnalyticsReport(bot, 'monthly')
+    } else if (msg.content.includes('daily')) {
+      await sendAnalyticsReport(bot, 'daily')
+    } else if (msg.content.includes('total'))  {
+      await sendAnalyticsReport(bot, 'total')
+    } else {
+      await sendAnalyticsHelp(bot)
+    }
+  }
 }
 
 const sendAnalyticsHelp = async (bot) => {
