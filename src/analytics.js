@@ -1,20 +1,13 @@
 const axios = require('axios')
 const _ = require('lodash')
 const moment = require('moment')
-const ImageCharts = require('image-charts');
 const Table = require('cli-table')
+const { actors, nonUserActors, getActorsOutputFromCounts } = require('./actors')
+const { buildChartImageUrl } = require('./charts')
+
+require('dotenv').config()
 
 const POSTHOG_KEY = process.env.WASP_POSTHOG_KEY
-
-const actors = {
-  user: 'user',
-  replit: 'replit',
-  ci: 'ci',
-  gitpod: 'gitpod',
-  codespaces: 'codespaces',
-}
-
-const nonUserActors = [actors.gitpod, actors.replit, actors.codespaces, actors.ci];
 
 // Here we set moment to use ISO-8601, Europe locale.
 moment.updateLocale("en", { week: {
@@ -115,7 +108,7 @@ async function generatePeriodProjectsReport (numPeriods, periodName, prefetchedE
   const projectCreationTimes = Object.values(userEventsByProject).map(events => calcProjectCreationTime(events))
   // [num_projects_created_before_end_of_period_0, num_projects_created_before_end_of_period_1, ...]
   const numProjectsCreatedTillPeriod =
-        periods.map(([pStart, pEnd]) => projectCreationTimes.filter(t => t.isSameOrBefore(pEnd)).length)
+        periods.map(([, pEnd]) => projectCreationTimes.filter(t => t.isSameOrBefore(pEnd)).length)
 
   const calcProjectFirstBuildTime = (allProjectEvents) => {
     const buildEvents = allProjectEvents.filter(e => e.properties.is_build)
@@ -125,7 +118,7 @@ async function generatePeriodProjectsReport (numPeriods, periodName, prefetchedE
   const projectFirstBuildTimes = Object.values(userEventsByProject).map(es => calcProjectFirstBuildTime(es)).filter(bt => bt)
   // [num_projects_built_before_end_of_period_0, num_projects_built_before_end_of_period_1, ...]
   const numProjectsBuiltTillPeriod =
-        periods.map(([pStart, pEnd]) => projectFirstBuildTimes.filter(t => t.isSameOrBefore(pEnd)).length)
+        periods.map(([, pEnd]) => projectFirstBuildTimes.filter(t => t.isSameOrBefore(pEnd)).length)
 
   const report = [
     {
@@ -142,24 +135,22 @@ async function generatePeriodProjectsReport (numPeriods, periodName, prefetchedE
 
 async function generateUserActivityReport (numPeriods, periodName, prefetchedEvents = undefined) {
   const events = prefetchedEvents || await fetchEventsForReportGenerator()
-
-  const eventsByActor = organizeEventsByActor(events)
-  const userEvents = eventsByActor[actors.user] || []
-
   const periods = calcLastNPeriods(numPeriods, periodName)
 
-  const numUniqueByActorInLastPeriod = getNumUniqueByActorInLastPeriod(periods);
+  const eventsByActor = organizeEventsByActor(events)
 
+  const userEvents = eventsByActor[actors.user] || []
   const uniqueUsersPerPeriodByAge = calcUniqueUsersPerPeriodByAge(userEvents, periods)
 
-  const nonUserActorsOutput = getActorNamesAndValuesFromReport(numUniqueByActorInLastPeriod);
+  const uniqueUsersByActorInPeriod = getUniqueUsersByActorInPeriod(periods, eventsByActor);
+  const nonUserActorsOutput = getActorsOutputFromCounts(uniqueUsersByActorInPeriod);
 
-  report = [ {
+  const report = [ {
     text: [
       'Number of unique active users:',
       `- During last ${periodName}: `
         + _.sum(Object.values(uniqueUsersPerPeriodByAge.series).map(s => elemFromBehind(s, 0))),
-      `  - ${nonUserActorsOutput.names}: ${nonUserActorsOutput.values}`
+      `  - ${nonUserActorsOutput}`
     ],
     chart: buildChartImageUrl(
       uniqueUsersPerPeriodByAge,
@@ -171,13 +162,13 @@ async function generateUserActivityReport (numPeriods, periodName, prefetchedEve
   return report
 }
 
-function getNumUniqueByActorInLastPeriod(periods, actors = nonUserActors) {
-  const result = {};
+function getUniqueUsersByActorInPeriod(periods, eventsByActor, actors = nonUserActors) {
+  const uniqueUsersByActorInPeriod = {};
   for (let actor of actors) {
     const events = eventsByActor[actor] || []
-    result[actor] = uniqueUserIdsInPeriod(events, elemFromBehind(periods, 0)).length
+    uniqueUsersByActorInPeriod[actor] = uniqueUserIdsInPeriod(events, elemFromBehind(periods, 0)).length
   }
-  return result;
+  return uniqueUsersByActorInPeriod;
 }
 
 // Generates report for some general statistics that cover the whole (total) time (all of the events).
@@ -186,11 +177,12 @@ async function generateTotalReport (prefetchedEvents = undefined) {
   const events = prefetchedEvents || await fetchEventsForReportGenerator()
 
   const eventsByActor = organizeEventsByActor(events)
-  const userEvents = eventsByActor[actors.user] || []
-  const numTotalByActor = getNumTotalByActor(eventsByActor)
-  const nonUserActorsOutput = getActorNamesAndValuesFromReport(numTotalByActor);
 
+  const userEvents = eventsByActor[actors.user] || []
   const userEventsByProject = groupEventsByProject(userEvents)
+
+  const totalUniqueUsersByActor = getTotalUniqueUsersByActor(eventsByActor)
+  const nonUserActorsOutput = getActorsOutputFromCounts(totalUniqueUsersByActor);
 
   const numProjectsTotal = Object.keys(userEventsByProject).length
   const numProjectsBuiltTotal = Object.values(userEventsByProject)
@@ -202,19 +194,19 @@ async function generateTotalReport (prefetchedEvents = undefined) {
       'Number of unique projects in total: ' + numProjectsTotal,
       'Number of unique projects built in total: ' + numProjectsBuiltTotal,
       'Number of unique users in total: ' + numUniqueUsersTotal,
-      `Number of unique ${nonUserActorsOutput.names} users in total: ${nonUserActorsOutput.values}`
+      ` - ${nonUserActorsOutput}`
     ] }
   ]
   return report
 }
 
-function getNumTotalByActor(eventsByActor, actors = nonUserActors) {
-  const result = {};
+function getTotalUniqueUsersByActor(eventsByActor, actors = nonUserActors) {
+  const totalUniqueUsersByActor = {};
   for (let actor of actors) {
     const events = eventsByActor[actor] || []
-    result[actor] = new Set(events.map(e => e.distinct_id)).size
+    totalUniqueUsersByActor[actor] = new Set(events.map(e => e.distinct_id)).size
   }
-  return result;
+  return totalUniqueUsersByActor;
 }
 
 async function generateCohortRetentionReport (numPeriods, periodName, prefetchedEvents = undefined) {
@@ -236,11 +228,11 @@ async function generateCohortRetentionReport (numPeriods, periodName, prefetched
   function findNewUsersForPeriod ([pStart, pEnd]) {
     return (
       Object.entries(eventsByUser)
-        .filter(([userId, eventsOfUser]) => {
+        .filter(([, eventsOfUser]) => {
           const timeOfFirstEvent = moment.min(eventsOfUser.map(e => moment(e.timestamp)))
           return timeOfFirstEvent.isSameOrBefore(pEnd) && timeOfFirstEvent.isAfter(pStart)
         })
-        .map(([userId, eventsOfUser]) => userId)
+        .map(([userId]) => userId)
     )
   }
 
@@ -266,7 +258,7 @@ async function generateCohortRetentionReport (numPeriods, periodName, prefetched
 
   const table = new Table({
     head: [""].concat(periods.map((p, i) => `+${i}${periodNameShort}`)),
-    colAligns: ["right", ...periods.map(p => "right")],
+    colAligns: ["right", ...periods.map(() => "right")],
     // Options below remove all the decorations and colors from the table,
     // which makes it easier for us to print it to Discord later.
     // If you want some nicer visuals, comment out options below (.chars and .style).
@@ -385,7 +377,7 @@ function calcUniqueUsersPerPeriodByAge (userEvents, periods) {
     },
     periodEnds: [] // [string] where strings are dates formatted as YY-MM-DD.
   }
-  for (period of periods) {
+  for (let period of periods) {
     const ids = uniqueUserIdsInPeriod(userEvents, period)
     const ages = ids.map(id => (calcUserAgeInDays(userEvents, id)))
     uniqueUsersPerPeriodByAge.series["<=1d"].push(ages.filter(age => age <= 1).length)
@@ -406,10 +398,6 @@ function groupEventsByProject (events) {
 // { <unique_user_id>: [<user_event>] }
 function groupEventsByUser (events) {
   return _.groupBy(events, e => e.distinct_id)
-}
-
-function findUsersFirstActivity (eventsOfUser) {
-  return moment.min(eventsOfUser.map(e => moment(e.timestamp)))
 }
 
 // From given events, calculates the age of user with specified user id (distinctId),
@@ -435,27 +423,6 @@ async function showReportInCLI (report) {
   }
 }
 
-// Expects data to be:
-//   data = { series: { name: [number] }, periodEnds: [string] }
-// Returns a string, URL leading to image-charts.com that contains query with exact
-// instructions how to display this chart via image.
-function buildChartImageUrl (data, title, type='line') {
-  const chart = ImageCharts()
-        .cht(type === 'line' ? 'ls' : 'bvs') // Type: lines or vertical bars? Could also be other things.
-        .chtt(title) // Title.
-        .chd('a:' + Object.values(data.series).map(s => s.join(',')).join('|')) // Data series.
-        .chl(Object.values(data.series).map(s => s.map(v => v || undefined).join('|')).join('|')) // Value labels on bars.
-        .chdl(Object.keys(data.series).join('|'))  // Legend (per series)
-        .chdlp('b')  // Position of legend. 'b' is for bottom.
-        .chxl('0:|' + data.periodEnds.join('|')) // X axis labels.
-        .chxs('0,s,min45max45') // On x-axis (0), skip some labels (s) and use 45 degress angle (min45max45).
-        .chs('700x400') // Size.
-        .chg('20,20') // Solid or dotted grid lines.
-        .chma('0,50,50') // Margins.
-        .chxt('x,y') // Axes to show.
-  return chart
-}
-
 // Takes a bunch of events that have .timestamp field and returns only those that
 // happened in the period specified via (startTime, endTime).
 function filterEventsInPeriod (es, [startTime, endTime]) {
@@ -468,46 +435,8 @@ function uniqueUserIdsInPeriod (es, period) {
   return Array.from(new Set(filterEventsInPeriod(es, period).map(e => e.distinct_id)))
 }
 
-// zip([[1,2],[3,4,5],[6,7]]) == [[1,3,6],[2,4,7]]
-function zip (arrays) {
-  const minLength = Math.min(...arrays.map(a => a.length))
-  const result = []
-  for (let i = 0; i < minLength; i++) {
-    const values = []
-    for (let j = 0; j < arrays.length; j++) {
-      values.push(arrays[j][i])
-    }
-    result.push(values)
-  }
-  return result
-}
-
-// sum([1,2,3]) == 6
-function sum (numbers) { return numbers.reduce((s, x) => s + x, 0) }
-
 // elemFromBehind([1,2,3], 0) == 3
 function elemFromBehind (arr, i) { return arr[arr.length - 1 - i] }
-
-const actorNames = {
-  [actors.user]: 'User',
-  [actors.replit]: 'Replit',
-  [actors.ci]: 'CI',
-  [actors.gitpod]: 'Gitpod',
-  [actors.codespaces]: 'Github Codespaces',
-}
-
-// Generates two strings from given report:
-// - names: A / B / C
-// - values: 1 / 2 / 3
-function getActorNamesAndValuesFromReport (report, actors = nonUserActors) {
-  const names = [];
-  const values = [];
-  for (const actor of actors) {
-    names.push(actorNames[actor])
-    values.push(report[actor])
-  }
-  return { names: names.join(' / '), values: values.join(' / ') }
-}
 
 module.exports = {
   fetchEventsForReportGenerator,
