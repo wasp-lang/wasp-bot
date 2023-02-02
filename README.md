@@ -11,6 +11,7 @@ Wasp bot is a constantly running nodejs server that serves different purposes:
 Copy env.example to .env and fill it with your PostHog API key and Discord bot token.
 
 Both are needed to run bot locally, but only PostHog API key is needed to run just analytics locally.
+
 ### Running
 
 When developing, run the bot server locally with `npm run startBot`. This will actually connect it to the Discord server, so it could affect the production.
