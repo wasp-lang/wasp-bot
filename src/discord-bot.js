@@ -7,7 +7,7 @@ const moment = require('moment')
 require('dotenv').config()
 
 const logger = require('./utils/logger')
-const analytics = require('./analytics')
+const analytics = require('./analytics/analytics')
 
 
 const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN
