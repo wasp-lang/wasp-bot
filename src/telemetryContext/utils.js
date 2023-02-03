@@ -4,12 +4,12 @@ const { thirdPartyContexts } = require(".");
 // Organize events by the context: Replit, Gitpod, Github Codepsaces, CI, or the normal usage.
 // We are most interested in normal usage, which is why we want to do this separation,
 // but we also do some analysis on the rest of events.
-function splitEventsByNormalUsageAnd3rdPartyContext(events) {
+function splitEventsByRegularUsageAnd3rdPartyContext(events) {
     const eventsWithContext = events.map((e) => {
         const context = getContextFromEvent(e);
         return { ...e, _waspContext: context };
     });
-    const [normalUsageEvents, thirdPartyEvents] = _.partition(
+    const [regularUsageEvents, thirdPartyEvents] = _.partition(
         eventsWithContext,
         (e) => {
             return e._waspContext === null;
@@ -18,7 +18,7 @@ function splitEventsByNormalUsageAnd3rdPartyContext(events) {
     const groupedThirdPartyEvents = _.groupBy(thirdPartyEvents, (e) => {
         return e._waspContext;
     });
-    return [normalUsageEvents, groupedThirdPartyEvents];
+    return [regularUsageEvents, groupedThirdPartyEvents];
 }
 
 function getContextFromEvent(event) {
@@ -44,6 +44,6 @@ function showPrettyMetrics(metricsByContext) {
 }
 
 module.exports = {
-    splitEventsByNormalUsageAnd3rdPartyContext,
+    splitEventsByRegularUsageAnd3rdPartyContext,
     showPrettyMetrics
 };

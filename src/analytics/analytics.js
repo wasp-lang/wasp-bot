@@ -3,7 +3,7 @@ const _ = require('lodash')
 const moment = require('moment')
 const Table = require('cli-table')
 const { thirdPartyContexts } = require('../telemetryContext')
-const { splitEventsByNormalUsageAnd3rdPartyContext, showPrettyMetrics } = require('../telemetryContext/utils')
+const { splitEventsByRegularUsageAnd3rdPartyContext, showPrettyMetrics } = require('../telemetryContext/utils')
 const { buildChartImageUrl } = require('./charts')
 
 require('dotenv').config()
@@ -69,11 +69,11 @@ async function generatePeriodReport (numPeriods, periodName, prefetchedEvents = 
 async function generatePeriodProjectsReport (numPeriods, periodName, prefetchedEvents = undefined) {
   const events = prefetchedEvents || await fetchEventsForReportGenerator()
 
-  const [normalUsageEvents] = splitEventsByNormalUsageAnd3rdPartyContext(events)
+  const [regularUsageEvents] = splitEventsByRegularUsageAnd3rdPartyContext(events)
 
   const periods = calcLastNPeriods(numPeriods, periodName)
 
-  const userEventsByProject = groupEventsByProject(normalUsageEvents)
+  const userEventsByProject = groupEventsByProject(regularUsageEvents)
 
   const calcProjectCreationTime = (allProjectEvents) => {
     return moment.min(allProjectEvents.map(e => moment(e.timestamp)))
@@ -111,9 +111,9 @@ async function generateUserActivityReport (numPeriods, periodName, prefetchedEve
   const events = prefetchedEvents || await fetchEventsForReportGenerator()
   const periods = calcLastNPeriods(numPeriods, periodName)
 
-  const [normalUsageEvents, groupedThirdPartyEvents] = splitEventsByNormalUsageAnd3rdPartyContext(events)
+  const [regularUsageEvents, groupedThirdPartyEvents] = splitEventsByRegularUsageAnd3rdPartyContext(events)
 
-  const uniqueUsersPerPeriodByAge = calcUniqueUsersPerPeriodByAge(normalUsageEvents, periods)
+  const uniqueUsersPerPeriodByAge = calcUniqueUsersPerPeriodByAge(regularUsageEvents, periods)
 
   const uniqueUsersByContextInPeriod = calcUniqueUsersByContextInPeriod(periods, groupedThirdPartyEvents);
   const pretty3rdPartyMetrics = showPrettyMetrics(uniqueUsersByContextInPeriod);
@@ -149,9 +149,9 @@ async function generateTotalReport (prefetchedEvents = undefined) {
   // All events, sort by time (starting with oldest), with events caused by Wasp team members filtered out.
   const events = prefetchedEvents || await fetchEventsForReportGenerator()
 
-  const [normalUsageEvents, groupedThirdPartyEvents] = splitEventsByNormalUsageAnd3rdPartyContext(events)
+  const [regularUsageEvents, groupedThirdPartyEvents] = splitEventsByRegularUsageAnd3rdPartyContext(events)
 
-  const userEventsByProject = groupEventsByProject(normalUsageEvents)
+  const userEventsByProject = groupEventsByProject(regularUsageEvents)
 
   const totalUniqueUsersByContext = calcTotalUniqueUsersByContext(groupedThirdPartyEvents)
   const pretty3rdPartyMetrics = showPrettyMetrics(totalUniqueUsersByContext);
@@ -159,7 +159,7 @@ async function generateTotalReport (prefetchedEvents = undefined) {
   const numProjectsTotal = Object.keys(userEventsByProject).length
   const numProjectsBuiltTotal = Object.values(userEventsByProject)
         .filter(events => events.some(e => e.properties.is_build)).length
-  const numUniqueUsersTotal = new Set(normalUsageEvents.map(e => e.distinct_id)).size
+  const numUniqueUsersTotal = new Set(regularUsageEvents.map(e => e.distinct_id)).size
 
   const report = [
     { text: [
@@ -187,14 +187,14 @@ async function generateCohortRetentionReport (numPeriods, periodName, prefetched
   // All events, sort by time (starting with oldest), with events caused by Wasp team members filtered out.
   const events = prefetchedEvents || await fetchEventsForReportGenerator()
 
-  const [normalUsageEvents] = splitEventsByNormalUsageAnd3rdPartyContext(events)
+  const [regularUsageEvents] = splitEventsByRegularUsageAnd3rdPartyContext(events)
 
   const periods = calcLastNPeriods(numPeriods, periodName)
 
   // [<active_users_at_period_0>, <active_users_at_period_1>, ...]
-  const activeUsersAtPeriod = periods.map(p => uniqueUserIdsInPeriod(normalUsageEvents, p))
+  const activeUsersAtPeriod = periods.map(p => uniqueUserIdsInPeriod(regularUsageEvents, p))
 
-  const eventsByUser = groupEventsByUser(normalUsageEvents)
+  const eventsByUser = groupEventsByUser(regularUsageEvents)
 
   // Finds all users that have their first event in the specified period.
   function findNewUsersForPeriod ([pStart, pEnd]) {
