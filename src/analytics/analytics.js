@@ -138,11 +138,11 @@ async function generateUserActivityReport (numPeriods, periodName, prefetchedEve
   return report
 }
 
-function calcUniqueNonLocalEventsInPeriod(periods, eventsByContext) {
+function calcUniqueNonLocalEventsInPeriod(periods, eventsByEnv) {
   const uniqueNonLocalEventsInPeriod = {};
-  for (let contextKey of Object.keys(executionEnvs)) {
-    const events = eventsByContext[contextKey] || []
-    uniqueNonLocalEventsInPeriod[contextKey] = uniqueUserIdsInPeriod(events, elemFromBehind(periods, 0)).length
+  for (let envKey of Object.keys(executionEnvs)) {
+    const events = eventsByEnv[envKey] || []
+    uniqueNonLocalEventsInPeriod[envKey] = uniqueUserIdsInPeriod(events, elemFromBehind(periods, 0)).length
   }
   return uniqueNonLocalEventsInPeriod;
 }
@@ -174,11 +174,11 @@ async function generateTotalReport (prefetchedEvents = undefined) {
   return report
 }
 
-function calcTotalUniqueEventsByExecutionEnv(eventsByContext) {
+function calcTotalUniqueEventsByExecutionEnv(eventsByEnv) {
   const totalUniqueEventsByExecutionEnv = {};
-  for (let contextKey of Object.keys(executionEnvs)) {
-    const events = eventsByContext[contextKey] || []
-    totalUniqueEventsByExecutionEnv[contextKey] = new Set(events.map(e => e.distinct_id)).size
+  for (let envKey of Object.keys(executionEnvs)) {
+    const events = eventsByEnv[envKey] || []
+    totalUniqueEventsByExecutionEnv[envKey] = new Set(events.map(e => e.distinct_id)).size
   }
   return totalUniqueEventsByExecutionEnv;
 }
