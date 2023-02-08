@@ -52,7 +52,7 @@ function getExecutionEnvFromEventContext(event) {
 // Takes metrics by execution env, and returns a pretty string representation of them.
 // Given
 //   `{ ci: 5, gitpod: 2 }`
-// Where ci and gitpod are keys in `executionEnvs`,
+// Where ci and gitpod are keys in `executionEnvs` and 5 and 2 are metric values,
 // It returns:
 //   `"[CI: 5] [Gitpod: 2]"`
 function showPrettyMetrics(metricsByEnv) {
