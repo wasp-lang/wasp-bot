@@ -1,5 +1,7 @@
 const _ = require("lodash");
 
+const { getEventContextValues } = require("./eventContext");
+
 // Defines all non-local execution environemnts from which Wasp CLI sends
 // telemetry data to PostHog
 // - "contextKey" is used to identify the execution env in the event context
@@ -45,10 +47,6 @@ function getExecutionEnvFromEventContext(event) {
         }
     }
     return null;
-}
-
-function getEventContextValues(event) {
-    return event.properties.context?.split(" ").map((v) => v.toLowerCase()) || [];
 }
 
 // Takes metrics by execution env, and returns a pretty string representation of them.
