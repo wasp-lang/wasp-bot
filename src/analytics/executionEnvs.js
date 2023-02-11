@@ -16,9 +16,9 @@ const executionEnvs = {
     ci: { contextKey: "ci", name: "CI" }
 };
 
-// Organize events by the execution env: Replit, Gitpod, Github Codepsaces, CI, or the local usage.
-// We are most interested in local usage (user running Wasp on their computer), which is why we want
-// to do this separation, but we also do some analysis on the rest of events.
+// Organize events by the execution env:
+//   - non-local: e.g. Replit, Gitpod, Github Codepsaces, CI, ... .
+//   - local: User running Wasp on their computer.
 function groupEventsByExecutionEnv(events) {
     const eventsWithExecutionEnv = events.map((e) => {
         const executionEnv = getExecutionEnvFromEventContext(e);
