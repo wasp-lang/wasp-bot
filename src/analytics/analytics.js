@@ -2,7 +2,11 @@ const axios = require('axios')
 const _ = require('lodash')
 const moment = require('moment')
 const Table = require('cli-table')
-const { nonUserActors, userActorKey, getPrettyActorMetrics } = require('./actors')
+const {
+  executionEnvs,
+  groupEventsByExecutionEnv,
+  showPrettyMetrics,
+} = require('./executionEnvs')
 const { buildChartImageUrl } = require('./charts')
 
 require('dotenv').config()
@@ -27,32 +31,6 @@ const ourDistinctIds = [
   '8605f02d-5b32-466c-93d2-faaa787f43a0',
   'dc396135-c50d-4064-9563-5813056b1cc8'
 ]
-
-// This is executed when this file is run as a script.
-if (require.main === module) {
-  fetchEventsForReportGenerator().then(events => {
-    generateTotalReport(events).then(report => {
-      console.log('\n\nTOTAL REPORT')
-      showReportInCLI(report)
-    })
-
-    generateDailyReport(events).then(report => {
-      console.log('\n\nDAILY REPORT')
-      showReportInCLI(report)
-    })
-
-    generateWeeklyReport(events).then(report => {
-      console.log('\n\nWEEKLY REPORT')
-      showReportInCLI(report)
-    })
-
-    generateMonthlyReport(events).then(report => {
-      console.log('\n\nMONTHLY REPORT')
-      showReportInCLI(report)
-    })
-  })
-}
-
 
 async function generateDailyReport (prefetchedEvents = undefined) {
   return generatePeriodReport(14, 'day', prefetchedEvents, false)
@@ -94,18 +72,17 @@ async function generatePeriodReport (numPeriods, periodName, prefetchedEvents = 
 async function generatePeriodProjectsReport (numPeriods, periodName, prefetchedEvents = undefined) {
   const events = prefetchedEvents || await fetchEventsForReportGenerator()
 
-  const eventsByActor = organizeEventsByActor(events)
-  const userEvents = eventsByActor[userActorKey] || []
+  const { localEvents } = groupEventsByExecutionEnv(events)
 
   const periods = calcLastNPeriods(numPeriods, periodName)
 
-  const userEventsByProject = groupEventsByProject(userEvents)
+  const localEventsByProject = groupEventsByProject(localEvents)
 
   const calcProjectCreationTime = (allProjectEvents) => {
     return moment.min(allProjectEvents.map(e => moment(e.timestamp)))
   }
 
-  const projectCreationTimes = Object.values(userEventsByProject).map(events => calcProjectCreationTime(events))
+  const projectCreationTimes = Object.values(localEventsByProject).map(events => calcProjectCreationTime(events))
   // [num_projects_created_before_end_of_period_0, num_projects_created_before_end_of_period_1, ...]
   const numProjectsCreatedTillPeriod =
         periods.map(([, pEnd]) => projectCreationTimes.filter(t => t.isSameOrBefore(pEnd)).length)
@@ -115,7 +92,7 @@ async function generatePeriodProjectsReport (numPeriods, periodName, prefetchedE
     return buildEvents.length == 0 ? undefined : moment.min(buildEvents.map(e => moment(e.timestamp)))
   }
 
-  const projectFirstBuildTimes = Object.values(userEventsByProject).map(es => calcProjectFirstBuildTime(es)).filter(bt => bt)
+  const projectFirstBuildTimes = Object.values(localEventsByProject).map(es => calcProjectFirstBuildTime(es)).filter(bt => bt)
   // [num_projects_built_before_end_of_period_0, num_projects_built_before_end_of_period_1, ...]
   const numProjectsBuiltTillPeriod =
         periods.map(([, pEnd]) => projectFirstBuildTimes.filter(t => t.isSameOrBefore(pEnd)).length)
@@ -137,23 +114,22 @@ async function generateUserActivityReport (numPeriods, periodName, prefetchedEve
   const events = prefetchedEvents || await fetchEventsForReportGenerator()
   const periods = calcLastNPeriods(numPeriods, periodName)
 
-  const eventsByActor = organizeEventsByActor(events)
+  const { localEvents, groupedNonLocalEvents } = groupEventsByExecutionEnv(events)
 
-  const userEvents = eventsByActor[userActorKey] || []
-  const uniqueUsersPerPeriodByAge = calcUniqueUsersPerPeriodByAge(userEvents, periods)
+  const uniqueLocalEventsPerPeriodByAge = calcUniqueLocalEventsPerPeriodByAge(localEvents, periods)
 
-  const uniqueUsersByActorInPeriod = calcUniqueUsersByActorInPeriod(periods, eventsByActor);
-  const prettyNonUserMetrics = getPrettyActorMetrics(uniqueUsersByActorInPeriod);
+  const uniqueNonLocalEventsInPeriod = calcUniqueNonLocalEventsInPeriod(periods, groupedNonLocalEvents);
+  const prettyNonLocalMetrics = showPrettyMetrics(uniqueNonLocalEventsInPeriod);
 
   const report = [ {
     text: [
       'Number of unique active users:',
       `- During last ${periodName}: `
-        + _.sum(Object.values(uniqueUsersPerPeriodByAge.series).map(s => elemFromBehind(s, 0))),
-      `  - ${prettyNonUserMetrics}`
+        + _.sum(Object.values(uniqueLocalEventsPerPeriodByAge.series).map(s => elemFromBehind(s, 0))),
+      `  - ${prettyNonLocalMetrics}`
     ],
     chart: buildChartImageUrl(
-      uniqueUsersPerPeriodByAge,
+      uniqueLocalEventsPerPeriodByAge,
       `Num unique active users (per ${periodName})`,
       'bars'
     )
@@ -162,13 +138,13 @@ async function generateUserActivityReport (numPeriods, periodName, prefetchedEve
   return report
 }
 
-function calcUniqueUsersByActorInPeriod(periods, eventsByActor) {
-  const uniqueUsersByActorInPeriod = {};
-  for (let actorKey of Object.keys(nonUserActors)) {
-    const events = eventsByActor[actorKey] || []
-    uniqueUsersByActorInPeriod[actorKey] = uniqueUserIdsInPeriod(events, elemFromBehind(periods, 0)).length
+function calcUniqueNonLocalEventsInPeriod(periods, eventsByEnv) {
+  const uniqueNonLocalEventsInPeriod = {};
+  for (let envKey of Object.keys(executionEnvs)) {
+    const events = eventsByEnv[envKey] || []
+    uniqueNonLocalEventsInPeriod[envKey] = uniqueUserIdsInPeriod(events, elemFromBehind(periods, 0)).length
   }
-  return uniqueUsersByActorInPeriod;
+  return uniqueNonLocalEventsInPeriod;
 }
 
 // Generates report for some general statistics that cover the whole (total) time (all of the events).
@@ -176,37 +152,35 @@ async function generateTotalReport (prefetchedEvents = undefined) {
   // All events, sort by time (starting with oldest), with events caused by Wasp team members filtered out.
   const events = prefetchedEvents || await fetchEventsForReportGenerator()
 
-  const eventsByActor = organizeEventsByActor(events)
+  const { localEvents, groupedNonLocalEvents } = groupEventsByExecutionEnv(events)
 
-  const userEvents = eventsByActor[userActorKey] || []
-  const userEventsByProject = groupEventsByProject(userEvents)
-
-  const totalUniqueUsersByActor = calcTotalUniqueUsersByActor(eventsByActor)
-  const prettyNonUserMetrics = getPrettyActorMetrics(totalUniqueUsersByActor);
-
-  const numProjectsTotal = Object.keys(userEventsByProject).length
-  const numProjectsBuiltTotal = Object.values(userEventsByProject)
+  const localEventsByProject = groupEventsByProject(localEvents)
+  const numProjectsTotal = Object.keys(localEventsByProject).length
+  const numProjectsBuiltTotal = Object.values(localEventsByProject)
         .filter(events => events.some(e => e.properties.is_build)).length
-  const numUniqueUsersTotal = new Set(userEvents.map(e => e.distinct_id)).size
+  const numUniqueUsersTotal = new Set(localEvents.map(e => e.distinct_id)).size
+
+  const totalUniqueEventsByExecutionEnv = calcTotalUniqueEventsByExecutionEnv(groupedNonLocalEvents)
+  const prettyNonLocalMetrics = showPrettyMetrics(totalUniqueEventsByExecutionEnv);
 
   const report = [
     { text: [
       'Number of unique projects in total: ' + numProjectsTotal,
       'Number of unique projects built in total: ' + numProjectsBuiltTotal,
       'Number of unique users in total: ' + numUniqueUsersTotal,
-      ` - ${prettyNonUserMetrics}`
+      ` - ${prettyNonLocalMetrics}`
     ] }
   ]
   return report
 }
 
-function calcTotalUniqueUsersByActor(eventsByActor) {
-  const totalUniqueUsersByActor = {};
-  for (let actorKey of Object.keys(nonUserActors)) {
-    const events = eventsByActor[actorKey] || []
-    totalUniqueUsersByActor[actorKey] = new Set(events.map(e => e.distinct_id)).size
+function calcTotalUniqueEventsByExecutionEnv(eventsByEnv) {
+  const totalUniqueEventsByExecutionEnv = {};
+  for (let envKey of Object.keys(executionEnvs)) {
+    const events = eventsByEnv[envKey] || []
+    totalUniqueEventsByExecutionEnv[envKey] = new Set(events.map(e => e.distinct_id)).size
   }
-  return totalUniqueUsersByActor;
+  return totalUniqueEventsByExecutionEnv;
 }
 
 async function generateCohortRetentionReport (numPeriods, periodName, prefetchedEvents = undefined) {
@@ -215,14 +189,14 @@ async function generateCohortRetentionReport (numPeriods, periodName, prefetched
   // All events, sort by time (starting with oldest), with events caused by Wasp team members filtered out.
   const events = prefetchedEvents || await fetchEventsForReportGenerator()
 
-  const userEvents = organizeEventsByActor(events)[userActorKey] || []
+  const { localEvents } = groupEventsByExecutionEnv(events)
 
   const periods = calcLastNPeriods(numPeriods, periodName)
 
   // [<active_users_at_period_0>, <active_users_at_period_1>, ...]
-  const activeUsersAtPeriod = periods.map(p => uniqueUserIdsInPeriod(userEvents, p))
+  const activeUsersAtPeriod = periods.map(p => uniqueUserIdsInPeriod(localEvents, p))
 
-  const eventsByUser = groupEventsByUser(userEvents)
+  const eventsByUser = groupEventsByUser(localEvents)
 
   // Finds all users that have their first event in the specified period.
   function findNewUsersForPeriod ([pStart, pEnd]) {
@@ -336,21 +310,6 @@ async function fetchEvents (url) {
   return results.concat(restOfResults)
 }
 
-// Organize events by the actors / source: Replit, Gitpod, Github Codepsaces, CI, or the normal usage (actors.user).
-// We are most interested in normal usage, which is why we want to do this separation,
-// but we also do some analysis on the rest of events.
-function organizeEventsByActor (events) {
-  return _.groupBy(events, e => {
-    const contextValues = e.properties.context?.split(" ").map(v => v.toLowerCase()) || []
-    for (let [key, actor] of Object.entries(nonUserActors)) {
-      if (contextValues.includes(actor.contextKey)) {
-        return key;
-      }
-    }
-    return userActorKey;
-  })
-}
-
 // periodName should be 'day', 'week', or 'month'.
 // This will return last numPeriods complete periods with the length of periodName.
 // Returns: [[periodStartDateTime, periodEndDateTime]].
@@ -367,8 +326,8 @@ function calcLastNPeriods (numPeriods, periodName) {
 // The main metric we are calculating -> for each period, number of unique users, grouped by age (of usage).
 // We return it ready for displaying via chart or table.
 // Takes list of all events, ends of all periods, and period duration.
-function calcUniqueUsersPerPeriodByAge (userEvents, periods) {
-  const uniqueUsersPerPeriodByAge = {
+function calcUniqueLocalEventsPerPeriodByAge (userEvents, periods) {
+  const uniqueLocalEventsPerPeriodByAge = {
     // All series have the same length, which is the length of .periodEnds.
     series: {
       ">30d": [], // [number]
@@ -381,14 +340,14 @@ function calcUniqueUsersPerPeriodByAge (userEvents, periods) {
   for (let period of periods) {
     const ids = uniqueUserIdsInPeriod(userEvents, period)
     const ages = ids.map(id => (calcUserAgeInDays(userEvents, id)))
-    uniqueUsersPerPeriodByAge.series["<=1d"].push(ages.filter(age => age <= 1).length)
-    uniqueUsersPerPeriodByAge.series["(1, 5]d"].push(ages.filter(age => age > 1 && age <= 5).length)
-    uniqueUsersPerPeriodByAge.series["(5, 30]d"].push(ages.filter(age => age > 5 && age <= 30).length)
-    uniqueUsersPerPeriodByAge.series[">30d"].push(ages.filter(age => age > 30).length)
+    uniqueLocalEventsPerPeriodByAge.series["<=1d"].push(ages.filter(age => age <= 1).length)
+    uniqueLocalEventsPerPeriodByAge.series["(1, 5]d"].push(ages.filter(age => age > 1 && age <= 5).length)
+    uniqueLocalEventsPerPeriodByAge.series["(5, 30]d"].push(ages.filter(age => age > 5 && age <= 30).length)
+    uniqueLocalEventsPerPeriodByAge.series[">30d"].push(ages.filter(age => age > 30).length)
 
-    uniqueUsersPerPeriodByAge.periodEnds.push(period[1].format('YY-MM-DD'))
+    uniqueLocalEventsPerPeriodByAge.periodEnds.push(period[1].format('YY-MM-DD'))
   }
-  return uniqueUsersPerPeriodByAge
+  return uniqueLocalEventsPerPeriodByAge
 }
 
 // { <unique_project_id>: [<project_event>] }
@@ -408,20 +367,6 @@ function calcUserAgeInDays (events, distinctId) {
   const oldestEvent = _.find(events, e => e.distinct_id == distinctId)
   const newestEvent = _.findLast(events, e => e.distinct_id == distinctId)
   return moment(newestEvent.timestamp).diff(moment(oldestEvent.timestamp), 'days') + 1
-}
-
-async function showReportInCLI (report) {
-  for (const metric of report) {
-    console.log()
-    if (metric.text) {
-      for (const textLine of metric.text) {
-        console.log(textLine)
-      }
-    }
-    if (metric.chart) {
-      console.log('- Chart: ', metric.chart.toURL())
-    }
-  }
 }
 
 // Takes a bunch of events that have .timestamp field and returns only those that
