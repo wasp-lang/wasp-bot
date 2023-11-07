@@ -12,6 +12,10 @@ Copy env.example to .env and fill it with your PostHog API key and Discord bot t
 
 Both are needed to run bot locally, but only PostHog API key is needed to run just analytics locally.
 
+### Installation
+
+Run `npm install` for the first time or after any changes in npm deps.
+
 ### Running
 
 When developing, run the bot server locally with `npm run startBot`. This will actually connect it to the Discord server, so it could affect the production.
