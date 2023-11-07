@@ -7,7 +7,7 @@ const moment = require('moment')
 require('dotenv').config()
 
 const logger = require('./utils/logger')
-const analytics = require('./analytics/analytics')
+const reports = require('./analytics/reports')
 
 
 const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN
@@ -33,7 +33,7 @@ const start = () => {
       // I am guessing that more events we will have, the worse it will get, because we will be fetching more of them,
       // so in that case we might have to revisit our fetching strategy and cache intermediate results.
       const events = await retry(async () => {
-        return analytics.fetchEventsForReportGenerator()
+        return reports.fetchEventsForReportGenerator()
       }, {retries: 3})
 
       // Send total and daily analytics report every day.
@@ -154,16 +154,16 @@ wasp-lang/wasp-bot repo and generate them locally, README has instructions on th
 const sendAnalyticsReport = async (bot, reportType, prefetchedEvents = undefined) => {
   let reportPromise, reportTitle
   if (reportType == 'monthly') {
-    reportPromise = analytics.generateMonthlyReport(prefetchedEvents)
+    reportPromise = reports.generateMonthlyReport(prefetchedEvents)
     reportTitle = 'MONTHLY'
   } else if (reportType == 'weekly') {
-    reportPromise = analytics.generateWeeklyReport(prefetchedEvents)
+    reportPromise = reports.generateWeeklyReport(prefetchedEvents)
     reportTitle = 'WEEKLY'
   } else if (reportType == 'daily') {
-    reportPromise = analytics.generateDailyReport(prefetchedEvents)
+    reportPromise = reports.generateDailyReport(prefetchedEvents)
     reportTitle = 'DAILY'
   } else if (reportType == 'total') {
-    reportPromise = analytics.generateTotalReport(prefetchedEvents)
+    reportPromise = reports.generateTotalReport(prefetchedEvents)
     reportTitle = 'TOTAL'
   }
   const guild = await bot.guilds.fetch(GUILD_ID)
