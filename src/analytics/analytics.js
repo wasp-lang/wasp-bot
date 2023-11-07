@@ -340,7 +340,7 @@ function calcUniqueLocalEventsPerPeriodByAge (userEvents, periods) {
   for (let period of periods) {
     const userEventsUpToAndInPeriod = filterEventsUpToAndInPeriod(userEvents, period)
     const ids = uniqueUserIdsInPeriod(userEventsUpToAndInPeriod, period)
-    const ages = ids.map(id => (calcUserAgeInDays(userEventsUpToAndInPeriod, id)))
+    const ages = ids.map(id => calcUserAgeInDays(userEventsUpToAndInPeriod, id))
     uniqueLocalEventsPerPeriodByAge.series["<=1d"].push(ages.filter(age => age <= 1).length)
     uniqueLocalEventsPerPeriodByAge.series["(1, 5]d"].push(ages.filter(age => age > 1 && age <= 5).length)
     uniqueLocalEventsPerPeriodByAge.series["(5, 30]d"].push(ages.filter(age => age > 5 && age <= 30).length)
@@ -372,20 +372,20 @@ function calcUserAgeInDays (events, distinctId) {
 
 // Takes a bunch of events that have .timestamp field and returns only those that
 // happened in the period specified via (startTime, endTime).
-function filterEventsInPeriod (es, [startTime, endTime]) {
-  return es.filter(e => moment(e.timestamp).isSameOrBefore(endTime) && moment(e.timestamp).isAfter(startTime))
+function filterEventsInPeriod (events, [startTime, endTime]) {
+  return events.filter(e => moment(e.timestamp).isSameOrBefore(endTime) && moment(e.timestamp).isAfter(startTime))
 }
 
 // Takes a bunch of events that have .timestamp field and returns only those that
 // happened in the period specified via (startTime, endTime) or before it.
-function filterEventsUpToAndInPeriod (es, [startTime, endTime]) {
-  return es.filter(e => moment(e.timestamp).isSameOrBefore(endTime))
+function filterEventsUpToAndInPeriod (events, [startTime, endTime]) {
+  return events.filter(e => moment(e.timestamp).isSameOrBefore(endTime))
 }
 
 // Based on given events, finds all unique users that were active in the given period
 // and returns their ids.
-function uniqueUserIdsInPeriod (es, period) {
-  return Array.from(new Set(filterEventsInPeriod(es, period).map(e => e.distinct_id)))
+function uniqueUserIdsInPeriod (events, period) {
+  return Array.from(new Set(filterEventsInPeriod(events, period).map(e => e.distinct_id)))
 }
 
 // elemFromBehind([1,2,3], 0) == 3
