@@ -1,7 +1,6 @@
-const Table = require('cli-table')
-
 const moment = require('../../moment')
-const { executionEnvs, groupEventsByExecutionEnv } = require('../../executionEnvs')
+const { newSimpleTable } = require('../../table')
+const { groupEventsByExecutionEnv } = require('../../executionEnvs')
 const { fetchEventsForReportGenerator } = require('../events')
 
 const { groupEventsByUser, getIntersection, elemFromBehind } = require('../utils')
@@ -59,19 +58,6 @@ async function generateCohortRetentionReport (
     cohorts.push(cohort)
   }
 
-  const table = new Table({
-    head: [""].concat(periods.map((p, i) => `+${i}${periodNameShort}`)),
-    colAligns: ["right", ...periods.map(() => "right")],
-    // Options below remove all the decorations and colors from the table,
-    // which makes it easier for us to print it to Discord later.
-    // If you want some nicer visuals, comment out options below (.chars and .style).
-    chars: { 'top': '' , 'top-mid': '' , 'top-left': '' , 'top-right': ''
-             , 'bottom': '' , 'bottom-mid': '' , 'bottom-left': '' , 'bottom-right': ''
-             , 'left': '' , 'left-mid': '' , 'mid': '' , 'mid-mid': ''
-             , 'right': '' , 'right-mid': '' , 'middle': ' ' },
-    style: { 'head': null }
-  });
-
   /**
    * @param {[number]} cohort [num_users_at_start, num_users_after_1_period, ...]
    * @returns {[string]} [num_users_at_start, num_and_perc_users_after_1_period, ...]
@@ -89,17 +75,19 @@ async function generateCohortRetentionReport (
     return [numUsersAtStart.toString(), ...retentionPercentages];
   }
 
-  table.push(
-    ...cohorts.map((cohort, i) => ({
-      [`${periodNameShort} #${i}`]: calcCohortRetentionTableRow(cohort)
+  const table = newSimpleTable({
+    head: ["", ...periods.map((_, i) => `+${i}${periodNameShort}`)],
+    rows: cohorts.map((cohort, i) => ({
+        [`${periodNameShort} #${i}`]: calcCohortRetentionTableRow(cohort)
     }))
-  )
+  })
 
   const fmt = m => m.format('DD-MM-YY')
   const firstPeriod = periods[0]
   const lastPeriod = elemFromBehind(periods, 0)
   const report = [{
     text: [
+      '==== Cohort Retention ====',
       "```",
       table.toString(),
       "```",

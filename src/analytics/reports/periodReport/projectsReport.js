@@ -43,6 +43,7 @@ async function generatePeriodProjectsReport (numPeriods, periodName, prefetchedE
   const report = [
     {
       text: [
+        '==== Projects created/built ====',
         "Num projects created by period end (cumm):",
         numProjectsCreatedTillPeriod.join(" "),
         "Num projects built by period end (cumm):",

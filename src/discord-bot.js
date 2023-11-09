@@ -85,13 +85,21 @@ const handleMessage = async (bot, msg) => {
     }
   }
 
+  function getNumPeriodsFromAnalyticsCmd (cmd) {
+    let match = cmd.match(/numPeriods\s*=\s*(\d+)/)
+    if (match) {
+      return parseInt(match[1])
+    }
+    return null
+  }
+
   if (msg.content.startsWith('!analytics') && msg.channel.id.toString() === REPORTS_CHANNEL_ID) {
     if (msg.content.includes('weekly')) {
-      await sendAnalyticsReport(bot, 'weekly')
+      await sendAnalyticsReport(bot, 'weekly', undefined, getNumPeriodsFromAnalyticsCmd(msg.content))
     } else if (msg.content.includes('monthly')) {
-      await sendAnalyticsReport(bot, 'monthly')
+      await sendAnalyticsReport(bot, 'monthly', undefined, getNumPeriodsFromAnalyticsCmd(msg.content))
     } else if (msg.content.includes('daily')) {
-      await sendAnalyticsReport(bot, 'daily')
+      await sendAnalyticsReport(bot, 'daily', undefined, getNumPeriodsFromAnalyticsCmd(msg.content))
     } else if (msg.content.includes('total'))  {
       await sendAnalyticsReport(bot, 'total')
     } else {
@@ -105,9 +113,9 @@ const sendAnalyticsHelp = async (bot) => {
   const channel = guild.channels.resolve(REPORTS_CHANNEL_ID)
   await channel.send(
 `Available commands:
-  !analytics daily
-  !analytics weekly
-  !analytics monthly
+  !analytics daily [numPeriods=<int>]
+  !analytics weekly [numPeriods=<int>]
+  !analytics monthly [numPeriods=<int>]
   !analytics total
 
 If nothing is said, stats are being shown for "normal" usage -> meaning that Replit/Gitpod/CI
@@ -151,16 +159,18 @@ wasp-lang/wasp-bot repo and generate them locally, README has instructions on th
   )
 }
 
-const sendAnalyticsReport = async (bot, reportType, prefetchedEvents = undefined) => {
+const DISCORD_MAX_MSG_SIZE = 2000
+
+const sendAnalyticsReport = async (bot, reportType, prefetchedEvents = undefined, numPeriods = undefined) => {
   let reportPromise, reportTitle
   if (reportType == 'monthly') {
-    reportPromise = reports.generateMonthlyReport(prefetchedEvents)
+    reportPromise = reports.generateMonthlyReport(prefetchedEvents, numPeriods)
     reportTitle = 'MONTHLY'
   } else if (reportType == 'weekly') {
-    reportPromise = reports.generateWeeklyReport(prefetchedEvents)
+    reportPromise = reports.generateWeeklyReport(prefetchedEvents, numPeriods)
     reportTitle = 'WEEKLY'
   } else if (reportType == 'daily') {
-    reportPromise = reports.generateDailyReport(prefetchedEvents)
+    reportPromise = reports.generateDailyReport(prefetchedEvents, numPeriods)
     reportTitle = 'DAILY'
   } else if (reportType == 'total') {
     reportPromise = reports.generateTotalReport(prefetchedEvents)
@@ -174,7 +184,11 @@ const sendAnalyticsReport = async (bot, reportType, prefetchedEvents = undefined
   const report = await reportPromise
   waspTeamTextChannel.send(`=============== ${reportTitle} ANALYTICS REPORT ===============`)
   for (const metric of report) {
-    const text = metric.text?.join('\n')
+    let text = metric.text?.join('\n')
+    if (text && text.length >= DISCORD_MAX_MSG_SIZE) {
+      text = text.substr(0, DISCORD_MAX_MSG_SIZE - 50)
+        + "\n... ⚠️ MESSAGE CUT BECAUSE IT IS TOO LONG..."
+    }
 
     let embed = undefined
     if (metric.chart) {

@@ -19,6 +19,7 @@ function buildChartImageUrl(data, title, type = "line") {
                 .map((s) => s.map((v) => v || undefined).join("|"))
                 .join("|")
         ) // Value labels on bars.
+        .chlps("font.size,12")
         .chdl(Object.keys(data.series).join("|")) // Legend (per series)
         .chdlp("b") // Position of legend. 'b' is for bottom.
         .chxl("0:|" + data.periodEnds.join("|")) // X axis labels.
