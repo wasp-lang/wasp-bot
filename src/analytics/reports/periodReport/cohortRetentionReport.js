@@ -2,7 +2,7 @@ const Table = require('cli-table')
 
 const moment = require('../../moment')
 const { executionEnvs, groupEventsByExecutionEnv } = require('../../executionEnvs')
-const { fetchEventsForReportGenerator } = require('../../events')
+const { fetchEventsForReportGenerator } = require('../events')
 
 const { groupEventsByUser, getIntersection, elemFromBehind } = require('../utils')
 

@@ -5,7 +5,7 @@ const {
   groupEventsByExecutionEnv,
   showPrettyMetrics,
 } = require('../../executionEnvs')
-const { fetchEventsForReportGenerator } = require('../../events')
+const { fetchEventsForReportGenerator } = require('../events')
 const { buildChartImageUrl } = require('../../charts')
 
 const { elemFromBehind } = require('../utils')

@@ -1,5 +1,5 @@
 
-const { fetchEventsForReportGenerator } = require('../../events')
+const { fetchEventsForReportGenerator } = require('../events')
 
 const { generatePeriodProjectsReport } = require('./projectsReport')
 const { generateUserActivityReport } = require('./userActivityReport')
