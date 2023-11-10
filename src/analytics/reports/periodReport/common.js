@@ -14,11 +14,11 @@ export function filterEventsUpToAndInPeriod(events, period) {
   return events.filter((e) => isEventInPeriodOrOlder(e, period));
 }
 
-export function isEventInPeriodOrOlder(event, [_startTime, endTime]) {
+export function isEventInPeriodOrOlder(event, [, endTime]) {
   return moment(event.timestamp).isSameOrBefore(endTime);
 }
 
-export function isEventInPeriodOrNewer(event, [startTime, _endTime]) {
+export function isEventInPeriodOrNewer(event, [startTime]) {
   return moment(event.timestamp).isAfter(startTime);
 }
 

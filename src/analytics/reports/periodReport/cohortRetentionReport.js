@@ -1,5 +1,4 @@
 import * as _ from "lodash";
-
 import { newSimpleTable } from "../../table";
 import { groupEventsByExecutionEnv } from "../../executionEnvs";
 import { fetchEventsForReportGenerator } from "../events";
