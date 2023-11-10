@@ -1,13 +1,15 @@
-const Discord = require('discord.js')
-const schedule = require('node-schedule')
-const Quote = require('inspirational-quotes')
-const retry = require('async-retry')
-const moment = require('moment')
+import * as Discord from 'discord.js'
+import * as schedule from 'node-schedule'
+import * as Quote from 'inspirational-quotes'
+import * as retry from 'async-retry'
+import moment from 'moment'
 
-require('dotenv').config()
+import { config as dotenvConfig } from "dotenv"
 
-const logger = require('./utils/logger')
-const reports = require('./analytics/reports')
+import logger from './utils/logger'
+import reports from './analytics/reports'
+
+dotenvConfig()
 
 
 const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN
@@ -19,7 +21,7 @@ const INTRODUCTIONS_CHANNEL_ID = '689916376542085170'
 
 const timezone = 'Europe/Zagreb'
 
-const start = () => {
+export const start = () => {
   const bot = new Discord.Client({})
   bot.login(BOT_TOKEN)
 
@@ -212,8 +214,4 @@ const initiateDailyStandup = async (bot) => {
     + '\nHow was your day yesterday, what are you working on today, and what are the challenges you are encountering?'
     + '\n\nDaily fun/wisdom: ' + wisdom
   )
-}
-
-module.exports = {
-  start
 }

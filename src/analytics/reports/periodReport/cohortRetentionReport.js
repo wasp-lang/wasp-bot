@@ -1,21 +1,20 @@
-const _ = require('lodash')
+import * as _ from 'lodash'
 
-const moment = require('../../moment')
-const { newSimpleTable } = require('../../table')
-const { groupEventsByExecutionEnv } = require('../../executionEnvs')
-const { fetchEventsForReportGenerator } = require('../events')
+import { newSimpleTable } from '../../table'
+import { groupEventsByExecutionEnv } from '../../executionEnvs'
+import { fetchEventsForReportGenerator } from '../events'
 
-const { groupEventsByUser, getIntersection } = require('../utils')
+import { groupEventsByUser, getIntersection } from '../utils'
 
-const {
+import {
   calcLastNPeriods,
   groupEventsByPeriods,
   getActiveUserIds,
   isEventInPeriod
-} = require('./common')
+} from './common'
 
 
-async function generateCohortRetentionReport (
+export async function generateCohortRetentionReport (
   numPeriods, periodName, prefetchedEvents = undefined
 ) {
   const periodNameShort = periodName[0]
@@ -97,9 +96,4 @@ async function generateCohortRetentionReport (
     ]
   }]
   return report
-}
-
-
-module.exports = {
-  generateCohortRetentionReport
 }

@@ -1,6 +1,6 @@
-const Table = require('cli-table')
+import * as Table from 'cli-table'
 
-function newSimpleTable ({head, rows}) {
+export function newSimpleTable ({head, rows}) {
   const table = new Table({
     head,
     colAligns: ["right", ...head.map(() => "right")],
@@ -17,8 +17,4 @@ function newSimpleTable ({head, rows}) {
   });
   table.push(...rows)
   return table
-}
-
-module.exports = {
-  newSimpleTable
 }

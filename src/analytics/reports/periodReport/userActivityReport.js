@@ -1,24 +1,24 @@
-const _ = require('lodash')
+import * as _ from 'lodash'
 
-const { newSimpleTable } = require('../../table')
-const {
+import { newSimpleTable } from '../../table'
+import {
   executionEnvs,
   groupEventsByExecutionEnv,
   showPrettyMetrics,
-} = require('../../executionEnvs')
-const { fetchEventsForReportGenerator } = require('../events')
-const { buildChartImageUrl } = require('../../charts')
+} from '../../executionEnvs'
+import { buildChartImageUrl } from '../../charts'
 
-const { groupEventsByUser, calcUserAgeInDays } = require('../utils')
+import { fetchEventsForReportGenerator } from '../events'
+import { groupEventsByUser, calcUserAgeInDays } from '../utils'
 
-const {
+import {
   calcLastNPeriods,
   getActiveUserIdsInPeriod,
   groupEventsByPeriods
-} = require('./common')
+} from './common'
 
 
-async function generateUserActivityReport (numPeriods, periodName, prefetchedEvents = undefined) {
+export async function generateUserActivityReport (numPeriods, periodName, prefetchedEvents = undefined) {
   const events = prefetchedEvents ?? await fetchEventsForReportGenerator()
   const periods = calcLastNPeriods(numPeriods, periodName)
 
@@ -118,8 +118,4 @@ function calcNumActiveUsersPerPeriodByAge (userEvents, periods) {
     numUniqueActiveUsersPerPeriodByAge.periodEnds.push(periods[periodIdx][1].format('YY-MM-DD'))
   }
   return numUniqueActiveUsersPerPeriodByAge
-}
-
-module.exports = {
-  generateUserActivityReport
 }

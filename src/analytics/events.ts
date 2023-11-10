@@ -1,13 +1,14 @@
-const axios = require('axios')
-const fs = require('fs').promises
+import axios from 'axios'
+import { promises as fs } from 'fs'
+import { config as dotenvConfig } from 'dotenv'
 
-require('dotenv').config()
+dotenvConfig()
 
 const POSTHOG_KEY = process.env.WASP_POSTHOG_KEY
 // POSTHOG_PROJECT_API_KEY is public, so it can be here.
 const POSTHOG_PROJECT_API_KEY = "CdDd2A0jKTI2vFAsrI9JWm3MqpOcgHz1bMyogAcwsE4"
 
-async function fetchAllCliEvents () {
+export async function fetchAllCliEvents () {
   console.log('Fetching all CLI events...')
 
   const cachedEvents = await loadCachedEvents() ?? []
@@ -115,8 +116,4 @@ function getOldestEventTimestampOrNull (events) {
 function getNewestEventTimestampOrNull (events) {
   if (events.length <= 0) return null
   return events[0].timestamp
-}
-
-module.exports = {
-  fetchAllCliEvents
 }

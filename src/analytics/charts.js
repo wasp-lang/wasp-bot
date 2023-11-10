@@ -1,10 +1,10 @@
-const ImageCharts = require("image-charts");
+import * as ImageCharts from "image-charts";
 
 // Expects data to be:
 //   data = { series: { name: [number] }, periodEnds: [string] }
 // Returns a string, URL leading to image-charts.com that contains query with exact
 // instructions how to display this chart via image.
-function buildChartImageUrl(data, title, type = "line") {
+export function buildChartImageUrl(data, title, type = "line") {
     const chart = ImageCharts()
         .cht(type === "line" ? "ls" : "bvs") // Type: lines or vertical bars? Could also be other things.
         .chtt(title) // Title.
@@ -30,7 +30,3 @@ function buildChartImageUrl(data, title, type = "line") {
         .chxt("x,y"); // Axes to show.
     return chart;
 }
-
-module.exports = {
-    buildChartImageUrl
-};
