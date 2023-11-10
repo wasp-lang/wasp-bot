@@ -1,9 +1,8 @@
+import { fetchEventsForReportGenerator } from "../events";
 
-import { fetchEventsForReportGenerator } from '../events'
-
-import { generatePeriodProjectsReport } from './projectsReport'
-import { generateUserActivityReport } from './userActivityReport'
-import { generateCohortRetentionReport } from './cohortRetentionReport'
+import { generatePeriodProjectsReport } from "./projectsReport";
+import { generateUserActivityReport } from "./userActivityReport";
+import { generateCohortRetentionReport } from "./cohortRetentionReport";
 
 // Generates a report that calculates usage for last numPeriod periods of size periodName,
 // where periodName should be 'day' or 'week' or 'month'.
@@ -13,17 +12,19 @@ import { generateCohortRetentionReport } from './cohortRetentionReport'
 // they are prepared (our events removed, sorted) and that they are all events available for CLI,
 // for the whole history. You should obtain them with fetchAllCliEvents(), in that case they will
 // be all good.
-export async function generatePeriodReport (
+export async function generatePeriodReport(
   numPeriods,
   periodName,
   prefetchedEvents = undefined,
-  genCohortRetentionReport = true
+  genCohortRetentionReport = true,
 ) {
-  const events = prefetchedEvents ?? await fetchEventsForReportGenerator()
+  const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
 
   return [
-    ...await generateUserActivityReport(numPeriods, periodName, events),
-    ...(genCohortRetentionReport ? await generateCohortRetentionReport(numPeriods, periodName, events) : []),
-    ...await generatePeriodProjectsReport(numPeriods, periodName, events)
-  ]
+    ...(await generateUserActivityReport(numPeriods, periodName, events)),
+    ...(genCohortRetentionReport
+      ? await generateCohortRetentionReport(numPeriods, periodName, events)
+      : []),
+    ...(await generatePeriodProjectsReport(numPeriods, periodName, events)),
+  ];
 }

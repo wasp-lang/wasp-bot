@@ -1,6 +1,7 @@
 # Wasp-bot
 
 Wasp bot is a constantly running nodejs server that serves different purposes:
+
 - Acting as a Discord bot for our Discord community.
 - Sending Wasp analytics reports.
 
@@ -15,6 +16,8 @@ Both are needed to run bot locally, but only PostHog API key is needed to run ju
 ### Installation
 
 Run `npm install` for the first time or after any changes in npm deps.
+
+Also, run `npm run prepare` to set up pre-commit hooks (for stuff like code formatting and linting!).
 
 ### Running
 

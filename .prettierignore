@@ -1,0 +1,4 @@
+node_modules/
+wasp-analytics-cached-events.json
+dist/
+package-lock.json

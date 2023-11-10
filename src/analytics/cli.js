@@ -3,23 +3,23 @@ import {
   generateTotalReport,
   generateDailyReport,
   generateWeeklyReport,
-  generateMonthlyReport
-} from "./reports"
+  generateMonthlyReport,
+} from "./reports";
 
 async function cliReport() {
-  const events = await fetchEventsForReportGenerator()
+  const events = await fetchEventsForReportGenerator();
 
-  printTitle("TOTAL REPORT")
-  showReportInCLI(await generateTotalReport(events))
+  printTitle("TOTAL REPORT");
+  showReportInCLI(await generateTotalReport(events));
 
-  printTitle("DAILY REPORT")
-  showReportInCLI(await generateDailyReport(events))
+  printTitle("DAILY REPORT");
+  showReportInCLI(await generateDailyReport(events));
 
-  printTitle("WEEKLY REPORT")
-  showReportInCLI(await generateWeeklyReport(events))
+  printTitle("WEEKLY REPORT");
+  showReportInCLI(await generateWeeklyReport(events));
 
-  printTitle("MONTHLY REPORT")
-  showReportInCLI(await generateMonthlyReport(events))
+  printTitle("MONTHLY REPORT");
+  showReportInCLI(await generateMonthlyReport(events));
 }
 
 function showReportInCLI(report) {
@@ -40,4 +40,4 @@ function printTitle(text) {
   console.log(`\x1b[33m \n\n${text} \x1b[0m`);
 }
 
-cliReport()
+cliReport();
