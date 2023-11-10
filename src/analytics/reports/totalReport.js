@@ -17,20 +17,23 @@ async function generateTotalReport (prefetchedEvents = undefined) {
   const localEventsByProject = groupEventsByProject(localEvents)
   const numProjectsTotal = Object.keys(localEventsByProject).length
   const numProjectsBuiltTotal = Object.values(localEventsByProject)
-        .filter(events => events.some(e => e.properties.is_build)).length
+    .filter(events => events.some(e => e.properties.is_build)).length
   const numUniqueUsersTotal = new Set(localEvents.map(e => e.distinct_id)).size
 
   const totalUniqueEventsByExecutionEnv = calcTotalUniqueEventsByExecutionEnv(groupedNonLocalEvents)
   const prettyNonLocalMetrics = showPrettyMetrics(totalUniqueEventsByExecutionEnv);
 
   const report = [
-    { text: [
-      'Number of unique projects in total: ' + numProjectsTotal,
-      'Number of unique projects built in total: ' + numProjectsBuiltTotal,
-      'Number of unique users in total: ' + numUniqueUsersTotal,
-      ` - ${prettyNonLocalMetrics}`
-    ] }
+    {
+      text: [
+        `Number of unique projects in total: ${numProjectsTotal}`,
+        `Number of unique projects built in total: ${numProjectsBuiltTotal}`,
+        `Number of unique users in total: ${numUniqueUsersTotal}`,
+        ` - ${prettyNonLocalMetrics}`
+      ]
+    }
   ]
+
   return report
 }
 

@@ -1,11 +1,18 @@
+const _ = require('lodash')
+
 const moment = require('../../moment')
 const { newSimpleTable } = require('../../table')
 const { groupEventsByExecutionEnv } = require('../../executionEnvs')
 const { fetchEventsForReportGenerator } = require('../events')
 
-const { groupEventsByUser, getIntersection, elemFromBehind } = require('../utils')
+const { groupEventsByUser, getIntersection } = require('../utils')
 
-const { calcLastNPeriods, uniqueUserIdsInPeriod } = require('./common')
+const {
+  calcLastNPeriods,
+  groupEventsByPeriods,
+  getActiveUserIds,
+  isEventInPeriod
+} = require('./common')
 
 
 async function generateCohortRetentionReport (
@@ -13,7 +20,7 @@ async function generateCohortRetentionReport (
 ) {
   const periodNameShort = periodName[0]
 
-  // All events, sort by time (starting with oldest), with events caused by Wasp team members
+  // All events, sorted by time (starting with oldest), with events caused by Wasp team members
   // filtered out.
   const events = prefetchedEvents ?? await fetchEventsForReportGenerator()
 
@@ -22,18 +29,15 @@ async function generateCohortRetentionReport (
   const periods = calcLastNPeriods(numPeriods, periodName)
 
   // [<active_users_at_period_0>, <active_users_at_period_1>, ...]
-  const activeUsersAtPeriod = periods.map(p => uniqueUserIdsInPeriod(localEvents, p))
+  const activeUsersSetsByPeriod = groupEventsByPeriods(localEvents, periods).map(events => new Set(getActiveUserIds(events)))
 
   const eventsByUser = groupEventsByUser(localEvents)
 
   // Finds all users that have their first event in the specified period.
-  function findNewUsersForPeriod ([pStart, pEnd]) {
+  function findNewUsersForPeriod(period) {
     return (
       Object.entries(eventsByUser)
-        .filter(([, eventsOfUser]) => {
-          const timeOfFirstEvent = moment.min(eventsOfUser.map(e => moment(e.timestamp)))
-          return timeOfFirstEvent.isSameOrBefore(pEnd) && timeOfFirstEvent.isAfter(pStart)
-        })
+        .filter(([, eventsOfUser]) => isEventInPeriod(eventsOfUser[0], period))
         .map(([userId]) => userId)
     )
   }
@@ -46,13 +50,10 @@ async function generateCohortRetentionReport (
   const cohorts = []
   for (let i = 0; i < periods.length; i++) {
     const cohort = []
-    const cohortUsers = findNewUsersForPeriod(periods[i])
-    cohort.push(cohortUsers.length)
+    const cohortUsersSet = new Set(findNewUsersForPeriod(periods[i]))
+    cohort.push(cohortUsersSet.size)
     for (let j = i + 1; j < periods.length; j++) {
-      const users = Array.from(getIntersection(
-        new Set(cohortUsers),
-        new Set(activeUsersAtPeriod[j])
-      ))
+      const users = Array.from(getIntersection(cohortUsersSet, activeUsersSetsByPeriod[j]))
       cohort.push(users.length)
     }
     cohorts.push(cohort)
@@ -84,7 +85,7 @@ async function generateCohortRetentionReport (
 
   const fmt = m => m.format('DD-MM-YY')
   const firstPeriod = periods[0]
-  const lastPeriod = elemFromBehind(periods, 0)
+  const lastPeriod = _.last(periods)
   const report = [{
     text: [
       '==== Cohort Retention ====',

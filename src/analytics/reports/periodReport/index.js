@@ -21,12 +21,11 @@ async function generatePeriodReport (
 ) {
   const events = prefetchedEvents ?? await fetchEventsForReportGenerator()
 
-  const report = [
-    ... await generateUserActivityReport(numPeriods, periodName, events),
+  return [
+    ...await generateUserActivityReport(numPeriods, periodName, events),
     ...(genCohortRetentionReport ? await generateCohortRetentionReport(numPeriods, periodName, events) : []),
-    ... await generatePeriodProjectsReport(numPeriods, periodName, events),
+    ...await generatePeriodProjectsReport(numPeriods, periodName, events)
   ]
-  return report
 }
 
 module.exports = {
