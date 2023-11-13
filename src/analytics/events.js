@@ -10,7 +10,7 @@ const POSTHOG_PROJECT_API_KEY = "CdDd2A0jKTI2vFAsrI9JWm3MqpOcgHz1bMyogAcwsE4"
 async function fetchAllCliEvents () {
   console.log('Fetching all CLI events...')
 
-  const cachedEvents = await loadCachedEvents() || []
+  const cachedEvents = await loadCachedEvents() ?? []
   console.log("Number of already locally cached events: ", cachedEvents.length)
 
   let events = cachedEvents
@@ -53,23 +53,29 @@ async function fetchAllCliEvents () {
   return events
 }
 
-// Fetches events from PostHog.
-// If there is a lot of events, it will return only a portion of them (the newest ones)
-// and let us know there is more to fetch. This limit is defined by PostHog, but is usually
-// set at 100 events, meaning each fetch will retrieve 100 or less events.
-// To continue fetching the rest of events, you can call fetchEvents() with `before` set to the
-// timestamp of the oldest event that was returned in the previous call to fetchEvents().
-async function fetchEvents ({eventType, after, before}) {
+/**
+ * Fetches events from PostHog.
+ * If there is a lot of events, it will return only a portion of them (the newest ones)
+ * and let us know there is more to fetch. This limit is defined by PostHog, but is usually
+ * set at 100 events, meaning each fetch will retrieve 100 or less events.
+ * To continue fetching the rest of events, you can call fetchEvents() with `before` set to the
+ * timestamp of the oldest event that was returned in the previous call to fetchEvents().
+ * All of the arguments are optional.
+ * If `after` or `before` are not provided, then corresponding restriction on age of events is not set.
+ */
+async function fetchEvents ({eventType = undefined, after = undefined, before = undefined}) {
   // `token=` here specifies from which project to pull the events from.
-  const baseUrl = `https://app.posthog.com/api/event/?token=${POSTHOG_PROJECT_API_KEY}`
-  const url = baseUrl
-        + (eventType ? `&event=${eventType}` : "")
-        + (after ? `&after=${encodeURIComponent(after)}` : "")
-        + (before ? `&before=${encodeURIComponent(before)}` : "")
+  const params = {
+    token: POSTHOG_PROJECT_API_KEY,
+    ...(eventType && { event: eventType }),
+    ...(after && { after }),
+    ...(before && { before })
+  }
+  const url = `https://app.posthog.com/api/event/?${new URLSearchParams(params).toString()}`;
 
   console.log('Fetching: ' + url)
   const response = await axios.get(url, { headers: {
-    'Authorization': 'Bearer ' + POSTHOG_KEY
+    'Authorization': `Bearer ${POSTHOG_KEY}`
   }})
 
   const { next, results: events } = response.data

@@ -16,7 +16,7 @@ async function generateCohortRetentionReport (
 
   // All events, sort by time (starting with oldest), with events caused by Wasp team members
   // filtered out.
-  const events = prefetchedEvents || await fetchEventsForReportGenerator()
+  const events = prefetchedEvents ?? await fetchEventsForReportGenerator()
 
   const { localEvents } = groupEventsByExecutionEnv(events)
 

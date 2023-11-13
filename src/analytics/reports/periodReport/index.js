@@ -19,7 +19,7 @@ async function generatePeriodReport (
   prefetchedEvents = undefined,
   genCohortRetentionReport = true
 ) {
-  const events = prefetchedEvents || await fetchEventsForReportGenerator()
+  const events = prefetchedEvents ?? await fetchEventsForReportGenerator()
 
   const report = [
     ... await generateUserActivityReport(numPeriods, periodName, events),

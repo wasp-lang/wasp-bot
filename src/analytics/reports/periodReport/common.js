@@ -8,7 +8,7 @@ const { calcUserAgeInDays, elemFromBehind } = require('../utils')
 function calcUniqueNonLocalEventsInPeriod(periods, eventsByEnv) {
   const uniqueNonLocalEventsInPeriod = {};
   for (let envKey of Object.keys(executionEnvs)) {
-    const events = eventsByEnv[envKey] || []
+    const events = eventsByEnv[envKey] ?? []
     uniqueNonLocalEventsInPeriod[envKey] = uniqueUserIdsInPeriod(events, elemFromBehind(periods, 0)).length
   }
   return uniqueNonLocalEventsInPeriod;

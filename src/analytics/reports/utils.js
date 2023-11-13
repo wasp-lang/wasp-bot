@@ -2,13 +2,18 @@ const _ = require('lodash')
 
 const moment = require('../moment')
 
-
-// { <unique_project_id>: [<project_event>] }
-function groupEventsByProject (events) {
+/**
+ * @param {[PosthogEvent]} events
+ * @returns {{ [string]: [PosthogEvent] }} Key is unique project id, value is a list of events that belong to it.
+ */
+function groupEventsByProject(events) {
   return _.groupBy(events, e => e.distinct_id + e.properties.project_hash)
 }
 
-// { <unique_user_id>: [<user_event>] }
+/**
+ * @param {[PosthogEvent]} events
+ * @returns {{ [string]: [PosthogEvent] }} Key is unique user id, value is a list of events that belong to it.
+ */
 function groupEventsByUser (events) {
   return _.groupBy(events, e => e.distinct_id)
 }

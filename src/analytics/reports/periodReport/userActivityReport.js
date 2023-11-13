@@ -8,8 +8,6 @@ const {
 const { fetchEventsForReportGenerator } = require('../events')
 const { buildChartImageUrl } = require('../../charts')
 
-const { elemFromBehind } = require('../utils')
-
 const {
   calcLastNPeriods,
   calcUniqueLocalEventsPerPeriodByAge,
@@ -18,7 +16,7 @@ const {
 
 
 async function generateUserActivityReport (numPeriods, periodName, prefetchedEvents = undefined) {
-  const events = prefetchedEvents || await fetchEventsForReportGenerator()
+  const events = prefetchedEvents ?? await fetchEventsForReportGenerator()
   const periods = calcLastNPeriods(numPeriods, periodName)
 
   const { localEvents, groupedNonLocalEvents } = groupEventsByExecutionEnv(events)
@@ -32,7 +30,7 @@ async function generateUserActivityReport (numPeriods, periodName, prefetchedEve
     text: [
       'Number of unique active users:',
       `- During last ${periodName}: `
-        + _.sum(Object.values(uniqueLocalEventsPerPeriodByAge.series).map(s => elemFromBehind(s, 0))),
+        + _.sum(Object.values(uniqueLocalEventsPerPeriodByAge.series).map(series => _.last(series))),
       `  - ${prettyNonLocalMetrics}`
     ],
     chart: buildChartImageUrl(

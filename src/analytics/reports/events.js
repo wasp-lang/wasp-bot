@@ -21,7 +21,8 @@ async function fetchEventsForReportGenerator () {
   console.log('\nNumber of CLI events fetched:', allEvents.length)
   return _.sortBy(
     allEvents.filter(e => !ourDistinctIds.includes(e.distinct_id)),
-    'timestamp')
+    'timestamp'
+  )
 }
 
 module.exports = {

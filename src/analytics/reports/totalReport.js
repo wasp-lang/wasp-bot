@@ -10,7 +10,7 @@ const { groupEventsByProject } = require('./utils')
 // Generates report for some general statistics that cover the whole (total) time (all of the events).
 async function generateTotalReport (prefetchedEvents = undefined) {
   // All events, sort by time (starting with oldest), with events caused by Wasp team members filtered out.
-  const events = prefetchedEvents || await fetchEventsForReportGenerator()
+  const events = prefetchedEvents ?? await fetchEventsForReportGenerator()
 
   const { localEvents, groupedNonLocalEvents } = groupEventsByExecutionEnv(events)
 
@@ -37,7 +37,7 @@ async function generateTotalReport (prefetchedEvents = undefined) {
 function calcTotalUniqueEventsByExecutionEnv(eventsByEnv) {
   const totalUniqueEventsByExecutionEnv = {};
   for (let envKey of Object.keys(executionEnvs)) {
-    const events = eventsByEnv[envKey] || []
+    const events = eventsByEnv[envKey] ?? []
     totalUniqueEventsByExecutionEnv[envKey] = new Set(events.map(e => e.distinct_id)).size
   }
   return totalUniqueEventsByExecutionEnv;

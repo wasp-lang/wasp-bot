@@ -11,7 +11,7 @@ const { calcLastNPeriods } = require('./common')
 
 
 async function generatePeriodProjectsReport (numPeriods, periodName, prefetchedEvents = undefined) {
-  const events = prefetchedEvents || await fetchEventsForReportGenerator()
+  const events = prefetchedEvents ?? await fetchEventsForReportGenerator()
 
   const { localEvents } = groupEventsByExecutionEnv(events)
 
@@ -33,7 +33,9 @@ async function generatePeriodProjectsReport (numPeriods, periodName, prefetchedE
     return buildEvents.length == 0 ? undefined : moment.min(buildEvents.map(e => moment(e.timestamp)))
   }
 
-  const projectFirstBuildTimes = Object.values(localEventsByProject).map(es => calcProjectFirstBuildTime(es)).filter(bt => bt)
+  const projectFirstBuildTimes = Object.values(localEventsByProject)
+                                  .map(events => calcProjectFirstBuildTime(events))
+                                  .filter(buildTime => buildTime)
   // [num_projects_built_before_end_of_period_0, num_projects_built_before_end_of_period_1, ...]
   const numProjectsBuiltTillPeriod =
         periods.map(([, pEnd]) => projectFirstBuildTimes.filter(t => t.isSameOrBefore(pEnd)).length)
