@@ -72,11 +72,26 @@ async function generateCohortRetentionReport (
     style: { 'head': null }
   });
 
+  /**
+   * @param {[number]} cohort [num_users_at_start, num_users_after_1_period, ...]
+   * @returns {[string]} [num_users_at_start, num_and_perc_users_after_1_period, ...]
+   *   Examples of returned value:
+   *    - `["10", "6 (60%)", "3 (30%)", "0 (0%)"]`
+   *    - `["0", "N/A", "N/A"]`
+   */
+  function calcCohortRetentionTableRow(cohort) {
+    const [numUsersAtStart, ...numUsersThroughPeriods] = cohort;
+    const retentionPercentages = numUsersThroughPeriods.map(n =>
+      numUsersAtStart === 0
+        ? "N/A"
+        : `${n} (${Math.round(n / numUsersAtStart * 100)}%)`
+    );
+    return [numUsersAtStart.toString(), ...retentionPercentages];
+  }
+
   table.push(
-    ...cohorts.map((c, i) => ({
-      [`${periodNameShort} #${i}`]: [c[0], ...(c.slice(1).map(n =>
-        c[0] == 0 ? "N/A" : `${n} (${Math.round(n / c[0] * 100)}%)`
-      ))]
+    ...cohorts.map((cohort, i) => ({
+      [`${periodNameShort} #${i}`]: calcCohortRetentionTableRow(cohort)
     }))
   )
 
