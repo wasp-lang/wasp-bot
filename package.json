@@ -10,6 +10,7 @@
     "startBot": "node ./dist/bot.js",
     "calcAnalytics": "node ./dist/analytics/cli.js",
     "build": "tsc",
+    "postinstall": "COMMENT: We do building in this step because that way Heroku will run it at the right moment when deploying.",
     "postinstall": "npm run build",
     "prepare": "husky install",
     "format": "prettier . --write"

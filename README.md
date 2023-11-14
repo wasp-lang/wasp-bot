@@ -28,3 +28,7 @@ Run `npm run buildAndCalcAnalytics` to run analytics manually and get the report
 ### Deployment
 
 Deployed instance of server is running on Heroku. Whatever you push to `production` branch automatically gets re-deployed to Heroku.
+
+Heroku cares about `Procfile` that we have in the root of the project, and will run the command there to start the project once deployed.
+
+Heroku knows it is a node project, so it will run `npm install` when deploying it, which will also run `npm run postinstall`, which is why it all works, because `npm run postinstall` does building (of TS).
