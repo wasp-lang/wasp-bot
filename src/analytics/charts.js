@@ -16,7 +16,7 @@ function buildChartImageUrl(data, title, type = "line") {
         ) // Data series.
         .chl(
             Object.values(data.series)
-                .map((s) => s.map((v) => v || undefined).join("|"))
+                .map((s) => s.map((v) => v ?? undefined).join("|"))
                 .join("|")
         ) // Value labels on bars.
         .chlps("font.size,12")

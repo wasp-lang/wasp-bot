@@ -6,29 +6,23 @@ const {
   generateMonthlyReport
 } = require("./reports");
 
-fetchEventsForReportGenerator().then((events) => {
-  generateTotalReport(events).then((report) => {
-    printTitle("TOTAL REPORT");
-    showReportInCLI(report);
-  });
+async function cliReport() {
+  const events = await fetchEventsForReportGenerator()
 
-  generateDailyReport(events).then((report) => {
-    printTitle("DAILY REPORT");
-    showReportInCLI(report);
-  });
+  printTitle("TOTAL REPORT")
+  showReportInCLI(await generateTotalReport(events))
 
-  generateWeeklyReport(events).then((report) => {
-    printTitle("WEEKLY REPORT");
-    showReportInCLI(report);
-  });
+  printTitle("DAILY REPORT")
+  showReportInCLI(await generateDailyReport(events))
 
-  generateMonthlyReport(events).then((report) => {
-    printTitle("MONTHLY REPORT");
-    showReportInCLI(report);
-  });
-});
+  printTitle("WEEKLY REPORT")
+  showReportInCLI(await generateWeeklyReport(events))
 
-async function showReportInCLI(report) {
+  printTitle("MONTHLY REPORT")
+  showReportInCLI(await generateMonthlyReport(events))
+}
+
+function showReportInCLI(report) {
   for (const metric of report) {
     console.log();
     if (metric.text) {
@@ -45,3 +39,5 @@ async function showReportInCLI(report) {
 function printTitle(text) {
   console.log(`\x1b[33m \n\n${text} \x1b[0m`);
 }
+
+cliReport()

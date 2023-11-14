@@ -9,9 +9,13 @@ const {
 const { fetchEventsForReportGenerator } = require('../events')
 const { buildChartImageUrl } = require('../../charts')
 
-const { calcUserAgeInDays } = require('../utils')
+const { groupEventsByUser, calcUserAgeInDays } = require('../utils')
 
-const { calcLastNPeriods, filterEventsUpToAndInPeriod, uniqueUserIdsInPeriod } = require('./common')
+const {
+  calcLastNPeriods,
+  getActiveUserIdsInPeriod,
+  groupEventsByPeriods
+} = require('./common')
 
 
 async function generateUserActivityReport (numPeriods, periodName, prefetchedEvents = undefined) {
@@ -20,13 +24,15 @@ async function generateUserActivityReport (numPeriods, periodName, prefetchedEve
 
   const { localEvents, groupedNonLocalEvents } = groupEventsByExecutionEnv(events)
 
-  const uniqueLocalActiveUsersPerPeriodByAge = calcNumUniqueActiveUsersPerPeriodByAge(localEvents, periods)
+  const uniqueLocalActiveUsersPerPeriodByAge = calcNumActiveUsersPerPeriodByAge(localEvents, periods)
 
-  const uniqueNonLocalActiveUsersInPeriod = calcUniqueNonLocalEventsInPeriod(periods, groupedNonLocalEvents);
+  const uniqueNonLocalActiveUsersInPeriod = calcUniqueNonLocalEventsInPeriod(periods, groupedNonLocalEvents)
   const prettyNonLocalMetrics = showPrettyMetrics(uniqueNonLocalActiveUsersInPeriod);
 
   const ageRanges = Object.keys(uniqueLocalActiveUsersPerPeriodByAge.series)
-  const ageRangesAverages = ageRanges.map((ageRange) => Math.round(_.mean(uniqueLocalActiveUsersPerPeriodByAge.series[ageRange])))
+  const ageRangesAverages = ageRanges.map(ageRange =>
+    Math.round(_.mean(uniqueLocalActiveUsersPerPeriodByAge.series[ageRange]))
+  )
   const tableOfActiveUsersPerPeriodByAge = newSimpleTable({
     head: ["", ...ageRanges, "ALL"],
     rows: [
@@ -69,7 +75,7 @@ function calcUniqueNonLocalEventsInPeriod(periods, eventsByEnv) {
   const uniqueNonLocalEventsInPeriod = {};
   for (let envKey of Object.keys(executionEnvs)) {
     const events = eventsByEnv[envKey] ?? []
-    uniqueNonLocalEventsInPeriod[envKey] = uniqueUserIdsInPeriod(events, _.last(periods)).length
+    uniqueNonLocalEventsInPeriod[envKey] = getActiveUserIdsInPeriod(events, _.last(periods)).length
   }
   return uniqueNonLocalEventsInPeriod;
 }
@@ -77,7 +83,7 @@ function calcUniqueNonLocalEventsInPeriod(periods, eventsByEnv) {
 // The main metric we are calculating -> for each period, number of unique users, grouped by age (of usage).
 // We return it ready for displaying via chart or table.
 // Takes list of all events, ends of all periods, and period duration.
-function calcNumUniqueActiveUsersPerPeriodByAge (userEvents, periods) {
+function calcNumActiveUsersPerPeriodByAge (userEvents, periods) {
   const numUniqueActiveUsersPerPeriodByAge = {
     // All series have the same length, which is the length of .periodEnds.
     series: {
@@ -88,10 +94,17 @@ function calcNumUniqueActiveUsersPerPeriodByAge (userEvents, periods) {
     },
     periodEnds: [] // [string] where strings are dates formatted as YY-MM-DD.
   }
-  for (let period of periods) {
-    const userEventsUpToAndInPeriod = filterEventsUpToAndInPeriod(userEvents, period)
-    const ids = uniqueUserIdsInPeriod(userEventsUpToAndInPeriod, period)
-    const ages = ids.map(id => calcUserAgeInDays(userEventsUpToAndInPeriod, id))
+
+  const eventsByPeriods = groupEventsByPeriods(userEvents, periods)
+  const eventsByUsers = groupEventsByUser(userEvents)
+
+  for (let periodIdx = 0; periodIdx < periods.length; periodIdx++) {
+    const eventsInThisPeriodByUsers = groupEventsByUser(eventsByPeriods[periodIdx])
+    const ages = Object.entries(eventsInThisPeriodByUsers).map(([userId, eventsInThisPeriodByThisUser]) => {
+      const oldestEventEverByThisUser = eventsByUsers[userId][0]
+      const newestEventInThisPeriodByThisUser = _.last(eventsInThisPeriodByThisUser)
+      return calcUserAgeInDays(newestEventInThisPeriodByThisUser, oldestEventEverByThisUser)
+    })
 
     numUniqueActiveUsersPerPeriodByAge.series["<=1d"]
       .push(ages.filter(age => age <= 1).length)
@@ -102,11 +115,10 @@ function calcNumUniqueActiveUsersPerPeriodByAge (userEvents, periods) {
     numUniqueActiveUsersPerPeriodByAge.series[">30d"]
       .push(ages.filter(age => age > 30).length)
 
-    numUniqueActiveUsersPerPeriodByAge.periodEnds.push(period[1].format('YY-MM-DD'))
+    numUniqueActiveUsersPerPeriodByAge.periodEnds.push(periods[periodIdx][1].format('YY-MM-DD'))
   }
   return numUniqueActiveUsersPerPeriodByAge
 }
-
 
 module.exports = {
   generateUserActivityReport
