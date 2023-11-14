@@ -18,9 +18,9 @@ Run `npm install` for the first time or after any changes in npm deps.
 
 ### Running
 
-When developing, run the bot server locally with `npm run startBot`. This will actually connect it to the Discord server, so it could affect the production.
+When developing, run the bot server locally with `npm run buildAndStartBot`. This will actually connect it to the Discord server, so you will have two bots running at the same time -> production one, and your development one. So test quickly what you need and then shut it down.
 
-Run `npm run calcAnalytics` to run analytics manually and get the report in the CLI.
+Run `npm run buildAndCalcAnalytics` to run analytics manually and get the report in the CLI.
 
 ### Deployment
 

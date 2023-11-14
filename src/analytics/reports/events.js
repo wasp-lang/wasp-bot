@@ -1,6 +1,6 @@
-const _ = require('lodash')
+import * as _ from 'lodash'
 
-const { fetchAllCliEvents } = require('../events')
+import { fetchAllCliEvents } from '../events'
 
 // These are telemetry user ids of Wasp team members
 // from the situation when we accidentally left telemetry enabled.
@@ -15,7 +15,7 @@ const ourDistinctIds = [
   'dc396135-c50d-4064-9563-5813056b1cc8'
 ]
 
-async function fetchEventsForReportGenerator () {
+export async function fetchEventsForReportGenerator () {
   const allEvents = await fetchAllCliEvents()
 
   console.log('\nNumber of CLI events fetched:', allEvents.length)
@@ -23,8 +23,4 @@ async function fetchEventsForReportGenerator () {
     allEvents.filter(e => !ourDistinctIds.includes(e.distinct_id)),
     'timestamp'
   )
-}
-
-module.exports = {
-  fetchEventsForReportGenerator
 }

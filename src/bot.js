@@ -1,3 +1,3 @@
-const discordBot = require('./discord-bot')
+import * as discordBot from './discord-bot'
 
 discordBot.start()

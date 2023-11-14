@@ -2,11 +2,15 @@
   "name": "wasp-discord-bot",
   "version": "1.0.0",
   "description": "WaspBot (Discord)",
-  "main": "src/bot.js",
   "author": "Martin Sosic (Wasp-lang)",
   "scripts": {
-    "startBot": "node ./src/bot.js",
-    "calcAnalytics": "node ./src/analytics/cli.js"
+    "buildAndStartBot": "npm run build && npm run startBot",
+    "buildAndCalcAnalytics": "npm run build && npm run calcAnalytics",
+    "start": "npm run startBot",
+    "startBot": "node ./dist/bot.js",
+    "calcAnalytics": "node ./dist/analytics/cli.js",
+    "build": "tsc",
+    "postinstall": "npm run build"
   },
   "dependencies": {
     "asciichart": "^1.5.25",
@@ -23,6 +27,12 @@
     "winston": "^3.3.3"
   },
   "devDependencies": {
-    "eslint": "^8.33.0"
+    "@types/async-retry": "^1.4.8",
+    "@types/cli-table": "^0.3.4",
+    "@types/lodash": "^4.14.201",
+    "@types/node": "^20.9.0",
+    "@types/node-schedule": "^2.1.3",
+    "eslint": "^8.33.0",
+    "typescript": "^5.2.2"
   }
 }

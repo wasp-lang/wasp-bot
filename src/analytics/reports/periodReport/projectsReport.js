@@ -1,16 +1,12 @@
-const moment = require('../../moment')
-const {
-  executionEnvs,
-  groupEventsByExecutionEnv,
-  showPrettyMetrics,
-} = require('../../executionEnvs')
-const { fetchEventsForReportGenerator } = require('../events')
-const { groupEventsByProject } = require('../utils')
+import moment from '../../moment'
+import { groupEventsByExecutionEnv } from '../../executionEnvs'
+import { fetchEventsForReportGenerator } from '../events'
+import { groupEventsByProject } from '../utils'
 
-const { calcLastNPeriods } = require('./common')
+import { calcLastNPeriods } from './common'
 
 
-async function generatePeriodProjectsReport (numPeriods, periodName, prefetchedEvents = undefined) {
+export async function generatePeriodProjectsReport (numPeriods, periodName, prefetchedEvents = undefined) {
   const events = prefetchedEvents ?? await fetchEventsForReportGenerator()
 
   const { localEvents } = groupEventsByExecutionEnv(events)
@@ -52,8 +48,4 @@ async function generatePeriodProjectsReport (numPeriods, periodName, prefetchedE
     }
   ]
   return report
-}
-
-module.exports = {
-  generatePeriodProjectsReport
 }

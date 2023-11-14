@@ -1,14 +1,14 @@
-const {
+import {
   executionEnvs,
   groupEventsByExecutionEnv,
   showPrettyMetrics,
-} = require('../executionEnvs')
-const { fetchEventsForReportGenerator } = require('./events')
+} from '../executionEnvs'
+import { fetchEventsForReportGenerator } from './events'
 
-const { groupEventsByProject } = require('./utils')
+import { groupEventsByProject } from './utils'
 
 // Generates report for some general statistics that cover the whole (total) time (all of the events).
-async function generateTotalReport (prefetchedEvents = undefined) {
+export async function generateTotalReport (prefetchedEvents = undefined) {
   // All events, sort by time (starting with oldest), with events caused by Wasp team members filtered out.
   const events = prefetchedEvents ?? await fetchEventsForReportGenerator()
 
@@ -44,8 +44,4 @@ function calcTotalUniqueEventsByExecutionEnv(eventsByEnv) {
     totalUniqueEventsByExecutionEnv[envKey] = new Set(events.map(e => e.distinct_id)).size
   }
   return totalUniqueEventsByExecutionEnv;
-}
-
-module.exports = {
-  generateTotalReport
 }

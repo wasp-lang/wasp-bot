@@ -1,10 +1,10 @@
-const {
+import {
   fetchEventsForReportGenerator,
   generateTotalReport,
   generateDailyReport,
   generateWeeklyReport,
   generateMonthlyReport
-} = require("./reports");
+} from "./reports"
 
 async function cliReport() {
   const events = await fetchEventsForReportGenerator()

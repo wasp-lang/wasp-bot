@@ -1,3 +1,4 @@
 node_modules/
 .env
 wasp-analytics-cached-events.json
+dist/
