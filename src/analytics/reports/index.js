@@ -7,18 +7,15 @@ const { generatePeriodReport } = require('./periodReport')
 // events where it would matter, but now we are getting there.
 
 async function generateDailyReport (prefetchedEvents = undefined, numPeriods = undefined) {
-  numPeriods = numPeriods ?? 14;
-  return generatePeriodReport(numPeriods, 'day', prefetchedEvents, false)
+  return generatePeriodReport(numPeriods ?? 14, 'day', prefetchedEvents, false)
 }
 
 async function generateWeeklyReport (prefetchedEvents = undefined, numPeriods = undefined) {
-  numPeriods = numPeriods ?? 12;
-  return generatePeriodReport(numPeriods, 'week', prefetchedEvents)
+  return generatePeriodReport(numPeriods ?? 12, 'week', prefetchedEvents)
 }
 
 async function generateMonthlyReport (prefetchedEvents = undefined, numPeriods = undefined) {
-  numPeriods = numPeriods ?? 12;
-  return generatePeriodReport(numPeriods, 'month', prefetchedEvents)
+  return generatePeriodReport(numPeriods ?? 12, 'month', prefetchedEvents)
 }
 
 module.exports = {

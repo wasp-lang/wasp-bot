@@ -68,7 +68,7 @@ async function generateUserActivityReport (numPeriods, periodName, prefetchedEve
 function calcUniqueNonLocalEventsInPeriod(periods, eventsByEnv) {
   const uniqueNonLocalEventsInPeriod = {};
   for (let envKey of Object.keys(executionEnvs)) {
-    const events = eventsByEnv[envKey] || []
+    const events = eventsByEnv[envKey] ?? []
     uniqueNonLocalEventsInPeriod[envKey] = uniqueUserIdsInPeriod(events, _.last(periods)).length
   }
   return uniqueNonLocalEventsInPeriod;
@@ -92,10 +92,15 @@ function calcNumUniqueActiveUsersPerPeriodByAge (userEvents, periods) {
     const userEventsUpToAndInPeriod = filterEventsUpToAndInPeriod(userEvents, period)
     const ids = uniqueUserIdsInPeriod(userEventsUpToAndInPeriod, period)
     const ages = ids.map(id => calcUserAgeInDays(userEventsUpToAndInPeriod, id))
-    numUniqueActiveUsersPerPeriodByAge.series["<=1d"].push(ages.filter(age => age <= 1).length)
-    numUniqueActiveUsersPerPeriodByAge.series["(1, 7]d"].push(ages.filter(age => age > 1 && age <= 7).length)
-    numUniqueActiveUsersPerPeriodByAge.series["(7, 30]d"].push(ages.filter(age => age > 7 && age <= 30).length)
-    numUniqueActiveUsersPerPeriodByAge.series[">30d"].push(ages.filter(age => age > 30).length)
+
+    numUniqueActiveUsersPerPeriodByAge.series["<=1d"]
+      .push(ages.filter(age => age <= 1).length)
+    numUniqueActiveUsersPerPeriodByAge.series["(1, 7]d"]
+      .push(ages.filter(age => age > 1 && age <= 7).length)
+    numUniqueActiveUsersPerPeriodByAge.series["(7, 30]d"]
+      .push(ages.filter(age => age > 7 && age <= 30).length)
+    numUniqueActiveUsersPerPeriodByAge.series[">30d"]
+      .push(ages.filter(age => age > 30).length)
 
     numUniqueActiveUsersPerPeriodByAge.periodEnds.push(period[1].format('YY-MM-DD'))
   }
