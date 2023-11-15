@@ -7,7 +7,7 @@ import moment from "moment";
 import { config as dotenvConfig } from "dotenv";
 
 import logger from "./utils/logger";
-import reports from "./analytics/reports";
+import * as reports from "./analytics/reports";
 
 dotenvConfig();
 
