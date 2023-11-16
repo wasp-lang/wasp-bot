@@ -1,4 +1,5 @@
 import moment from "../../moment";
+import { newSimpleTable } from "../../table";
 import { groupEventsByExecutionEnv } from "../../executionEnvs";
 import { fetchEventsForReportGenerator } from "../events";
 import { groupEventsByProject } from "../utils";
@@ -47,14 +48,40 @@ export async function generatePeriodProjectsReport(
       projectFirstBuildTimes.filter((t) => t.isSameOrBefore(pEnd)).length,
   );
 
+  const table = newSimpleTable({
+    head: ["", "created", "built"],
+    rows: [
+      ...periods.map(([, periodEnd], i) => {
+        const createdCumm = numProjectsCreatedTillPeriod[i];
+        const createdDiff =
+          i > 0
+            ? numProjectsCreatedTillPeriod[i] -
+              numProjectsCreatedTillPeriod[i - 1]
+            : null;
+        const builtCumm = numProjectsBuiltTillPeriod[i];
+        const builtDiff =
+          i > 0
+            ? numProjectsBuiltTillPeriod[i] - numProjectsBuiltTillPeriod[i - 1]
+            : null;
+        return {
+          [periodEnd.format("YY-MM-DD")]: [
+            (createdDiff !== null ? `(+${createdDiff}) ` : "") +
+              createdCumm.toString(),
+            (builtDiff !== null ? `(+${builtDiff}) ` : "") +
+              builtCumm.toString(),
+          ],
+        };
+      }),
+    ],
+  });
+
   const report = [
     {
       text: [
-        "==== Projects created/built ====",
-        "Num projects created by period end (cumm):",
-        numProjectsCreatedTillPeriod.join(" "),
-        "Num projects built by period end (cumm):",
-        numProjectsBuiltTillPeriod.join(" "),
+        `==== Projects created/built per ${periodName} (cumm) ====`,
+        "```",
+        table.toString(),
+        "```",
       ],
     },
   ];
