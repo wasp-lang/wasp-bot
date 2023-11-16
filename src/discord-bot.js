@@ -2,7 +2,7 @@ import * as Discord from "discord.js";
 import * as schedule from "node-schedule";
 import * as Quote from "inspirational-quotes";
 import * as retry from "async-retry";
-import moment from "moment";
+import * as moment from "moment";
 
 import { config as dotenvConfig } from "dotenv";
 
@@ -27,12 +27,26 @@ export const start = () => {
   bot.on("ready", async () => {
     logger.info(`Logged in as: ${bot.user.tag}.`);
 
+    // Initiate daily standup every day at 8:00.
+    schedule.scheduleJob(
+      { dayOfWeek: [1, 2, 3, 4, 5], hour: 8, minute: 0, tz: timezone },
+      async () => {
+        await initiateDailyStandup(bot);
+      },
+    );
+
     // Every day at 7:00 am, send analytics reports.
     schedule.scheduleJob({ hour: 7, minute: 0, tz: timezone }, async () => {
+      const reportsChannel = await fetchChannelById(bot, REPORTS_CHANNEL_ID);
+      await reportsChannel.send(
+        "📊 What time is it? It is time for daily analytics report!",
+      );
+
+      await reportsChannel.send("⏳ Fetching analytics events...");
       // By prefetching events, we can reuse them when generating multiple reports and not just daily ones.
       // We retry it a couple of times because Posthog's API can sometimes be flaky.
-      // I am guessing that more events we will have, the worse it will get, because we will be fetching more of them,
-      // so in that case we might have to revisit our fetching strategy and cache intermediate results.
+      // Good thing is that fetchEventsForReportGenerator caches the fetched events, so each time we try again,
+      // we are continuing from where we left off.
       const events = await retry(
         async () => {
           return reports.fetchEventsForReportGenerator();
@@ -54,14 +68,6 @@ export const start = () => {
         await sendAnalyticsReport(bot, "monthly", events);
       }
     });
-
-    // Initiate daily standup every day at 8:00.
-    schedule.scheduleJob(
-      { dayOfWeek: [1, 2, 3, 4, 5], hour: 8, minute: 0, tz: timezone },
-      async () => {
-        await initiateDailyStandup(bot);
-      },
-    );
   });
 
   bot.on("message", async (msg) => handleMessage(bot, msg));
@@ -140,9 +146,13 @@ const handleMessage = async (bot, msg) => {
   }
 };
 
-const sendAnalyticsHelp = async (bot) => {
+async function fetchChannelById(bot, channelId) {
   const guild = await bot.guilds.fetch(GUILD_ID);
-  const channel = guild.channels.resolve(REPORTS_CHANNEL_ID);
+  return guild.channels.resolve(channelId);
+}
+
+const sendAnalyticsHelp = async (bot) => {
+  const channel = await fetchChannelById(bot, REPORTS_CHANNEL_ID);
   await channel.send(
     `Available commands:
   !analytics daily [numPeriods=<int>]
@@ -213,10 +223,10 @@ const sendAnalyticsReport = async (
     reportPromise = reports.generateTotalReport(prefetchedEvents);
     reportTitle = "TOTAL";
   }
-  const guild = await bot.guilds.fetch(GUILD_ID);
-  const waspTeamTextChannel = guild.channels.resolve(REPORTS_CHANNEL_ID);
 
-  waspTeamTextChannel.send(`Generating report...`);
+  const waspTeamTextChannel = await fetchChannelById(bot, REPORTS_CHANNEL_ID);
+
+  waspTeamTextChannel.send(`⏳ Generating ${reportType} report...`);
 
   const report = await reportPromise;
   waspTeamTextChannel.send(
@@ -226,7 +236,7 @@ const sendAnalyticsReport = async (
     let text = metric.text?.join("\n");
     if (text && text.length >= DISCORD_MAX_MSG_SIZE) {
       text =
-        text.substr(0, DISCORD_MAX_MSG_SIZE - 50) +
+        text.substring(0, DISCORD_MAX_MSG_SIZE - 50) +
         "\n... ⚠️ MESSAGE CUT BECAUSE IT IS TOO LONG...";
     }
 
@@ -244,15 +254,17 @@ const sendAnalyticsReport = async (
 };
 
 const initiateDailyStandup = async (bot) => {
-  const guild = await bot.guilds.fetch(GUILD_ID);
-  const dailyStandupChannel = guild.channels.resolve(DAILY_STANDUP_CHANNEL_ID);
+  const dailyStandupChannel = await fetchChannelById(
+    bot,
+    DAILY_STANDUP_CHANNEL_ID,
+  );
 
   const wisdom = ((q) => `${q.text} | ${q.author}`)(Quote.getQuote());
 
   dailyStandupChannel.send(
-    "Time for daily standup!" +
+    "☀️ Time for daily standup!" +
       "\nHow was your day yesterday, what are you working on today, and what are the challenges you are encountering?" +
-      "\n\nDaily fun/wisdom: " +
+      "\n\n💡 Daily fun/wisdom: " +
       wisdom,
   );
 };
