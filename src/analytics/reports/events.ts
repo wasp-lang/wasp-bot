@@ -64,47 +64,39 @@ const validEventFilters = [
 function skipEventBurstsFromDifferentUsersFromSameIp(
   events: PosthogEvent[],
 ): PosthogEvent[] {
-  const filteredEvents = [];
   const lastTimePerIpAndUser = new Map<string, moment.Moment>();
   const lastTimePerIp = new Map<string, moment.Moment>();
-  events.forEach((event) => {
-    let shouldSkip = false;
+  return events.filter((event) => {
     const eventIp = event.properties?.$ip;
+
+    if (!eventIp) return true;
+
     const eventTime = moment(event.timestamp);
-    if (eventIp) {
-      const eventIpAndUser = `${eventIp}:${event.distinct_id}`;
+    const eventIpAndUser = `${eventIp}:${event.distinct_id}`;
 
-      const areClose = (t1: moment.Moment, t2: moment.Moment): boolean => {
-        // NOTE: Why 25 hours? Empirically, we saw this number to remove these problematic
-        //   event bursts well. Also, it is just a bit over 24 hours, so if somebody
-        //   has daily CI happening every 24 hours, it should catch that also.
-        return t1 && t2 && Math.abs(t1.diff(t2, "hours")) < 25;
-      };
+    const areClose = (t1: moment.Moment, t2: moment.Moment): boolean => {
+      // NOTE: Why 25 hours? Empirically, we saw this number to remove these problematic
+      //   event bursts well. Also, it is just a bit over 24 hours, so if somebody
+      //   has daily CI happening every 24 hours, it should catch that also.
+      return t1 && t2 && Math.abs(t1.diff(t2, "hours")) < 25;
+    };
 
-      const thereIsRecentEventWithSameIpAndUser = areClose(
-        eventTime,
-        lastTimePerIpAndUser.get(eventIpAndUser),
-      );
-      const thereIsRecentEventWithSameIp = areClose(
-        eventTime,
-        lastTimePerIp.get(eventIp),
-      );
-      const thereAreRecentEventsWithSameIpButNotFromSameUser =
-        thereIsRecentEventWithSameIp && !thereIsRecentEventWithSameIpAndUser;
+    const thereIsRecentEventWithSameIpAndUser = areClose(
+      eventTime,
+      lastTimePerIpAndUser.get(eventIpAndUser),
+    );
+    const thereIsRecentEventWithSameIp = areClose(
+      eventTime,
+      lastTimePerIp.get(eventIp),
+    );
+    const thereAreRecentEventsWithSameIpButNotFromSameUser =
+      thereIsRecentEventWithSameIp && !thereIsRecentEventWithSameIpAndUser;
 
-      if (thereAreRecentEventsWithSameIpButNotFromSameUser) {
-        shouldSkip = true;
-      }
+    lastTimePerIp.set(eventIp, eventTime);
+    lastTimePerIpAndUser.set(eventIpAndUser, eventTime);
 
-      lastTimePerIp.set(eventIp, eventTime);
-      lastTimePerIpAndUser.set(eventIpAndUser, eventTime);
-    }
-
-    if (!shouldSkip) {
-      filteredEvents.push(event);
-    }
+    return !thereAreRecentEventsWithSameIpButNotFromSameUser;
   });
-  return filteredEvents;
 }
 
 export async function fetchEventsForReportGenerator() {
