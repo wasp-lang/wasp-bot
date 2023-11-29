@@ -69,7 +69,7 @@ function skipEventBurstsFromDifferentUsersFromSameIp(
   const lastTimePerIp = new Map<string, moment.Moment>();
   events.forEach((event) => {
     let shouldSkip = false;
-    const eventIp = event.properties?.$ip as string;
+    const eventIp = event.properties?.$ip;
     const eventTime = moment(event.timestamp);
     if (eventIp) {
       const eventIpAndUser = `${eventIp}:${event.distinct_id}`;
