@@ -8,7 +8,22 @@ const POSTHOG_KEY = process.env.WASP_POSTHOG_KEY;
 // POSTHOG_PROJECT_API_KEY is public, so it can be here.
 const POSTHOG_PROJECT_API_KEY = "CdDd2A0jKTI2vFAsrI9JWm3MqpOcgHz1bMyogAcwsE4";
 
-export async function fetchAllCliEvents() {
+export interface PosthogEvent {
+  distinct_id: string;
+  timestamp: Date;
+  event?: string;
+  properties?: {
+    os?: string;
+    is_build?: boolean;
+    wasp_version?: string;
+    project_hash?: string;
+    deploy_cmd_args?: string;
+    context?: string;
+    $ip?: string;
+  };
+}
+
+export async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
   console.log("Fetching all CLI events...");
 
   const cachedEvents = (await loadCachedEvents()) ?? [];
@@ -68,13 +83,17 @@ async function fetchEvents({
   eventType = undefined,
   after = undefined,
   before = undefined,
-}) {
+}: {
+  eventType?: string;
+  after?: Date;
+  before?: Date;
+}): Promise<{ events: PosthogEvent[]; isThereMore: boolean }> {
   // `token=` here specifies from which project to pull the events from.
   const params = {
     token: POSTHOG_PROJECT_API_KEY,
     ...(eventType && { event: eventType }),
-    ...(after && { after }),
-    ...(before && { before }),
+    ...(after && { after: after.toString() }),
+    ...(before && { before: before.toString() }),
   };
   const url = `https://app.posthog.com/api/event/?${new URLSearchParams(
     params,
@@ -102,7 +121,7 @@ const cachedEventsFilePath = "wasp-analytics-cached-events.json";
 // Newest event is first (index 0), and oldest event is last, and cached events are continuous,
 // in the sense that there is no events between the oldest and newest that is missing.
 // There might be missing events before or after though.
-async function loadCachedEvents() {
+async function loadCachedEvents(): Promise<PosthogEvent[]> {
   try {
     return JSON.parse(await fs.readFile(cachedEventsFilePath, "utf-8"));
   } catch (e) {
@@ -112,16 +131,16 @@ async function loadCachedEvents() {
 }
 
 // Expects events that follow the same rules as the ones returned by `loadCachedEvents()`.
-async function saveCachedEvents(events) {
+async function saveCachedEvents(events: PosthogEvent[]): Promise<void> {
   await fs.writeFile(cachedEventsFilePath, JSON.stringify(events), "utf-8");
 }
 
-function getOldestEventTimestampOrNull(events) {
+function getOldestEventTimestampOrNull(events: PosthogEvent[]): Date {
   if (events.length <= 0) return null;
   return events[events.length - 1].timestamp;
 }
 
-function getNewestEventTimestampOrNull(events) {
+function getNewestEventTimestampOrNull(events: PosthogEvent[]): Date {
   if (events.length <= 0) return null;
   return events[0].timestamp;
 }
