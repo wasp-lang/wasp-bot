@@ -83,11 +83,11 @@ function skipEventBurstsFromDifferentUsersFromSameIp(
 
       const thereIsRecentEventWithSameIpAndUser = areClose(
         eventTime,
-        lastTimePerIpAndUser[eventIpAndUser],
+        lastTimePerIpAndUser.get(eventIpAndUser),
       );
       const thereIsRecentEventWithSameIp = areClose(
         eventTime,
-        lastTimePerIp[eventIp],
+        lastTimePerIp.get(eventIp),
       );
       const thereAreRecentEventsWithSameIpButNotFromSameUser =
         thereIsRecentEventWithSameIp && !thereIsRecentEventWithSameIpAndUser;
@@ -96,9 +96,10 @@ function skipEventBurstsFromDifferentUsersFromSameIp(
         shouldSkip = true;
       }
 
-      lastTimePerIp[eventIp] = eventTime;
-      lastTimePerIpAndUser[eventIpAndUser] = eventTime;
+      lastTimePerIp.set(eventIp, eventTime);
+      lastTimePerIpAndUser.set(eventIpAndUser, eventTime);
     }
+
     if (!shouldSkip) {
       filteredEvents.push(event);
     }
