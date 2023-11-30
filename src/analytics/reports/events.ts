@@ -2,6 +2,8 @@ import * as _ from "lodash";
 
 import moment from "../moment";
 import { type PosthogEvent, fetchAllCliEvents } from "../events";
+import { addEventContextValue } from "../eventContext";
+import { executionEnvs } from "../executionEnvs";
 
 // These filters, when applyed to a list of events, remove
 // events that we don't want to go into analysis
@@ -50,26 +52,28 @@ const validEventFilters = [
  * What is typical for such situations however is that often such CI server will run from the persistent IP,
  * especially if homecooked (which is normally when we might not recognize it as CI).
  * Therefore, what we do here is detect bursts of events from same IP but from different users
- * and then throw those events away so they don't show as false positive new users.
+ * and then ensure those events are marked as CI so they don't show as false positive
+ * new users.
  *
- * This is not perfect, and we may throw away some valid events this way, for example
+ * This is not perfect, and we may wrongly mark some valid events this way, for example
  * if multiple people from the same place created Wasp projects (imagine classroom),
- * or if dynamic IP address got switched from one to another Wasp user and they used it one after another,
- * but these are rare cases and for now it seems to work quite well in practice -> it removes those
- * bursts that we detected and doesn't seem to cut the normal looking events too much in general.
+ * or if dynamic IP address got switched from one to another Wasp user and they used it
+ * one after another, but these are rare cases and for now it seems to work quite well
+ * in practice -> it removes those bursts that we detected and doesn't seem to cut the
+ * normal looking events too much in general.
  *
  * @param events List of all events, sorted from oldest to newwest.
- * @returns Events in the same order as in the input but with filtered out events that are part of "bursts".
+ * @returns Events from input but some of them newly marked as CI (in their context).
  */
-function skipEventBurstsFromDifferentUsersFromSameIp(
+function markAsCiEventBurstsFromDifferentUsersFromSameIp(
   events: PosthogEvent[],
 ): PosthogEvent[] {
   const lastTimePerIpAndUser = new Map<string, moment.Moment>();
   const lastTimePerIp = new Map<string, moment.Moment>();
-  return events.filter((event) => {
+  return events.map((event) => {
     const eventIp = event.properties?.$ip;
 
-    if (!eventIp) return true;
+    if (!eventIp) return event;
 
     const eventTime = moment(event.timestamp);
     const eventIpAndUser = `${eventIp}:${event.distinct_id}`;
@@ -95,7 +99,11 @@ function skipEventBurstsFromDifferentUsersFromSameIp(
     lastTimePerIp.set(eventIp, eventTime);
     lastTimePerIpAndUser.set(eventIpAndUser, eventTime);
 
-    return !thereAreRecentEventsWithSameIpButNotFromSameUser;
+    if (thereAreRecentEventsWithSameIpButNotFromSameUser) {
+      return addEventContextValue(event, executionEnvs.ci.contextKey);
+    } else {
+      return event;
+    }
   });
 }
 
@@ -106,7 +114,7 @@ export async function fetchEventsForReportGenerator() {
 
   const allEventsSorted = _.sortBy(allEvents, "timestamp");
 
-  const validEventsSorted = skipEventBurstsFromDifferentUsersFromSameIp(
+  const validEventsSorted = markAsCiEventBurstsFromDifferentUsersFromSameIp(
     validEventFilters.reduce((events, f) => events.filter(f), allEventsSorted),
   );
 
