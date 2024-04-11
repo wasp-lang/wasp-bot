@@ -45,21 +45,29 @@ export async function generateUserActivityReport(
   const ageRangesAverages = ageRanges.map((ageRange) =>
     Math.round(_.mean(uniqueLocalActiveUsersPerPeriodByAge.series[ageRange])),
   );
+
+  const tableOfActiveUsersPerPeriodByAgeCsv = [
+    ["", ...ageRanges, "ALL"],
+    ...uniqueLocalActiveUsersPerPeriodByAge.periodEnds.map((periodEnd, i) => {
+      const numUsersPerAge = ageRanges.map(
+        (ageRange) => uniqueLocalActiveUsersPerPeriodByAge.series[ageRange][i],
+      );
+      return [periodEnd, ...numUsersPerAge, _.sum(numUsersPerAge)];
+    }),
+  ];
+
   const tableOfActiveUsersPerPeriodByAge = newSimpleTable({
-    head: ["", ...ageRanges, "ALL"],
+    head: tableOfActiveUsersPerPeriodByAgeCsv[0],
     rows: [
-      ...uniqueLocalActiveUsersPerPeriodByAge.periodEnds.map((periodEnd, i) => {
-        const numUsersPerAge = ageRanges.map(
-          (ageRange) =>
-            uniqueLocalActiveUsersPerPeriodByAge.series[ageRange][i],
-        );
-        return {
-          [periodEnd]: [...numUsersPerAge, _.sum(numUsersPerAge)],
-        };
-      }),
+      ...tableOfActiveUsersPerPeriodByAgeCsv
+        .slice(1)
+        .map(([periodEnd, ...numUsersPerAgeAndSum]) => ({
+          [periodEnd]: numUsersPerAgeAndSum,
+        })),
       ["AVG", ...ageRangesAverages, _.sum(ageRangesAverages)],
     ],
   });
+
   const totalNumOfLocalUsersInLastPeriod = _.sum(
     Object.values(uniqueLocalActiveUsersPerPeriodByAge.series).map((series) =>
       _.last(series),
@@ -83,6 +91,7 @@ export async function generateUserActivityReport(
         `Num unique active users (per ${periodName})`,
         "bars",
       ),
+      csv: tableOfActiveUsersPerPeriodByAgeCsv,
     },
   ];
 

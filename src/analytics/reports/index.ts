@@ -1,3 +1,4 @@
+import moment from "../moment";
 export { fetchEventsForReportGenerator } from "./events";
 export { generateTotalReport } from "./totalReport";
 import { generatePeriodReport } from "./periodReport";
@@ -19,6 +20,19 @@ export async function generateWeeklyReport(
 export async function generateMonthlyReport(
   prefetchedEvents = undefined,
   numPeriods = undefined,
+  genCohortRetentionReport = true,
 ) {
-  return generatePeriodReport(numPeriods ?? 12, "month", prefetchedEvents);
+  return generatePeriodReport(
+    numPeriods ?? 12,
+    "month",
+    prefetchedEvents,
+    genCohortRetentionReport,
+  );
+}
+
+export async function generateAllTimeMonthlyReport(
+  prefetchedEvents = undefined,
+) {
+  const numMonths = moment().diff(moment("2021-01-01"), "months") + 1;
+  return generateMonthlyReport(prefetchedEvents, numMonths, false);
 }
