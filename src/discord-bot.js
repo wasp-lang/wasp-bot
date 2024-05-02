@@ -8,6 +8,7 @@ import { config as dotenvConfig } from "dotenv";
 
 import logger from "./utils/logger";
 import * as reports from "./analytics/reports";
+import { getAnalyticsErrorMessage } from "./analytics/errors";
 
 dotenvConfig();
 
@@ -43,29 +44,37 @@ export const start = () => {
       );
 
       await reportsChannel.send("⏳ Fetching analytics events...");
-      // By prefetching events, we can reuse them when generating multiple reports and not just daily ones.
-      // We retry it a couple of times because Posthog's API can sometimes be flaky.
-      // Good thing is that fetchEventsForReportGenerator caches the fetched events, so each time we try again,
-      // we are continuing from where we left off.
-      const events = await retry(
-        async () => {
-          return reports.fetchEventsForReportGenerator();
-        },
-        { retries: 3 },
-      );
+      try {
+        // By prefetching events, we can reuse them when generating multiple reports and not just daily ones.
+        // We retry it a couple of times because Posthog's API can sometimes be flaky.
+        // Good thing is that fetchEventsForReportGenerator caches the fetched events, so each time we try again,
+        // we are continuing from where we left off.
+        const events = await retry(
+          async () => {
+            return reports.fetchEventsForReportGenerator();
+          },
+          { retries: 3 },
+        );
 
-      // Send total and daily analytics report every day.
-      await sendAnalyticsReport(bot, "total", events);
-      await sendAnalyticsReport(bot, "daily", events);
+        // Send total and daily analytics report every day.
+        await sendAnalyticsReport(bot, "total", events);
+        await sendAnalyticsReport(bot, "daily", events);
 
-      // It today is Monday, also send weekly analytics report.
-      if (moment().isoWeekday() === 1) {
-        await sendAnalyticsReport(bot, "weekly", events);
-      }
+        // It today is Monday, also send weekly analytics report.
+        if (moment().isoWeekday() === 1) {
+          await sendAnalyticsReport(bot, "weekly", events);
+        }
 
-      // It today is first day of the month, also send monthly analytics report.
-      if (moment().date() === 1) {
-        await sendAnalyticsReport(bot, "monthly", events);
+        // It today is first day of the month, also send monthly analytics report.
+        if (moment().date() === 1) {
+          await sendAnalyticsReport(bot, "monthly", events);
+        }
+      } catch (e) {
+        logger.error(e);
+        const message = getAnalyticsErrorMessage(e);
+        await reportsChannel.send(
+          `Failed to send daily analytics report: ${message}`,
+        );
       }
     });
   });

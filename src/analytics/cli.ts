@@ -1,26 +1,27 @@
-import {
-  fetchEventsForReportGenerator,
-  generateTotalReport,
-  generateDailyReport,
-  generateWeeklyReport,
-  generateMonthlyReport,
-  generateAllTimeMonthlyReport,
-} from "./reports";
+import logger from "../utils/logger";
+import { getAnalyticsErrorMessage } from "./errors";
+import * as reports from "./reports";
+import * as retry from "async-retry";
 
 async function cliReport() {
-  const events = await fetchEventsForReportGenerator();
+  const events = await retry(
+    async () => {
+      return reports.fetchEventsForReportGenerator();
+    },
+    { retries: 3 },
+  );
 
   printTitle("TOTAL REPORT");
-  showReportInCLI(await generateTotalReport(events));
+  showReportInCLI(await reports.generateTotalReport(events));
 
   printTitle("DAILY REPORT");
-  showReportInCLI(await generateDailyReport(events));
+  showReportInCLI(await reports.generateDailyReport(events));
 
   printTitle("WEEKLY REPORT");
-  showReportInCLI(await generateWeeklyReport(events));
+  showReportInCLI(await reports.generateWeeklyReport(events));
 
   printTitle("MONTHLY REPORT");
-  showReportInCLI(await generateMonthlyReport(events));
+  showReportInCLI(await reports.generateMonthlyReport(events));
 
   printTitle("ALL TIME MONTHLY REPORT (CSVs)");
   await allTimeMonthlyActiveUsersAndProjectsCsvCliReport(events);
@@ -30,7 +31,7 @@ async function cliReport() {
 // while skipping cohort analytis because that would be too complex.
 // Useful for manually producing charts that show total progress of Wasp.
 async function allTimeMonthlyActiveUsersAndProjectsCsvCliReport(events) {
-  const report = await generateAllTimeMonthlyReport(events);
+  const report = await reports.generateAllTimeMonthlyReport(events);
 
   console.log("\n[CSV] Num active users");
   const activeUsersReport = report[0];
@@ -64,4 +65,7 @@ function printTitle(text) {
   console.log(`\x1b[33m \n\n${text} \x1b[0m`);
 }
 
-cliReport();
+cliReport().catch((e) => {
+  const message = getAnalyticsErrorMessage(e);
+  logger.error(message);
+});
