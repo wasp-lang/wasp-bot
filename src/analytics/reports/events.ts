@@ -4,6 +4,7 @@ import moment from "../moment";
 import { type PosthogEvent, fetchAllCliEvents } from "../events";
 import { addEventContextValue } from "../eventContext";
 import { executionEnvs } from "../executionEnvs";
+import * as retry from "async-retry";
 
 // These filters, when applyed to a list of events, remove
 // events that we don't want to go into analysis
@@ -108,15 +109,25 @@ function markAsCiEventBurstsFromDifferentUsersFromSameIp(
 }
 
 export async function fetchEventsForReportGenerator() {
-  const allEvents = await fetchAllCliEvents();
+  // We retry it a couple of times because Posthog's API can sometimes be flaky.
+  // Good thing is that fetchAllCliEvents caches the fetched events, so each time we try again,
+  // we are continuing from where we left off.
+  const allEvents = await retry(
+    async () => {
+      return fetchAllCliEvents();
+    },
+    { retries: 3 },
+  );
 
   console.log("\nNumber of CLI events fetched:", allEvents.length);
 
   const allEventsSorted = _.sortBy(allEvents, "timestamp");
 
-  const validEventsSorted = markAsCiEventBurstsFromDifferentUsersFromSameIp(
+  const validEvents = markAsCiEventBurstsFromDifferentUsersFromSameIp(
     validEventFilters.reduce((events, f) => events.filter(f), allEventsSorted),
   );
 
-  return _.sortBy(validEventsSorted, "timestamp");
+  const validEventsSorted = _.sortBy(validEvents, "timestamp");
+
+  return validEventsSorted;
 }

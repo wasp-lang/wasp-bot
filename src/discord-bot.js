@@ -1,7 +1,6 @@
 import * as Discord from "discord.js";
 import * as schedule from "node-schedule";
 import * as Quote from "inspirational-quotes";
-import * as retry from "async-retry";
 import * as moment from "moment";
 
 import { config as dotenvConfig } from "dotenv";
@@ -46,15 +45,7 @@ export const start = () => {
       await reportsChannel.send("⏳ Fetching analytics events...");
       try {
         // By prefetching events, we can reuse them when generating multiple reports and not just daily ones.
-        // We retry it a couple of times because Posthog's API can sometimes be flaky.
-        // Good thing is that fetchEventsForReportGenerator caches the fetched events, so each time we try again,
-        // we are continuing from where we left off.
-        const events = await retry(
-          async () => {
-            return reports.fetchEventsForReportGenerator();
-          },
-          { retries: 3 },
-        );
+        const events = await reports.fetchEventsForReportGenerator();
 
         // Send total and daily analytics report every day.
         await sendAnalyticsReport(bot, "total", events);

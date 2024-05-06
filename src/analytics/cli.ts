@@ -1,15 +1,9 @@
 import logger from "../utils/logger";
 import { getAnalyticsErrorMessage } from "./errors";
 import * as reports from "./reports";
-import * as retry from "async-retry";
 
 async function cliReport() {
-  const events = await retry(
-    async () => {
-      return reports.fetchEventsForReportGenerator();
-    },
-    { retries: 3 },
-  );
+  const events = await reports.fetchEventsForReportGenerator();
 
   printTitle("TOTAL REPORT");
   showReportInCLI(await reports.generateTotalReport(events));
