@@ -63,12 +63,7 @@ export async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
     allNewEventsFetched = !isThereMore;
   }
   events = [...newEvents, ...events];
-  // Why do we want to delete the cache?
-  // - If we see something is off in Discord, we can retry getting
-  //   the analytics and this way we can be sure we are not using
-  //   some old cache
-  // - Heroku restarts dynos, so the cache gets lost at least once a day https://arc.net/l/quote/txwxmzje
-  await deleteCachedEvents();
+  await saveCachedEvents(events);
 
   console.log("All events fetched!");
   return events;
@@ -138,14 +133,6 @@ async function loadCachedEvents(): Promise<PosthogEvent[]> {
 // Expects events that follow the same rules as the ones returned by `loadCachedEvents()`.
 async function saveCachedEvents(events: PosthogEvent[]): Promise<void> {
   await fs.writeFile(cachedEventsFilePath, JSON.stringify(events), "utf-8");
-}
-
-async function deleteCachedEvents(): Promise<void> {
-  try {
-    await fs.unlink(cachedEventsFilePath);
-  } catch (e: unknown) {
-    console.error("Failed to delete cached events file: ", e);
-  }
 }
 
 function getOldestEventTimestampOrNull(events: PosthogEvent[]): Date {
