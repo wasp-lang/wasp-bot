@@ -1,6 +1,7 @@
 import axios from "axios";
 import { promises as fs } from "fs";
 import { config as dotenvConfig } from "dotenv";
+import { downloadFileFromStorage, uploadFileToStorage } from "./storage";
 
 dotenvConfig();
 
@@ -43,9 +44,9 @@ export async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
       before: getOldestEventTimestampOrNull(events),
     });
     events = [...events, ...fetchedEvents];
-    await saveCachedEvents(events);
     allOldEventsFetched = !isThereMore;
   }
+  await saveCachedEvents(events);
 
   // We fetch any events newer than the currently newest event we already have.
   // They are fetched starting with the newest ones and going backwards.
@@ -123,6 +124,16 @@ const cachedEventsFilePath = "wasp-analytics-cached-events.json";
 // There might be missing events before or after though.
 async function loadCachedEvents(): Promise<PosthogEvent[]> {
   try {
+    await downloadFileFromStorage(
+      "wasp-analytics-cached-events.json",
+      cachedEventsFilePath,
+    );
+  } catch (e: unknown) {
+    // Log and continue
+    console.error(e);
+  }
+
+  try {
     return JSON.parse(await fs.readFile(cachedEventsFilePath, "utf-8"));
   } catch (e) {
     if (e.code === "ENOENT") return [];
@@ -133,6 +144,10 @@ async function loadCachedEvents(): Promise<PosthogEvent[]> {
 // Expects events that follow the same rules as the ones returned by `loadCachedEvents()`.
 async function saveCachedEvents(events: PosthogEvent[]): Promise<void> {
   await fs.writeFile(cachedEventsFilePath, JSON.stringify(events), "utf-8");
+  await uploadFileToStorage(
+    "wasp-analytics-cached-events.json",
+    cachedEventsFilePath,
+  );
 }
 
 function getOldestEventTimestampOrNull(events: PosthogEvent[]): Date {
