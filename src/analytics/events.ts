@@ -1,12 +1,15 @@
 import axios from "axios";
 import { promises as fs } from "fs";
 import { config as dotenvConfig } from "dotenv";
+import moment from "./moment";
 
 dotenvConfig();
 
 const POSTHOG_KEY = process.env.WASP_POSTHOG_KEY;
 // POSTHOG_PROJECT_API_KEY is public, so it can be here.
 const POSTHOG_PROJECT_API_KEY = "CdDd2A0jKTI2vFAsrI9JWm3MqpOcgHz1bMyogAcwsE4";
+
+const OLDEST_EVENT_TIMESTAMP = "2021-01-22T19:42:56.684632+00:00";
 
 export interface PosthogEvent {
   distinct_id: string;
@@ -65,6 +68,21 @@ export async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
   events = [...newEvents, ...events];
   await saveCachedEvents(events);
 
+  // NOTE: Sometimes, likely due to rate limiting from PostHog side, `isThereMore` will falsely be
+  //   set to `false` even when there is more data. To handle that, we check here if we actually got
+  //   all the events, by checking if the oldest event we fetched is indeed old enough.
+  const oldestFetchedEventTimestamp = getOldestEventTimestampOrNull(events);
+  const didWeFetchAllOldEvents =
+    !!oldestFetchedEventTimestamp &&
+    moment(oldestFetchedEventTimestamp).isSameOrBefore(
+      moment(OLDEST_EVENT_TIMESTAMP),
+    );
+  if (!didWeFetchAllOldEvents) {
+    throw new Error(
+      "Not all events have been fetched: PostHog likely rate-limited us.",
+    );
+  }
+
   console.log("All events fetched!");
   return events;
 }
@@ -78,6 +96,12 @@ export async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
  * timestamp of the oldest event that was returned in the previous call to fetchEvents().
  * All of the arguments are optional.
  * If `after` or `before` are not provided, then corresponding restriction on age of events is not set.
+ * NOTE: We are using old PostHog API here, and while it works, sometimes it will return `null` for `next`
+ *   even though there actually is more data left. So it gives incorrect response in that sense!
+ *   When that happens, `isThereMore` will be `false` even though it should be `true`.
+ *   This usually happens after we did a fair amount of requests, so it is probably happening because
+ *   of the rate limiting from their side, but it manifests in this weird/bad way.
+ *   TODO: We should switch to newer API.
  */
 async function fetchEvents({
   eventType = undefined,
