@@ -73,7 +73,7 @@ export async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
   //   all the events, by checking if the oldest event we fetched is indeed old enough.
   const oldestFetchedEventTimestamp = getOldestEventTimestampOrNull(events);
   const didWeFetchAllOldEvents =
-    oldestFetchedEventTimestamp &&
+    !!oldestFetchedEventTimestamp &&
     moment(oldestFetchedEventTimestamp).isSameOrBefore(
       moment(OLDEST_EVENT_TIMESTAMP),
     );
