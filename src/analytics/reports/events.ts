@@ -116,7 +116,17 @@ export async function fetchEventsForReportGenerator() {
     async () => {
       return fetchAllCliEvents();
     },
-    { retries: 3 },
+    {
+      retries: 10,
+      minTimeout: 5 * 1000,
+      maxTimeout: 60 * 1000,
+      onRetry: (e) => {
+        console.error(
+          "Error happened while fetching events for report generator, trying again:",
+          e.message ?? e,
+        );
+      },
+    },
   );
 
   console.log("\nNumber of CLI events fetched:", allEvents.length);
