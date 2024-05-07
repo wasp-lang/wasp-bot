@@ -72,10 +72,12 @@ export async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
   //   set to `false` even when there is more data. To handle that, we check here if we actually got
   //   all the events, by checking if the oldest event we fetched is indeed old enough.
   const oldestFetchedEventTimestamp = getOldestEventTimestampOrNull(events);
-  if (
-    oldestFetchedEventTimestamp === null ||
-    moment(oldestFetchedEventTimestamp).isAfter(moment(OLDEST_EVENT_TIMESTAMP))
-  ) {
+  const didWeFetchAllOldEvents =
+    oldestFetchedEventTimestamp &&
+    moment(oldestFetchedEventTimestamp).isSameOrBefore(
+      moment(OLDEST_EVENT_TIMESTAMP),
+    );
+  if (!didWeFetchAllOldEvents) {
     throw new Error(
       "Not all events have been fetched: PostHog likely rate-limited us.",
     );
