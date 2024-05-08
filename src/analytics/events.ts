@@ -116,6 +116,7 @@ async function fetchEvents({
 
 // NOTE: This file is gitignored. If you change its name, update it also in gitignore.
 const cachedEventsFilePath = "wasp-analytics-cached-events.json";
+const cacheedEventsRemotePath = "wasp-analytics-cached-events.json";
 
 // Returns: [PosthogEvent]
 // where events are guaranteed to be continuous, with no missing events between the cached events.
@@ -125,12 +126,12 @@ const cachedEventsFilePath = "wasp-analytics-cached-events.json";
 async function loadCachedEvents(): Promise<PosthogEvent[]> {
   try {
     await downloadFileFromStorage(
-      "wasp-analytics-cached-events.json",
+      cacheedEventsRemotePath,
       cachedEventsFilePath,
     );
   } catch (e: unknown) {
     // Log and continue
-    console.error(e);
+    console.error("Error while downloading cache from S3", e);
   }
 
   try {
@@ -144,10 +145,12 @@ async function loadCachedEvents(): Promise<PosthogEvent[]> {
 // Expects events that follow the same rules as the ones returned by `loadCachedEvents()`.
 async function saveCachedEvents(events: PosthogEvent[]): Promise<void> {
   await fs.writeFile(cachedEventsFilePath, JSON.stringify(events), "utf-8");
-  await uploadFileToStorage(
-    "wasp-analytics-cached-events.json",
-    cachedEventsFilePath,
-  );
+  try {
+    await uploadFileToStorage(cacheedEventsRemotePath, cachedEventsFilePath);
+  } catch (e: unknown) {
+    // Log and continue
+    console.error("Error while uploading cache to S3", e);
+  }
 }
 
 function getOldestEventTimestampOrNull(events: PosthogEvent[]): Date {

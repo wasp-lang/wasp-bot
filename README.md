@@ -13,6 +13,9 @@ Copy env.example to .env and fill it with your PostHog API key and Discord bot t
 
 Both are needed to run bot locally, but only PostHog API key is needed to run just analytics locally.
 
+Also, if you want to use the S3 storage to store the cache file, fill in the S3 credentials as well. This is useful if you want to
+test the S3 storage locally.
+
 ### Installation
 
 Run `npm install` for the first time or after any changes in npm deps.
