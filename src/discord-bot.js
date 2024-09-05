@@ -2,6 +2,7 @@ import * as Discord from "discord.js";
 import * as schedule from "node-schedule";
 import * as Quote from "inspirational-quotes";
 import * as moment from "moment";
+import * as _ from "lodash";
 
 import { config as dotenvConfig } from "dotenv";
 
@@ -259,12 +260,28 @@ const initiateDailyStandup = async (bot) => {
     DAILY_STANDUP_CHANNEL_ID,
   );
 
-  const wisdom = ((q) => `${q.text} | ${q.author}`)(Quote.getQuote());
+  const wisdomQuote = ((q) => `${q.text} | ${q.author}`)(Quote.getQuote());
+  const waspQuote = ((q) => `${q[0]} | ${q[1]}`)(
+    _.sample([
+      ["No hour of life is wasted that is spent in the saddle.", "Vince"],
+      ["Food nourishes the body, but meetings nourish the soul.", "Filip"],
+      ["Shirt is just a social construct.", "Miho"],
+      [
+        "Don't be too dogmatic, unless we're talking about Dogma the beer brewery.",
+        "Milica, wannabe home brewer",
+      ],
+      ["Let's send them some swag! Martin will take care of it.", "Matija"][
+        ("I don't have time to review PRs but it seems I do have time to implement these silly quotes.",
+        "Martin")
+      ],
+    ]),
+  );
+  const quote = Math.random() < 0.1 ? waspQuote : wisdomQuote;
 
   dailyStandupChannel.send(
     "☀️ Time for daily standup!" +
       "\nHow was your day yesterday, what are you working on today, and what are the challenges you are encountering?" +
-      "\n\n💡 Daily fun/wisdom: " +
-      wisdom,
+      "\n\n💡 Daily quote: " +
+      quote,
   );
 };
