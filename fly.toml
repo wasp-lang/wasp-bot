@@ -1,0 +1,16 @@
+# fly.toml app configuration file generated for wasp-bot on 2024-12-21T10:28:44+01:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'wasp-bot'
+primary_region = 'fra'
+
+[mounts]
+destination = "/data"
+source = "wasp_bot_storage"
+
+[[vm]]
+cpu_kind = 'shared'
+cpus = 1
+memory = '1gb'
