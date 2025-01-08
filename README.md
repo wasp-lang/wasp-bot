@@ -27,8 +27,11 @@ Run `npm run buildAndCalcAnalytics` to run analytics manually and get the report
 
 ### Deployment
 
-Deployed instance of server is running on Heroku. Whatever you push to `production` branch automatically gets re-deployed to Heroku.
+The bot is deployed to [Fly](https://fly.io/). The `fly.toml` file contains the configuration for the deployment. The Fly deployoment uses the `Dockerfile` to build the image.
 
-Heroku cares about `Procfile` that we have in the root of the project, and will run the command there to start the project once deployed.
+The bot is deployed automatically on every push to the `production` branch. You can also deploy with the Fly CLI by running `fly deploy`.
 
-Heroku knows it is a node project, so it will run `npm install` when deploying it, which will also run `npm run postinstall`, which is why it all works, because `npm run postinstall` does building (of TS).
+The Fly.io server on which wasp-bot is deployed has a persistent volume attached to it called `wasp_bot_storage` mounted at `/data` dir, in order to persist the cached analytics events from Posthog between deployments.
+Our Wasp-bot app provides the `WASP_ANALYTICS_CACHED_EVENTS_JSON_PATH` environment variable, which in this case we set to point to `/data/wasp-analytics-cached-events.json`.
+
+You can check production app logs with `fly logs` and SSH into the app container with `fly ssh console`.

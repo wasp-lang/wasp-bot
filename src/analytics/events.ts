@@ -11,6 +11,10 @@ const POSTHOG_PROJECT_API_KEY = "CdDd2A0jKTI2vFAsrI9JWm3MqpOcgHz1bMyogAcwsE4";
 
 const OLDEST_EVENT_TIMESTAMP = "2021-01-22T19:42:56.684632+00:00";
 
+const CACHE_FILE_PATH =
+  process.env.WASP_ANALYTICS_CACHED_EVENTS_JSON_PATH ??
+  "./wasp-analytics-cached-events.json";
+
 export interface PosthogEvent {
   distinct_id: string;
   timestamp: Date;
@@ -137,9 +141,6 @@ async function fetchEvents({
   };
 }
 
-// NOTE: This file is gitignored. If you change its name, update it also in gitignore.
-const cachedEventsFilePath = "wasp-analytics-cached-events.json";
-
 // Returns: [PosthogEvent]
 // where events are guaranteed to be continuous, with no missing events between the cached events.
 // Newest event is first (index 0), and oldest event is last, and cached events are continuous,
@@ -147,7 +148,7 @@ const cachedEventsFilePath = "wasp-analytics-cached-events.json";
 // There might be missing events before or after though.
 async function loadCachedEvents(): Promise<PosthogEvent[]> {
   try {
-    return JSON.parse(await fs.readFile(cachedEventsFilePath, "utf-8"));
+    return JSON.parse(await fs.readFile(CACHE_FILE_PATH, "utf-8"));
   } catch (e) {
     if (e.code === "ENOENT") return [];
     throw e;
@@ -156,7 +157,7 @@ async function loadCachedEvents(): Promise<PosthogEvent[]> {
 
 // Expects events that follow the same rules as the ones returned by `loadCachedEvents()`.
 async function saveCachedEvents(events: PosthogEvent[]): Promise<void> {
-  await fs.writeFile(cachedEventsFilePath, JSON.stringify(events), "utf-8");
+  await fs.writeFile(CACHE_FILE_PATH, JSON.stringify(events), "utf-8");
 }
 
 function getOldestEventTimestampOrNull(events: PosthogEvent[]): Date {
