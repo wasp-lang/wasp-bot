@@ -11,11 +11,9 @@ const POSTHOG_PROJECT_API_KEY = "CdDd2A0jKTI2vFAsrI9JWm3MqpOcgHz1bMyogAcwsE4";
 
 const OLDEST_EVENT_TIMESTAMP = "2021-01-22T19:42:56.684632+00:00";
 
-if (!process.env.CACHE_FILE_PATH) {
-  throw new Error("Missing CACHE_FILE_PATH in .env");
-}
-
-const CACHE_FILE_PATH = process.env.CACHE_FILE_PATH;
+const CACHE_FILE_PATH =
+  process.env.WASP_ANALYTICS_CACHED_EVENTS_JSON_PATH ??
+  "./wasp-analytics-cached-events.json";
 
 export interface PosthogEvent {
   distinct_id: string;

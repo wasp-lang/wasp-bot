@@ -24,5 +24,4 @@ RUN addgroup --system --gid 1001 nodejs \
 
 USER discordbot
 
-# Command to run the app
 CMD ["npm", "run", "start"]

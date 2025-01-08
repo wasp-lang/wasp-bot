@@ -31,6 +31,6 @@ The bot is deployed to [Fly](https://fly.io/). The `fly.toml` file contains the 
 
 The bot is deployed automatically on every push to the `production` branch. You can also deploy with the Fly CLI by running `fly deploy`.
 
-The deployed bot has a persistent volume attached to it called `wasp_bot_storage` mounted at `/data` to keep the cache between deployments. We configured the `CACHE_FILE_PATH` environment variable to point to `/data/wasp-analytics-cached-events.json`.
+The deployed bot has a persistent volume attached to it called `wasp_bot_storage` mounted at `/data` to keep the cache between deployments. We configured the `WASP_ANALYTICS_CACHED_EVENTS_JSON_PATH` environment variable to point to `/data/wasp-analytics-cached-events.json`.
 
 You can check production app logs with `fly logs` and SSH into the app container with `fly ssh console`.
