@@ -14,6 +14,10 @@ export const executionEnvs = {
     name: "GH Codespaces",
   },
   ci: { contextKey: "ci", name: "CI" },
+  nonInteractiveShell: {
+    contextKey: "non_interactive_shell",
+    name: "Non-interactive shell",
+  },
 };
 
 // Organize events by the execution env:

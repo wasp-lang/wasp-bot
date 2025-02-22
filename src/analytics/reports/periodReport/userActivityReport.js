@@ -80,7 +80,7 @@ export async function generateUserActivityReport(
         "==== Unique Active Users ====",
         `During last ${periodName}:`,
         `- Local: ${totalNumOfLocalUsersInLastPeriod}`,
-        `- Cloud: ${prettyNonLocalMetrics}`,
+        `- Other: ${prettyNonLocalMetrics}`,
         `Table "Num unique active users per ${periodName} by age":`,
         "```",
         tableOfActiveUsersPerPeriodByAge.toString(),
