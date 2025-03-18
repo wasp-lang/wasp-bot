@@ -13,4 +13,4 @@ source = "wasp_bot_storage"
 [[vm]]
 cpu_kind = 'shared'
 cpus = 1
-memory = '1gb'
+memory = '2gb'
