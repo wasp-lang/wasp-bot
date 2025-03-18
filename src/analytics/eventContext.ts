@@ -5,7 +5,12 @@ import { type PosthogEvent } from "./events";
  * @returns Context values, all lowercase strings.
  */
 export function getEventContextValues(event: PosthogEvent): string[] {
-  return event.properties.context?.split(" ").map((v) => v.toLowerCase()) ?? [];
+  return (
+    event.properties.context
+      ?.split(" ")
+      .filter((str) => str !== "")
+      .map((v) => v.toLowerCase()) ?? []
+  );
 }
 
 export function setEventContextValues(
