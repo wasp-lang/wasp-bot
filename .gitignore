@@ -1,5 +1,5 @@
 node_modules/
-.env
+.env*
 wasp-analytics-cached-events.json
 dist/
 .DS_STORE

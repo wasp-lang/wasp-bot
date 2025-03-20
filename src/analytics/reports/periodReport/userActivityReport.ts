@@ -1,27 +1,33 @@
-import * as _ from "lodash";
+import _ from "lodash";
 
-import { newSimpleTable } from "../../table";
+import { buildUserActivityChartImageUrl } from "../../charts";
 import {
   executionEnvs,
   groupEventsByExecutionEnv,
   showPrettyMetrics,
 } from "../../executionEnvs";
-import { buildChartImageUrl } from "../../charts";
-
+import { newSimpleTable } from "../../table";
+import {
+  ChartData,
+  ExecutionPosthogEvent,
+  Period,
+  PeriodName,
+  PosthogEvent,
+  WaspReport,
+} from "../../types";
 import { fetchEventsForReportGenerator } from "../events";
-import { groupEventsByUser, calcUserAgeInDays } from "../utils";
-
+import { calcUserAgeInDays, groupEventsByUser } from "../utils";
 import {
   calcLastNPeriods,
   getActiveUserIdsInPeriod,
   groupEventsByPeriods,
-} from "./common";
+} from "./period";
 
 export async function generateUserActivityReport(
-  numPeriods,
-  periodName,
-  prefetchedEvents = undefined,
-) {
+  numPeriods: number,
+  periodName: PeriodName,
+  prefetchedEvents: PosthogEvent[] | undefined = undefined,
+): Promise<WaspReport[]> {
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
   const periods = calcLastNPeriods(numPeriods, periodName);
 
@@ -86,10 +92,9 @@ export async function generateUserActivityReport(
         tableOfActiveUsersPerPeriodByAge.toString(),
         "```",
       ],
-      chart: buildChartImageUrl(
+      chart: buildUserActivityChartImageUrl(
         uniqueLocalActiveUsersPerPeriodByAge,
         `Num unique active users (per ${periodName})`,
-        "bars",
       ),
       csv: tableOfActiveUsersPerPeriodByAgeCsv,
     },
@@ -100,12 +105,12 @@ export async function generateUserActivityReport(
 
 function calcUniqueNonLocalEventsInPeriod(periods, eventsByEnv) {
   const uniqueNonLocalEventsInPeriod = {};
-  for (let envKey of Object.keys(executionEnvs)) {
+  for (const envKey of Object.keys(executionEnvs)) {
     const events = eventsByEnv[envKey] ?? [];
     uniqueNonLocalEventsInPeriod[envKey] = getActiveUserIdsInPeriod(
       events,
       _.last(periods),
-    ).length;
+    ).size;
   }
   return uniqueNonLocalEventsInPeriod;
 }
@@ -113,16 +118,19 @@ function calcUniqueNonLocalEventsInPeriod(periods, eventsByEnv) {
 // The main metric we are calculating -> for each period, number of unique users, grouped by age (of usage).
 // We return it ready for displaying via chart or table.
 // Takes list of all events, ends of all periods, and period duration.
-function calcNumActiveUsersPerPeriodByAge(userEvents, periods) {
-  const numUniqueActiveUsersPerPeriodByAge = {
+function calcNumActiveUsersPerPeriodByAge(
+  userEvents: ExecutionPosthogEvent[],
+  periods: Period[],
+) {
+  const numUniqueActiveUsersPerPeriodByAge: ChartData = {
     // All series have the same length, which is the length of .periodEnds.
     series: {
-      ">30d": [], // [number]
+      ">30d": [],
       "(7, 30]d": [],
       "(1, 7]d": [],
       "<=1d": [],
     },
-    periodEnds: [], // [string] where strings are dates formatted as YY-MM-DD.
+    periodEnds: [], // strings formatted as YY-MM-DD.
   };
 
   const eventsByPeriods = groupEventsByPeriods(userEvents, periods);

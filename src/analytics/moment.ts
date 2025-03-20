@@ -1,4 +1,4 @@
-import * as moment from "moment";
+import moment from "moment";
 
 // Here we set moment to use ISO-8601, Europe locale.
 moment.updateLocale("en", {

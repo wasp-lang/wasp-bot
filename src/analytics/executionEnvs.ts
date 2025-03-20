@@ -1,6 +1,7 @@
-import * as _ from "lodash";
+import _ from "lodash";
 
 import { getEventContextValues } from "./eventContext";
+import { ExecutionPosthogEvent, PosthogEvent } from "./types";
 
 // Defines all non-local execution environemnts from which Wasp CLI sends
 // telemetry data to PostHog.
@@ -14,15 +15,15 @@ export const executionEnvs = {
     name: "GH Codespaces",
   },
   ci: { contextKey: "ci", name: "CI" },
-};
+} as const;
 
 // Organize events by the execution env:
 //   - non-local: e.g. Replit, Gitpod, Github Codepsaces, CI, ... .
 //   - local: User running Wasp on their computer.
-export function groupEventsByExecutionEnv(events) {
+export function groupEventsByExecutionEnv(events: PosthogEvent[]) {
   const eventsWithExecutionEnv = events.map((e) => {
     const executionEnv = getExecutionEnvFromEventContext(e);
-    return { ...e, _executionEnv: executionEnv };
+    return { ...e, _executionEnv: executionEnv } as ExecutionPosthogEvent;
   });
   const [localEvents, nonLocalEvents] = _.partition(
     eventsWithExecutionEnv,
@@ -39,9 +40,9 @@ export function groupEventsByExecutionEnv(events) {
   };
 }
 
-function getExecutionEnvFromEventContext(event) {
+function getExecutionEnvFromEventContext(event: PosthogEvent): string | null {
   const contextValues = getEventContextValues(event);
-  for (let [key, actor] of Object.entries(executionEnvs)) {
+  for (const [key, actor] of Object.entries(executionEnvs)) {
     if (contextValues.includes(actor.contextKey)) {
       return key;
     }

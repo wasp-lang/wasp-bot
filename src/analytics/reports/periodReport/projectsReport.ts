@@ -1,16 +1,17 @@
+import { groupEventsByExecutionEnv } from "../../executionEnvs";
 import moment from "../../moment";
 import { newSimpleTable } from "../../table";
-import { groupEventsByExecutionEnv } from "../../executionEnvs";
+import { PeriodName, PosthogEvent, WaspReport } from "../../types";
 import { fetchEventsForReportGenerator } from "../events";
 import { groupEventsByProject } from "../utils";
 
-import { calcLastNPeriods } from "./common";
+import { calcLastNPeriods } from "./period";
 
 export async function generatePeriodProjectsReport(
-  numPeriods,
-  periodName,
-  prefetchedEvents = undefined,
-) {
+  numPeriods: number,
+  periodName: PeriodName,
+  prefetchedEvents: PosthogEvent[] | undefined = undefined,
+): Promise<WaspReport[]> {
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
 
   const { localEvents } = groupEventsByExecutionEnv(events);

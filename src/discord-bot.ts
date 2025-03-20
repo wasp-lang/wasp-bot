@@ -1,14 +1,14 @@
 import * as Discord from "discord.js";
-import * as schedule from "node-schedule";
 import * as Quote from "inspirational-quotes";
-import * as moment from "moment";
-import * as _ from "lodash";
+import _ from "lodash";
+import moment from "moment";
+import * as schedule from "node-schedule";
 
 import { config as dotenvConfig } from "dotenv";
 
-import logger from "./utils/logger";
-import * as reports from "./analytics/reports";
 import { getAnalyticsErrorMessage } from "./analytics/errors";
+import * as reports from "./analytics/reports";
+import logger from "./utils/logger";
 
 dotenvConfig();
 
@@ -19,7 +19,7 @@ const DAILY_STANDUP_CHANNEL_ID = "842082539720146975";
 const GUEST_ROLE_ID = "812299047175716934";
 const INTRODUCTIONS_CHANNEL_ID = "689916376542085170";
 
-const timezone = "Europe/Zagreb";
+const timezone = "Europe/Zagreb" as const;
 
 export const start = () => {
   const bot = new Discord.Client({});
@@ -107,7 +107,7 @@ const handleMessage = async (bot, msg) => {
   }
 
   function getNumPeriodsFromAnalyticsCmd(cmd) {
-    let match = cmd.match(/numPeriods\s*=\s*(\d+)/);
+    const match = cmd.match(/numPeriods\s*=\s*(\d+)/);
     if (match) {
       return parseInt(match[1]);
     }
@@ -244,7 +244,7 @@ const sendAnalyticsReport = async (
     let embed = undefined;
     if (metric.chart) {
       embed = new Discord.MessageEmbed();
-      embed.setImage(metric.chart.toURL());
+      embed.setImage(metric.chart);
     }
 
     waspTeamTextChannel.send(text, embed);
@@ -270,9 +270,10 @@ const initiateDailyStandup = async (bot) => {
         "Don't be too dogmatic, unless we're talking about Dogma the beer brewery.",
         "Milica, wannabe home brewer",
       ],
-      ["Let's send them some swag! Martin will take care of it.", "Matija"][
-        ("I don't have time to review PRs but it seems I do have time to implement these silly quotes.",
-        "Martin")
+      ["Let's send them some swag! Martin will take care of it.", "Matija"],
+      [
+        "I don't have time to review PRs but it seems I do have time to implement these silly quotes.",
+        "Martin",
       ],
     ]),
   );
