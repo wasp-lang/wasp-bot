@@ -9,10 +9,10 @@ import {
 import { newSimpleTable } from "../../table";
 import {
   ChartData,
-  ExecutionPosthogEvent,
   Period,
   PeriodName,
   PosthogEvent,
+  PosthogEventWithExecutionEnv,
   WaspReport,
 } from "../../types";
 import { fetchEventsForReportGenerator } from "../events";
@@ -115,11 +115,13 @@ function calcUniqueNonLocalEventsInPeriod(periods, eventsByEnv) {
   return uniqueNonLocalEventsInPeriod;
 }
 
-// The main metric we are calculating -> for each period, number of unique users, grouped by age (of usage).
-// We return it ready for displaying via chart or table.
-// Takes list of all events, ends of all periods, and period duration.
+/**
+ * Calculates the number of unique active users per period, grouped by their age of usage.
+ * The main metric we are calculating -> for each period, number of unique users, grouped by age (of usage).
+ * Returns data ready for displaying via chart or table.
+ */
 function calcNumActiveUsersPerPeriodByAge(
-  userEvents: ExecutionPosthogEvent[],
+  userEvents: PosthogEventWithExecutionEnv[],
   periods: Period[],
 ) {
   const numUniqueActiveUsersPerPeriodByAge: ChartData = {

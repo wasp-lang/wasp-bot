@@ -1,7 +1,7 @@
 import _ from "lodash";
 
 import { getEventContextValues } from "./eventContext";
-import { ExecutionPosthogEvent, PosthogEvent } from "./types";
+import { PosthogEvent, PosthogEventWithExecutionEnv } from "./types";
 
 // Defines all non-local execution environemnts from which Wasp CLI sends
 // telemetry data to PostHog.
@@ -23,7 +23,10 @@ export const executionEnvs = {
 export function groupEventsByExecutionEnv(events: PosthogEvent[]) {
   const eventsWithExecutionEnv = events.map((e) => {
     const executionEnv = getExecutionEnvFromEventContext(e);
-    return { ...e, _executionEnv: executionEnv } as ExecutionPosthogEvent;
+    return {
+      ...e,
+      _executionEnv: executionEnv,
+    } as PosthogEventWithExecutionEnv;
   });
   const [localEvents, nonLocalEvents] = _.partition(
     eventsWithExecutionEnv,

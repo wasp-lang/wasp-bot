@@ -15,7 +15,7 @@ export type PosthogEvent = {
   };
 };
 
-export type ExecutionPosthogEvent = PosthogEvent & {
+export type PosthogEventWithExecutionEnv = PosthogEvent & {
   _executionEnv: string | null;
 };
 
