@@ -1,28 +1,34 @@
 import moment from "../moment";
+import { PosthogEvent } from "../types";
+import { generatePeriodReport } from "./periodReport";
 export { fetchEventsForReportGenerator } from "./events";
 export { generateTotalReport } from "./totalReport";
-import { generatePeriodReport } from "./periodReport";
 
 export async function generateDailyReport(
-  prefetchedEvents = undefined,
-  numPeriods = undefined,
+  prefetchedEvents: PosthogEvent[] | undefined = undefined,
+  numPeriods: number | undefined = undefined,
 ) {
-  return generatePeriodReport(numPeriods ?? 14, "day", prefetchedEvents, false);
+  return await generatePeriodReport(
+    numPeriods ?? 14,
+    "day",
+    prefetchedEvents,
+    false,
+  );
 }
 
 export async function generateWeeklyReport(
-  prefetchedEvents = undefined,
-  numPeriods = undefined,
+  prefetchedEvents: PosthogEvent[] | undefined = undefined,
+  numPeriods: number | undefined = undefined,
 ) {
-  return generatePeriodReport(numPeriods ?? 12, "week", prefetchedEvents);
+  return await generatePeriodReport(numPeriods ?? 12, "week", prefetchedEvents);
 }
 
 export async function generateMonthlyReport(
-  prefetchedEvents = undefined,
-  numPeriods = undefined,
+  prefetchedEvents: PosthogEvent[] | undefined = undefined,
+  numPeriods: number | undefined = undefined,
   genCohortRetentionReport = true,
 ) {
-  return generatePeriodReport(
+  return await generatePeriodReport(
     numPeriods ?? 12,
     "month",
     prefetchedEvents,
@@ -31,8 +37,8 @@ export async function generateMonthlyReport(
 }
 
 export async function generateAllTimeMonthlyReport(
-  prefetchedEvents = undefined,
+  prefetchedEvents: PosthogEvent[] | undefined = undefined,
 ) {
   const numMonths = moment().diff(moment("2021-01-01"), "months") + 1;
-  return generateMonthlyReport(prefetchedEvents, numMonths, false);
+  return await generateMonthlyReport(prefetchedEvents, numMonths, false);
 }

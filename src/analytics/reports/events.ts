@@ -1,16 +1,17 @@
-import * as _ from "lodash";
+import _ from "lodash";
 
-import moment from "../moment";
-import { type PosthogEvent, fetchAllCliEvents } from "../events";
+import retry from "async-retry";
 import { addEventContextValue } from "../eventContext";
+import { fetchAllCliEvents } from "../events";
 import { executionEnvs } from "../executionEnvs";
-import * as retry from "async-retry";
+import moment from "../moment";
+import { type PosthogEvent } from "../types";
 
 // These filters, when applyed to a list of events, remove
 // events that we don't want to go into analysis
 // (e.g. because we (Wasp Team) created them).
 const validEventFilters = [
-  (e) => {
+  (event: PosthogEvent) => {
     // These are telemetry user ids of Wasp team members
     // from the situation when we accidentally left telemetry enabled.
     // We track them here so we can ignore these events.
@@ -23,9 +24,9 @@ const validEventFilters = [
       "8605f02d-5b32-466c-93d2-faaa787f43a0",
       "dc396135-c50d-4064-9563-5813056b1cc8",
     ];
-    return !ourDistinctIds.includes(e.distinct_id);
+    return !ourDistinctIds.includes(event.distinct_id);
   },
-  (e) => {
+  (event: PosthogEvent) => {
     // Miho set up his own private CI server for his Wasp app but forgot
     // to turn off telemetry (+ forgot to set env vars to indicate it is CI)
     // so we filtering those out here.
@@ -35,8 +36,8 @@ const validEventFilters = [
       moment("2023-11-11T23:00:00.000Z"),
     ];
     return !(
-      e?.properties?.$ip == mihoCIServerIP &&
-      moment(e.timestamp).isBetween(
+      event?.properties?.$ip == mihoCIServerIP &&
+      moment(event.timestamp).isBetween(
         periodOfProblematicEvents[0],
         periodOfProblematicEvents[1],
       )
@@ -120,7 +121,7 @@ export async function fetchEventsForReportGenerator() {
       retries: 10,
       minTimeout: 5 * 1000,
       maxTimeout: 60 * 1000,
-      onRetry: (e) => {
+      onRetry: (e: Error) => {
         console.error(
           "Error happened while fetching events for report generator, trying again:",
           e.message ?? e,

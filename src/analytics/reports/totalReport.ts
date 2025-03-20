@@ -3,12 +3,17 @@ import {
   groupEventsByExecutionEnv,
   showPrettyMetrics,
 } from "../executionEnvs";
+import { PosthogEvent } from "../types";
 import { fetchEventsForReportGenerator } from "./events";
 
 import { groupEventsByProject } from "./utils";
 
-// Generates report for some general statistics that cover the whole (total) time (all of the events).
-export async function generateTotalReport(prefetchedEvents = undefined) {
+/**
+ * Generates report for some general statistics that cover the whole (total) time (all of the events).
+ */
+export async function generateTotalReport(
+  prefetchedEvents: PosthogEvent[] | undefined = undefined,
+) {
   // All events, sort by time (starting with oldest), with events caused by Wasp team members filtered out.
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
 
@@ -46,7 +51,7 @@ export async function generateTotalReport(prefetchedEvents = undefined) {
 
 function calcTotalUniqueEventsByExecutionEnv(eventsByEnv) {
   const totalUniqueEventsByExecutionEnv = {};
-  for (let envKey of Object.keys(executionEnvs)) {
+  for (const envKey of Object.keys(executionEnvs)) {
     const events = eventsByEnv[envKey] ?? [];
     totalUniqueEventsByExecutionEnv[envKey] = new Set(
       events.map((e) => e.distinct_id),
