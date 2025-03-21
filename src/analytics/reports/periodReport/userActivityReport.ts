@@ -1,6 +1,5 @@
 import _ from "lodash";
 
-import { WaspReport } from "..";
 import { buildChartImageUrl } from "../../charts";
 import {
   executionEnvs,
@@ -20,7 +19,7 @@ export async function generateUserActivityReport(
   numPeriods,
   periodName,
   prefetchedEvents = undefined,
-): Promise<WaspReport[]> {
+) {
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
   const periods = calcLastNPeriods(numPeriods, periodName);
 
@@ -73,26 +72,24 @@ export async function generateUserActivityReport(
     ),
   );
 
-  const report = [
-    {
-      text: [
-        "==== Unique Active Users ====",
-        `During last ${periodName}:`,
-        `- Local: ${totalNumOfLocalUsersInLastPeriod}`,
-        `- Cloud: ${prettyNonLocalMetrics}`,
-        `Table "Num unique active users per ${periodName} by age":`,
-        "```",
-        tableOfActiveUsersPerPeriodByAge.toString(),
-        "```",
-      ],
-      chart: buildChartImageUrl(
-        uniqueLocalActiveUsersPerPeriodByAge,
-        `Num unique active users (per ${periodName})`,
-        "bars",
-      ),
-      csv: tableOfActiveUsersPerPeriodByAgeCsv,
-    },
-  ];
+  const report = {
+    text: [
+      "==== Unique Active Users ====",
+      `During last ${periodName}:`,
+      `- Local: ${totalNumOfLocalUsersInLastPeriod}`,
+      `- Cloud: ${prettyNonLocalMetrics}`,
+      `Table "Num unique active users per ${periodName} by age":`,
+      "```",
+      tableOfActiveUsersPerPeriodByAge.toString(),
+      "```",
+    ],
+    chart: buildChartImageUrl(
+      uniqueLocalActiveUsersPerPeriodByAge,
+      `Num unique active users (per ${periodName})`,
+      "bars",
+    ),
+    csv: tableOfActiveUsersPerPeriodByAgeCsv,
+  };
 
   return report;
 }

@@ -228,11 +228,11 @@ const sendAnalyticsReport = async (
 
   waspTeamTextChannel.send(`⏳ Generating ${reportType} report...`);
 
-  const report = await reportPromise;
+  const report: reports.WaspReport = await reportPromise;
   waspTeamTextChannel.send(
     `=============== ${reportTitle} ANALYTICS REPORT ===============`,
   );
-  for (const metric of report) {
+  for (const metric of Object.values(report)) {
     let text = metric.text?.join("\n");
     if (text && text.length >= DISCORD_MAX_MSG_SIZE) {
       text =

@@ -1,4 +1,3 @@
-import { WaspReport } from "..";
 import { groupEventsByExecutionEnv } from "../../executionEnvs";
 import moment from "../../moment";
 import { newSimpleTable } from "../../table";
@@ -10,7 +9,7 @@ export async function generatePeriodProjectsReport(
   numPeriods,
   periodName,
   prefetchedEvents = undefined,
-): Promise<WaspReport[]> {
+) {
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
 
   const { localEvents } = groupEventsByExecutionEnv(events);
@@ -83,16 +82,14 @@ export async function generatePeriodProjectsReport(
     ),
   });
 
-  const report = [
-    {
-      csv,
-      text: [
-        `==== Projects created/built per ${periodName} (cumm) ====`,
-        "```",
-        table.toString(),
-        "```",
-      ],
-    },
-  ];
+  const report = {
+    csv,
+    text: [
+      `==== Projects created/built per ${periodName} (cumm) ====`,
+      "```",
+      table.toString(),
+      "```",
+    ],
+  };
   return report;
 }

@@ -1,4 +1,3 @@
-import { WaspReport } from "..";
 import { fetchEventsForReportGenerator } from "../events";
 import { generateCohortRetentionReport } from "./cohortRetentionReport";
 import { generatePeriodProjectsReport } from "./projectsReport";
@@ -12,19 +11,61 @@ import { generateUserActivityReport } from "./userActivityReport";
 // they are prepared (our events removed, sorted) and that they are all events available for CLI,
 // for the whole history. You should obtain them with fetchAllCliEvents(), in that case they will
 // be all good.
-export async function generatePeriodReport(
+
+export async function generateFullPeriodReport(
   numPeriods,
   periodName,
   prefetchedEvents = undefined,
-  genCohortRetentionReport = true,
-): Promise<WaspReport[]> {
+) {
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
 
-  return [
-    ...(await generateUserActivityReport(numPeriods, periodName, events)),
-    ...(genCohortRetentionReport
-      ? await generateCohortRetentionReport(numPeriods, periodName, events)
-      : []),
-    ...(await generatePeriodProjectsReport(numPeriods, periodName, events)),
-  ];
+  const baseReports = await generatePeriodReportDefaultReports(
+    numPeriods,
+    periodName,
+    events,
+  );
+
+  return {
+    ...baseReports,
+    cohortRetentionReport: await generateCohortRetentionReport(
+      numPeriods,
+      periodName,
+      events,
+    ),
+  };
+}
+
+export async function generatePeriodReportWithoutCohortRetention(
+  numPeriods,
+  periodName,
+  prefetchedEvents = undefined,
+) {
+  const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
+
+  const baseReports = await generatePeriodReportDefaultReports(
+    numPeriods,
+    periodName,
+    events,
+  );
+
+  return baseReports;
+}
+
+async function generatePeriodReportDefaultReports(
+  numPeriods,
+  periodName,
+  events = undefined,
+) {
+  return {
+    userActivityReport: await generateUserActivityReport(
+      numPeriods,
+      periodName,
+      events,
+    ),
+    projectsReport: await generatePeriodProjectsReport(
+      numPeriods,
+      periodName,
+      events,
+    ),
+  };
 }

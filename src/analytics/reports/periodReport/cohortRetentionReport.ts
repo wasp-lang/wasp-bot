@@ -5,7 +5,6 @@ import { newSimpleTable } from "../../table";
 import { fetchEventsForReportGenerator } from "../events";
 import { getIntersection, groupEventsByUser } from "../utils";
 
-import { WaspReport } from "..";
 import {
   calcLastNPeriods,
   getActiveUserIds,
@@ -17,7 +16,7 @@ export async function generateCohortRetentionReport(
   numPeriods,
   periodName,
   prefetchedEvents = undefined,
-): Promise<WaspReport[]> {
+) {
   const periodNameShort = periodName[0];
 
   // All events, sorted by time (starting with oldest), with events caused by Wasp team members
@@ -89,21 +88,19 @@ export async function generateCohortRetentionReport(
   const fmt = (m) => m.format("DD-MM-YY");
   const firstPeriod = periods[0];
   const lastPeriod = _.last(periods);
-  const report = [
-    {
-      text: [
-        "==== Cohort Retention ====",
-        "```",
-        table.toString(),
-        "```",
-        `Period of ${periodNameShort}  #0: ${fmt(firstPeriod[0])} - ${fmt(
-          firstPeriod[1],
-        )}`,
-        `Period of ${periodNameShort} #${periods.length - 1}: ${fmt(
-          lastPeriod[0],
-        )} - ${fmt(lastPeriod[1])}`,
-      ],
-    },
-  ];
+  const report = {
+    text: [
+      "==== Cohort Retention ====",
+      "```",
+      table.toString(),
+      "```",
+      `Period of ${periodNameShort}  #0: ${fmt(firstPeriod[0])} - ${fmt(
+        firstPeriod[1],
+      )}`,
+      `Period of ${periodNameShort} #${periods.length - 1}: ${fmt(
+        lastPeriod[0],
+      )} - ${fmt(lastPeriod[1])}`,
+    ],
+  };
   return report;
 }

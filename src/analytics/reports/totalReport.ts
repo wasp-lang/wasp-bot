@@ -29,8 +29,8 @@ export async function generateTotalReport(prefetchedEvents = undefined) {
     totalUniqueEventsByExecutionEnv,
   );
 
-  const report = [
-    {
+  const report = {
+    totalReport: {
       text: [
         `Number of unique projects in total: ${numProjectsTotal}`,
         `Number of unique projects built in total: ${numProjectsBuiltTotal}`,
@@ -38,7 +38,7 @@ export async function generateTotalReport(prefetchedEvents = undefined) {
         ` - ${prettyNonLocalMetrics}`,
       ],
     },
-  ];
+  };
 
   return report;
 }
