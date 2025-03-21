@@ -154,7 +154,7 @@ async function loadCachedEvents(): Promise<PosthogEvent[]> {
   try {
     return JSON.parse(await fs.readFile(CACHE_FILE_PATH, "utf-8"));
   } catch (e) {
-    if (e instanceof Error && "code" in e && e.code === "ENOENT") return [];
+    if ("code" in e && e.code === "ENOENT") return [];
     throw e;
   }
 }
