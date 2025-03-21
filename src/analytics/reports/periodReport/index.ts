@@ -15,59 +15,59 @@ import { generateUserActivityReport } from "./userActivityReport";
  * @returns Array of Wasp reports
  */
 export async function generateFullPeriodReport(
+  prefetchedEvents: PosthogEvent[] | undefined = undefined,
   numPeriods: number,
   periodName: PeriodName,
-  prefetchedEvents: PosthogEvent[] | undefined = undefined,
 ) {
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
 
   const baseReports = await generatePeriodReportDefaultReports(
+    events,
     numPeriods,
     periodName,
-    events,
   );
 
   return {
     ...baseReports,
     cohortRetentionReport: await generateCohortRetentionReport(
+      events,
       numPeriods,
       periodName,
-      events,
     ),
   };
 }
 
 export async function generatePeriodReportWithoutCohortRetention(
-  numPeriods,
-  periodName,
-  prefetchedEvents = undefined,
+  prefetchedEvents: PosthogEvent[] | undefined = undefined,
+  numPeriods: number,
+  periodName: PeriodName,
 ) {
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
 
   const baseReports = await generatePeriodReportDefaultReports(
+    events,
     numPeriods,
     periodName,
-    events,
   );
 
   return baseReports;
 }
 
 async function generatePeriodReportDefaultReports(
-  numPeriods,
-  periodName,
-  events = undefined,
+  events: PosthogEvent[],
+  numPeriods: number,
+  periodName: PeriodName,
 ) {
   return {
     userActivityReport: await generateUserActivityReport(
+      events,
       numPeriods,
       periodName,
-      events,
     ),
     projectsReport: await generatePeriodProjectsReport(
+      events,
       numPeriods,
       periodName,
-      events,
     ),
   };
 }

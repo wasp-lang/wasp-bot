@@ -5,6 +5,7 @@ import _ from "lodash";
 import schedule from "node-schedule";
 
 import { getAnalyticsErrorMessage } from "./analytics/errors";
+import { PosthogEvent } from "./analytics/events";
 import moment from "./analytics/moment";
 import * as reports from "./analytics/reports";
 import logger from "./utils/logger";
@@ -18,6 +19,7 @@ const DAILY_STANDUP_CHANNEL_ID = "842082539720146975";
 const GUEST_ROLE_ID = "812299047175716934";
 const INTRODUCTIONS_CHANNEL_ID = "689916376542085170";
 
+const DISCORD_MAX_MSG_SIZE = 2000;
 const timezone = "Europe/Zagreb";
 
 export const start = () => {
@@ -37,7 +39,10 @@ export const start = () => {
 
     // Every day at 7:00 am, send analytics reports.
     schedule.scheduleJob({ hour: 7, minute: 0, tz: timezone }, async () => {
-      const reportsChannel = await fetchChannelById(bot, REPORTS_CHANNEL_ID);
+      const reportsChannel = await fetchTextChannelById(
+        bot,
+        REPORTS_CHANNEL_ID,
+      );
       await reportsChannel.send(
         "📊 What time is it? It is time for daily analytics report!",
       );
@@ -77,35 +82,38 @@ export const start = () => {
   );
 };
 
-const handleMessage = async (bot, msg) => {
+const handleMessage = async (
+  bot: Discord.Client,
+  message: Discord.Message | Discord.PartialMessage,
+) => {
   // Ignore messages from the bot itself.
-  if (msg.author.id === bot.user.id) {
+  if (message.author.id === bot.user.id) {
     return;
   }
 
-  const member = msg.guild.member(msg.author);
+  const member = message.guild.member(message.author);
 
   if (
-    msg.channel.id.toString() === INTRODUCTIONS_CHANNEL_ID &&
+    message.channel.id.toString() === INTRODUCTIONS_CHANNEL_ID &&
     member.roles.cache.get(GUEST_ROLE_ID)
   ) {
-    const trimmedMsg = msg.content.trim().length;
+    const trimmedMsg = message.content.trim().length;
     if (trimmedMsg < 20) {
-      return msg.reply(
+      return message.reply(
         `\n👋 Great to have you here! Pls introduce yourself with a message that's at least 2️⃣0️⃣ characters long and I will give you full access to the server.`,
       );
     }
     try {
       await member.roles.remove(GUEST_ROLE_ID);
-      return msg.reply(
+      return message.reply(
         "Nice getting to know you ☕️! You now have full access to the Wasp Discord 🐝. Welcome!",
       );
     } catch (error) {
-      return msg.reply(`Error: ${error}`);
+      return message.reply(`Error: ${error}`);
     }
   }
 
-  function getNumPeriodsFromAnalyticsCmd(cmd) {
+  function getNumPeriodsFromAnalyticsCommand(cmd: string) {
     const match = cmd.match(/numPeriods\s*=\s*(\d+)/);
     if (match) {
       return parseInt(match[1]);
@@ -114,31 +122,31 @@ const handleMessage = async (bot, msg) => {
   }
 
   if (
-    msg.content.startsWith("!analytics") &&
-    msg.channel.id.toString() === REPORTS_CHANNEL_ID
+    message.content.startsWith("!analytics") &&
+    message.channel.id.toString() === REPORTS_CHANNEL_ID
   ) {
-    if (msg.content.includes("weekly")) {
+    if (message.content.includes("weekly")) {
       await sendAnalyticsReport(
         bot,
         "weekly",
         undefined,
-        getNumPeriodsFromAnalyticsCmd(msg.content),
+        getNumPeriodsFromAnalyticsCommand(message.content),
       );
-    } else if (msg.content.includes("monthly")) {
+    } else if (message.content.includes("monthly")) {
       await sendAnalyticsReport(
         bot,
         "monthly",
         undefined,
-        getNumPeriodsFromAnalyticsCmd(msg.content),
+        getNumPeriodsFromAnalyticsCommand(message.content),
       );
-    } else if (msg.content.includes("daily")) {
+    } else if (message.content.includes("daily")) {
       await sendAnalyticsReport(
         bot,
         "daily",
         undefined,
-        getNumPeriodsFromAnalyticsCmd(msg.content),
+        getNumPeriodsFromAnalyticsCommand(message.content),
       );
-    } else if (msg.content.includes("total")) {
+    } else if (message.content.includes("total")) {
       await sendAnalyticsReport(bot, "total");
     } else {
       await sendAnalyticsHelp(bot);
@@ -146,13 +154,22 @@ const handleMessage = async (bot, msg) => {
   }
 };
 
-async function fetchChannelById(bot, channelId) {
+async function fetchTextChannelById(
+  bot: Discord.Client,
+  channelId: Discord.Snowflake,
+): Promise<Discord.TextChannel> {
   const guild = await bot.guilds.fetch(GUILD_ID);
-  return guild.channels.resolve(channelId);
+  const channel = guild.channels.resolve(channelId);
+
+  if (!channel || !channel.isText()) {
+    throw new Error(`Channel ${channelId} is not a text channel`);
+  }
+
+  return channel as Discord.TextChannel;
 }
 
-const sendAnalyticsHelp = async (bot) => {
-  const channel = await fetchChannelById(bot, REPORTS_CHANNEL_ID);
+const sendAnalyticsHelp = async (bot: Discord.Client) => {
+  const channel = await fetchTextChannelById(bot, REPORTS_CHANNEL_ID);
   await channel.send(
     `Available commands:
   !analytics daily [numPeriods=<int>]
@@ -201,13 +218,11 @@ wasp-lang/wasp-bot repo and generate them locally, README has instructions on th
   );
 };
 
-const DISCORD_MAX_MSG_SIZE = 2000;
-
 const sendAnalyticsReport = async (
-  bot,
-  reportType,
-  prefetchedEvents = undefined,
-  numPeriods = undefined,
+  bot: Discord.Client,
+  reportType: "daily" | "weekly" | "monthly" | "total",
+  prefetchedEvents: PosthogEvent[] | undefined = undefined,
+  numPeriods: number = undefined,
 ) => {
   let reportPromise, reportTitle;
   if (reportType == "monthly") {
@@ -224,7 +239,10 @@ const sendAnalyticsReport = async (
     reportTitle = "TOTAL";
   }
 
-  const waspTeamTextChannel = await fetchChannelById(bot, REPORTS_CHANNEL_ID);
+  const waspTeamTextChannel = await fetchTextChannelById(
+    bot,
+    REPORTS_CHANNEL_ID,
+  );
 
   waspTeamTextChannel.send(`⏳ Generating ${reportType} report...`);
 
@@ -253,8 +271,8 @@ const sendAnalyticsReport = async (
   );
 };
 
-const initiateDailyStandup = async (bot) => {
-  const dailyStandupChannel = await fetchChannelById(
+const initiateDailyStandup = async (bot: Discord.Client) => {
+  const dailyStandupChannel = await fetchTextChannelById(
     bot,
     DAILY_STANDUP_CHANNEL_ID,
   );

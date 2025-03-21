@@ -1,6 +1,9 @@
 import _ from "lodash";
 
-import { buildUserActivityReportImageChartsObject } from "../../charts";
+import {
+  buildUserActivityReportImageChartsObject,
+  ChartData,
+} from "../../charts";
 import { PosthogEvent } from "../../events";
 import {
   EventsByExeuctionEnvironment,
@@ -21,9 +24,9 @@ import {
 } from "./period";
 
 export async function generateUserActivityReport(
+  prefetchedEvents: PosthogEvent[] | undefined = undefined,
   numPeriods: number,
   periodName: PeriodName,
-  prefetchedEvents: PosthogEvent[] | undefined = undefined,
 ) {
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
   const periods = calcLastNPeriods(numPeriods, periodName);
@@ -129,7 +132,7 @@ function calcNumActiveUsersPerPeriodByAge(
   userEvents: PosthogEvent[],
   periods: Period[],
 ) {
-  const numUniqueActiveUsersPerPeriodByAge = {
+  const numUniqueActiveUsersPerPeriodByAge: ChartData = {
     // All series have the same length, which is the length of .periodEnds.
     series: {
       ">30d": [], // [number]

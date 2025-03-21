@@ -90,7 +90,7 @@ export function showPrettyMetrics(
 ): string {
   const output = [];
   for (const [key, metric] of Object.entries(metricsByEnv)) {
-    const context = executionEnvs[key];
+    const context = executionEnvs[key as ExecutionEnvironment];
     output.push(`[${context.name}: ${metric}]`);
   }
   return output.join(" ");

@@ -1,5 +1,6 @@
 import _ from "lodash";
 
+import { Moment } from "moment";
 import { PosthogEvent } from "../../events";
 import { groupEventsByExecutionEnv } from "../../executionEnvs";
 import { newSimpleTable } from "../../table";
@@ -13,13 +14,14 @@ import {
   calcLastNPeriods,
   groupEventsByPeriods,
   isEventInPeriod,
+  Period,
   PeriodName,
 } from "./period";
 
 export async function generateCohortRetentionReport(
+  prefetchedEvents: PosthogEvent[] | undefined = undefined,
   numPeriods: number,
   periodName: PeriodName,
-  prefetchedEvents: PosthogEvent[] | undefined = undefined,
 ) {
   const periodNameShort = periodName[0];
 
@@ -40,7 +42,7 @@ export async function generateCohortRetentionReport(
   const eventsByUser = groupEventsByUser(localEvents);
 
   // Finds all users that have their first event in the specified period.
-  function findNewUsersForPeriod(period) {
+  function findNewUsersForPeriod(period: Period) {
     return Object.entries(eventsByUser)
       .filter(([, eventsOfUser]) => isEventInPeriod(eventsOfUser[0], period))
       .map(([userId]) => userId);
@@ -72,7 +74,7 @@ export async function generateCohortRetentionReport(
    *    - `["10", "6 (60%)", "3 (30%)", "0 (0%)"]`
    *    - `["0", "N/A", "N/A"]`
    */
-  function calcCohortRetentionTableRow(cohort) {
+  function calcCohortRetentionTableRow(cohort: number[]) {
     const [numUsersAtStart, ...numUsersThroughPeriods] = cohort;
     const retentionPercentages = numUsersThroughPeriods.map((n) =>
       numUsersAtStart === 0
@@ -89,7 +91,7 @@ export async function generateCohortRetentionReport(
     })),
   });
 
-  const fmt = (m) => m.format("DD-MM-YY");
+  const fmt = (m: Moment) => m.format("DD-MM-YY");
   const firstPeriod = periods[0];
   const lastPeriod = _.last(periods);
   const report = {

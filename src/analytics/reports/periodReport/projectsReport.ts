@@ -7,9 +7,9 @@ import { groupEventsByProject } from "../utils";
 import { calcLastNPeriods, PeriodName } from "./period";
 
 export async function generatePeriodProjectsReport(
+  prefetchedEvents: PosthogEvent[] | undefined = undefined,
   numPeriods: number,
   periodName: PeriodName,
-  prefetchedEvents: PosthogEvent[] | undefined = undefined,
 ) {
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
 
@@ -19,7 +19,7 @@ export async function generatePeriodProjectsReport(
 
   const localEventsByProject = groupEventsByProject(localEvents);
 
-  const calcProjectCreationTime = (allProjectEvents) => {
+  const calcProjectCreationTime = (allProjectEvents: PosthogEvent[]) => {
     return moment.min(allProjectEvents.map((e) => moment(e.timestamp)));
   };
 
@@ -32,7 +32,7 @@ export async function generatePeriodProjectsReport(
       projectCreationTimes.filter((t) => t.isSameOrBefore(pEnd)).length,
   );
 
-  const calcProjectFirstBuildTime = (allProjectEvents) => {
+  const calcProjectFirstBuildTime = (allProjectEvents: PosthogEvent[]) => {
     const buildEvents = allProjectEvents.filter((e) => e.properties.is_build);
     return buildEvents.length == 0
       ? undefined

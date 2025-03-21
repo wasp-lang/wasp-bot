@@ -58,7 +58,7 @@ export async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
   // They are fetched starting with the newest ones and going backwards.
   // Only once we fetch all of them, we add them to the cache. This is done to guarantee continuity of cached events.
   console.log("Fetching events newer than the cache...");
-  let newEvents = [];
+  let newEvents: PosthogEvent[] = [];
   let allNewEventsFetched = false;
   while (!allNewEventsFetched) {
     const { isThereMore, events: fetchedEvents } = await fetchEvents({
