@@ -6,8 +6,8 @@
     "outDir": "./dist" /* Specify an output folder for all emitted files. */,
     "rootDir": "./src",
     "allowJs": true,
-    "skipLibCheck": true /* Skip type checking all .d.ts files. */
-    // "esModuleInterop": true,
+    "skipLibCheck": true /* Skip type checking all .d.ts files. */,
+    "esModuleInterop": true
     // "forceConsistentCasingInFileNames": true,            /* Ensure that casing is correct in imports. */
     // "strict": true,                                      /* Enable all strict type-checking options. */
   }

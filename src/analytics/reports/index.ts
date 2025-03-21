@@ -1,32 +1,51 @@
+import ImageCharts from "image-charts";
 import moment from "../moment";
+import {
+  generateFullPeriodReport,
+  generatePeriodReportWithoutCohortRetention,
+} from "./periodReport";
 export { fetchEventsForReportGenerator } from "./events";
 export { generateTotalReport } from "./totalReport";
-import { generatePeriodReport } from "./periodReport";
+
+export type WaspReport = Record<
+  string,
+  {
+    text?: string[];
+    csv?: (number | string)[][];
+    chart?: ImageCharts;
+  }
+>;
 
 export async function generateDailyReport(
   prefetchedEvents = undefined,
   numPeriods = undefined,
 ) {
-  return generatePeriodReport(numPeriods ?? 14, "day", prefetchedEvents, false);
+  return await generateFullPeriodReport(
+    numPeriods ?? 14,
+    "day",
+    prefetchedEvents,
+  );
 }
 
 export async function generateWeeklyReport(
   prefetchedEvents = undefined,
   numPeriods = undefined,
 ) {
-  return generatePeriodReport(numPeriods ?? 12, "week", prefetchedEvents);
+  return await generateFullPeriodReport(
+    numPeriods ?? 12,
+    "week",
+    prefetchedEvents,
+  );
 }
 
 export async function generateMonthlyReport(
   prefetchedEvents = undefined,
   numPeriods = undefined,
-  genCohortRetentionReport = true,
 ) {
-  return generatePeriodReport(
+  return await generateFullPeriodReport(
     numPeriods ?? 12,
     "month",
     prefetchedEvents,
-    genCohortRetentionReport,
   );
 }
 
@@ -34,5 +53,9 @@ export async function generateAllTimeMonthlyReport(
   prefetchedEvents = undefined,
 ) {
   const numMonths = moment().diff(moment("2021-01-01"), "months") + 1;
-  return generateMonthlyReport(prefetchedEvents, numMonths, false);
+  return await generatePeriodReportWithoutCohortRetention(
+    numMonths,
+    "month",
+    prefetchedEvents,
+  );
 }

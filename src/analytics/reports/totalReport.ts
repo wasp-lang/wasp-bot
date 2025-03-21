@@ -4,7 +4,6 @@ import {
   showPrettyMetrics,
 } from "../executionEnvs";
 import { fetchEventsForReportGenerator } from "./events";
-
 import { groupEventsByProject } from "./utils";
 
 // Generates report for some general statistics that cover the whole (total) time (all of the events).
@@ -30,8 +29,8 @@ export async function generateTotalReport(prefetchedEvents = undefined) {
     totalUniqueEventsByExecutionEnv,
   );
 
-  const report = [
-    {
+  const report = {
+    totalReport: {
       text: [
         `Number of unique projects in total: ${numProjectsTotal}`,
         `Number of unique projects built in total: ${numProjectsBuiltTotal}`,
@@ -39,14 +38,14 @@ export async function generateTotalReport(prefetchedEvents = undefined) {
         ` - ${prettyNonLocalMetrics}`,
       ],
     },
-  ];
+  };
 
   return report;
 }
 
 function calcTotalUniqueEventsByExecutionEnv(eventsByEnv) {
   const totalUniqueEventsByExecutionEnv = {};
-  for (let envKey of Object.keys(executionEnvs)) {
+  for (const envKey of Object.keys(executionEnvs)) {
     const events = eventsByEnv[envKey] ?? [];
     totalUniqueEventsByExecutionEnv[envKey] = new Set(
       events.map((e) => e.distinct_id),

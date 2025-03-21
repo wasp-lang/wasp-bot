@@ -28,21 +28,19 @@ async function allTimeMonthlyActiveUsersAndProjectsCsvCliReport(events) {
   const report = await reports.generateAllTimeMonthlyReport(events);
 
   console.log("\n[CSV] Num active users");
-  const activeUsersReport = report[0];
-  for (const row of activeUsersReport.csv) {
+  for (const row of report.userActivityReport.csv) {
     console.log(row.join(","));
   }
 
   console.log("\n[CSV] Num projects");
-  console.log(",created diff,created cumm,built diff,built cumm");
-  const projectsReport = report[1];
-  for (const row of projectsReport.csv) {
+  console.log("created diff,created cumm,built diff,built cumm");
+  for (const row of report.projectsReport.csv) {
     console.log(row.join(","));
   }
 }
 
-function showReportInCLI(report) {
-  for (const metric of report) {
+function showReportInCLI(report: reports.WaspReport) {
+  for (const metric of Object.values(report)) {
     console.log();
     if (metric.text) {
       for (const textLine of metric.text) {
