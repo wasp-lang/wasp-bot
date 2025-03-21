@@ -4,7 +4,9 @@ import { PosthogEvent } from "../events";
 import moment from "../moment";
 
 /**
- * @returns {Record<string, PosthogEvent[]>} Key is unique project id, value is a list of events that belong to it.
+ * Groups events by unique project identifier.
+ * @param events - The array of PosthogEvent objects to group
+ * @returns Record where key is unique project id (user id + project hash), value is array of events for that project
  */
 export function groupEventsByProject(
   events: PosthogEvent[],
@@ -13,7 +15,9 @@ export function groupEventsByProject(
 }
 
 /**
- * @returns {Record<string, PosthogEvent[]>} Key is unique user id, value is a list of events that belong to it.
+ * Groups events by unique user identifier.
+ * @param events - The array of PosthogEvent objects to group
+ * @returns Record where key is unique user id, value is array of events for that user
  */
 export function groupEventsByUser(
   events: PosthogEvent[],

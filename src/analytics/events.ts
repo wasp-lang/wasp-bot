@@ -144,7 +144,7 @@ async function fetchEvents({
 /**
  * Loads cached PostHog events from a JSON file.
  *
- * @returns {Promise<PosthogEvent[]>} An array of PostHog events where:
+ * @returns An array of PostHog events where:
  *   - Events are guaranteed to be continuous, with no missing events between the cached events
  *   - Newest event is first (index 0), and oldest event is last
  *   - No events are missing between the oldest and newest cached events

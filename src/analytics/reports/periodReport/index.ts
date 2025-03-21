@@ -9,11 +9,10 @@ import { generateUserActivityReport } from "./userActivityReport";
  * Generates a report that calculates usage for last numPeriod periods of size periodName.
  * Each period is a central time scope of calculation.
  *
- * @param {number} numPeriods - The number of periods to calculate usage for
- * @param {PeriodName} periodName - The size of the period
- * @param {PosthogEvent[] | undefined} prefetchedEvents - Optional prefetched events. If provided, should be prepared (our events removed, sorted) and contain all events available for CLI for the whole history. Obtain with fetchAllCliEvents().
- * @param {boolean} genCohortRetentionReport - Whether to generate cohort retention report. Defaults to true.
- * @returns {Promise<WaspReport[]>} Array of Wasp reports
+ * @param numPeriods - The number of periods to calculate usage for
+ * @param periodName - The size of the period
+ * @param prefetchedEvents - Optional prefetched events. If provided, should be prepared (our events removed, sorted) and contain all events available for CLI for the whole history. Obtain with fetchAllCliEvents().
+ * @returns Array of Wasp reports
  */
 export async function generateFullPeriodReport(
   numPeriods: number,

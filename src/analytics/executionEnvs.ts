@@ -36,11 +36,11 @@ export const executionEnvs = {
 } as const;
 
 /**
- * Organizes events by the execution environment
+ * Organizes events by the execution environment:
  * - non-local: e.g. Replit, Gitpod, Github Codespaces, CI, etc.
  * - local: User running Wasp on their computer
  *
- * @returns {EventsByExecutionEnv} Object containing local events and grouped non-local events
+ * @returns Object containing local events and grouped non-local events
  */
 export function groupEventsByExecutionEnv(
   events: PosthogEvent[],
@@ -79,12 +79,12 @@ function getExecutionEnvFromEventContext(
   return null;
 }
 
-// Takes metrics by execution env, and returns a pretty string representation of them.
-// Given
-//   `{ ci: 5, gitpod: 2 }`
-// Where ci and gitpod are keys in `executionEnvs` and 5 and 2 are metric values,
-// It returns:
-//   `"[CI: 5] [Gitpod: 2]"`
+/**
+ * Formats metrics by execution environment into a pretty string representation.
+ *
+ * @param metricsByEnv - Object containing metric values keyed by environment identifiers
+ * @returns Formatted string representation of metrics in the format "[EnvName: MetricValue] [EnvName2: MetricValue2] ..."
+ */
 export function showPrettyMetrics(
   metricsByEnv: Record<string, number>,
 ): string {

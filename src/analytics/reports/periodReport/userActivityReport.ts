@@ -120,6 +120,10 @@ function calcUniqueNonLocalEventsInPeriod(
 /**
  * The main metric we are calculating -> for each period, number of unique users, grouped by age (of usage).
  * We return it ready for displaying via chart or table.
+ *
+ * @param userEvents - Events data from users to analyze
+ * @param periods - Time periods for which to calculate user activity
+ * @returns An object containing series data for different age ranges and corresponding period end dates
  */
 function calcNumActiveUsersPerPeriodByAge(
   userEvents: PosthogEvent[],

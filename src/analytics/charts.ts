@@ -6,25 +6,22 @@ export type ChartData = {
 };
 
 /**
- * Builds a stacked vertical bar chart for user activity report
+ * Builds a stacked vertical bar chart for user activity report.
  */
 export function buildUserActivityReportImageChartsObject(
   data: ChartData,
   title: string,
 ): ImageCharts {
-  return createBaseChartConfiguration(data, title).cht("bvs"); // Type - "bars vertical stacked"
+  return returnBaseChart(data, title).cht("bvs"); // Type - "bars vertical stacked"
 }
 
 /**
- * Creates a base chart configuration with common settings used across all chart types
- * This establishes the default formatting, sizing, and data structure that all charts share
+ * Creates a base chart configuration with common settings used across all chart types.
+ * This establishes the default formatting, sizing, and data structure that all charts share.
  *
- * @returns {ImageCharts} Base ImageCharts object with common configuration applied
+ * @returns Base ImageCharts object with common configuration applied
  */
-function createBaseChartConfiguration(
-  data: ChartData,
-  title: string,
-): ImageCharts {
+function returnBaseChart(data: ChartData, title: string): ImageCharts {
   const chart = new ImageCharts()
     .chtt(title) // Title.
     .chd(
