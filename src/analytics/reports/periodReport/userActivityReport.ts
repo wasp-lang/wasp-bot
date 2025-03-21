@@ -1,7 +1,13 @@
 import _ from "lodash";
 
-import { buildChartImageUrl } from "../../charts";
 import {
+  buildUserActivityReportImageChartsObject,
+  ChartData,
+} from "../../charts";
+import { PosthogEvent } from "../../events";
+import {
+  EventsByExeuctionEnvironment,
+  ExecutionEnvironment,
   executionEnvs,
   groupEventsByExecutionEnv,
   showPrettyMetrics,
@@ -13,12 +19,14 @@ import {
   calcLastNPeriods,
   getActiveUserIdsInPeriod,
   groupEventsByPeriods,
-} from "./common";
+  Period,
+  PeriodName,
+} from "./period";
 
 export async function generateUserActivityReport(
-  numPeriods,
-  periodName,
-  prefetchedEvents = undefined,
+  prefetchedEvents: PosthogEvent[] | undefined = undefined,
+  numPeriods: number,
+  periodName: PeriodName,
 ) {
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
   const periods = calcLastNPeriods(numPeriods, periodName);
@@ -83,10 +91,9 @@ export async function generateUserActivityReport(
       tableOfActiveUsersPerPeriodByAge.toString(),
       "```",
     ],
-    chart: buildChartImageUrl(
+    chart: buildUserActivityReportImageChartsObject(
       uniqueLocalActiveUsersPerPeriodByAge,
       `Num unique active users (per ${periodName})`,
-      "bars",
     ),
     csv: tableOfActiveUsersPerPeriodByAgeCsv,
   };
@@ -94,23 +101,38 @@ export async function generateUserActivityReport(
   return report;
 }
 
-function calcUniqueNonLocalEventsInPeriod(periods, eventsByEnv) {
-  const uniqueNonLocalEventsInPeriod = {};
-  for (const envKey of Object.keys(executionEnvs)) {
-    const events = eventsByEnv[envKey] ?? [];
+function calcUniqueNonLocalEventsInPeriod(
+  periods: Period[],
+  eventsByExecutionEnv: EventsByExeuctionEnvironment,
+): Record<ExecutionEnvironment, number> {
+  const uniqueNonLocalEventsInPeriod: Record<string, number> = {};
+
+  for (const envKey of Object.keys(
+    executionEnvs,
+  ) as Array<ExecutionEnvironment>) {
+    const events = eventsByExecutionEnv[envKey] ?? [];
     uniqueNonLocalEventsInPeriod[envKey] = getActiveUserIdsInPeriod(
       events,
       _.last(periods),
-    ).length;
+    ).size;
   }
-  return uniqueNonLocalEventsInPeriod;
+
+  return uniqueNonLocalEventsInPeriod as Record<ExecutionEnvironment, number>;
 }
 
-// The main metric we are calculating -> for each period, number of unique users, grouped by age (of usage).
-// We return it ready for displaying via chart or table.
-// Takes list of all events, ends of all periods, and period duration.
-function calcNumActiveUsersPerPeriodByAge(userEvents, periods) {
-  const numUniqueActiveUsersPerPeriodByAge = {
+/**
+ * The main metric we are calculating -> for each period, number of unique users, grouped by age (of usage).
+ * We return it ready for displaying via chart or table.
+ *
+ * @param userEvents - Events data from users to analyze
+ * @param periods - Time periods for which to calculate user activity
+ * @returns An object containing series data for different age ranges and corresponding period end dates
+ */
+function calcNumActiveUsersPerPeriodByAge(
+  userEvents: PosthogEvent[],
+  periods: Period[],
+) {
+  const numUniqueActiveUsersPerPeriodByAge: ChartData = {
     // All series have the same length, which is the length of .periodEnds.
     series: {
       ">30d": [], // [number]

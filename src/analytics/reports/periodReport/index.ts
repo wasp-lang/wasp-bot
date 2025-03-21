@@ -1,71 +1,73 @@
+import { PosthogEvent } from "../../events";
 import { fetchEventsForReportGenerator } from "../events";
 import { generateCohortRetentionReport } from "./cohortRetentionReport";
+import { PeriodName } from "./period";
 import { generatePeriodProjectsReport } from "./projectsReport";
 import { generateUserActivityReport } from "./userActivityReport";
 
-// Generates a report that calculates usage for last numPeriod periods of size periodName,
-// where periodName should be 'day' or 'week' or 'month'.
-// Each period is a central time scope of calculation.
-//
-// You can optionally pass prefetched events, in which case you should make sure
-// they are prepared (our events removed, sorted) and that they are all events available for CLI,
-// for the whole history. You should obtain them with fetchAllCliEvents(), in that case they will
-// be all good.
-
+/**
+ * Generates a report that calculates usage for last numPeriod periods of size periodName.
+ * Each period is a central time scope of calculation.
+ *
+ * @param numPeriods - The number of periods to calculate usage for
+ * @param periodName - The size of the period
+ * @param prefetchedEvents - Optional prefetched events. If provided, should be prepared (our events removed, sorted) and contain all events available for CLI for the whole history. Obtain with fetchAllCliEvents().
+ * @returns Array of Wasp reports
+ */
 export async function generateFullPeriodReport(
-  numPeriods,
-  periodName,
-  prefetchedEvents = undefined,
+  prefetchedEvents: PosthogEvent[] | undefined = undefined,
+  numPeriods: number,
+  periodName: PeriodName,
 ) {
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
 
   const baseReports = await generatePeriodReportDefaultReports(
+    events,
     numPeriods,
     periodName,
-    events,
   );
 
   return {
     ...baseReports,
     cohortRetentionReport: await generateCohortRetentionReport(
+      events,
       numPeriods,
       periodName,
-      events,
     ),
   };
 }
 
 export async function generatePeriodReportWithoutCohortRetention(
-  numPeriods,
-  periodName,
-  prefetchedEvents = undefined,
+  prefetchedEvents: PosthogEvent[] | undefined = undefined,
+  numPeriods: number,
+  periodName: PeriodName,
 ) {
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
 
   const baseReports = await generatePeriodReportDefaultReports(
+    events,
     numPeriods,
     periodName,
-    events,
   );
 
   return baseReports;
 }
 
 async function generatePeriodReportDefaultReports(
-  numPeriods,
-  periodName,
-  events = undefined,
+  events: PosthogEvent[],
+  numPeriods: number,
+  periodName: PeriodName,
 ) {
   return {
     userActivityReport: await generateUserActivityReport(
+      events,
       numPeriods,
       periodName,
-      events,
     ),
     projectsReport: await generatePeriodProjectsReport(
+      events,
       numPeriods,
       periodName,
-      events,
     ),
   };
 }

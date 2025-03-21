@@ -1,4 +1,5 @@
 import ImageCharts from "image-charts";
+import { PosthogEvent } from "../events";
 import moment from "../moment";
 import {
   generateFullPeriodReport,
@@ -17,45 +18,33 @@ export type WaspReport = Record<
 >;
 
 export async function generateDailyReport(
-  prefetchedEvents = undefined,
-  numPeriods = undefined,
+  prefetchedEvents: PosthogEvent[] | undefined = undefined,
+  numPeriods: number = 14,
 ) {
-  return await generateFullPeriodReport(
-    numPeriods ?? 14,
-    "day",
-    prefetchedEvents,
-  );
+  return await generateFullPeriodReport(prefetchedEvents, numPeriods, "day");
 }
 
 export async function generateWeeklyReport(
-  prefetchedEvents = undefined,
-  numPeriods = undefined,
+  prefetchedEvents: PosthogEvent[] | undefined = undefined,
+  numPeriods: number = 12,
 ) {
-  return await generateFullPeriodReport(
-    numPeriods ?? 12,
-    "week",
-    prefetchedEvents,
-  );
+  return await generateFullPeriodReport(prefetchedEvents, numPeriods, "week");
 }
 
 export async function generateMonthlyReport(
-  prefetchedEvents = undefined,
-  numPeriods = undefined,
+  prefetchedEvents: PosthogEvent[] | undefined = undefined,
+  numPeriods: number = 12,
 ) {
-  return await generateFullPeriodReport(
-    numPeriods ?? 12,
-    "month",
-    prefetchedEvents,
-  );
+  return await generateFullPeriodReport(prefetchedEvents, numPeriods, "month");
 }
 
 export async function generateAllTimeMonthlyReport(
-  prefetchedEvents = undefined,
+  prefetchedEvents: PosthogEvent[] | undefined = undefined,
 ) {
   const numMonths = moment().diff(moment("2021-01-01"), "months") + 1;
   return await generatePeriodReportWithoutCohortRetention(
+    prefetchedEvents,
     numMonths,
     "month",
-    prefetchedEvents,
   );
 }

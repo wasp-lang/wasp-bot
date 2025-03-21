@@ -1,6 +1,6 @@
 import axios from "axios";
-import { promises as fs } from "fs";
 import { config as dotenvConfig } from "dotenv";
+import { promises as fs } from "fs";
 import moment from "./moment";
 
 dotenvConfig();
@@ -58,7 +58,7 @@ export async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
   // They are fetched starting with the newest ones and going backwards.
   // Only once we fetch all of them, we add them to the cache. This is done to guarantee continuity of cached events.
   console.log("Fetching events newer than the cache...");
-  let newEvents = [];
+  let newEvents: PosthogEvent[] = [];
   let allNewEventsFetched = false;
   while (!allNewEventsFetched) {
     const { isThereMore, events: fetchedEvents } = await fetchEvents({
@@ -141,31 +141,37 @@ async function fetchEvents({
   };
 }
 
-// Returns: [PosthogEvent]
-// where events are guaranteed to be continuous, with no missing events between the cached events.
-// Newest event is first (index 0), and oldest event is last, and cached events are continuous,
-// in the sense that there is no events between the oldest and newest that is missing.
-// There might be missing events before or after though.
+/**
+ * Loads cached PostHog events from a JSON file.
+ *
+ * @returns An array of PostHog events where:
+ *   - Events are guaranteed to be continuous, with no missing events between the cached events
+ *   - Newest event is first (index 0), and oldest event is last
+ *   - No events are missing between the oldest and newest cached events
+ *   - There might be missing events before or after the cached range
+ */
 async function loadCachedEvents(): Promise<PosthogEvent[]> {
   try {
     return JSON.parse(await fs.readFile(CACHE_FILE_PATH, "utf-8"));
   } catch (e) {
-    if (e.code === "ENOENT") return [];
+    if ("code" in e && e.code === "ENOENT") return [];
     throw e;
   }
 }
 
-// Expects events that follow the same rules as the ones returned by `loadCachedEvents()`.
+/**
+ * Expects events that follow the same rules as the ones returned by `loadCachedEvents()`.
+ */
 async function saveCachedEvents(events: PosthogEvent[]): Promise<void> {
   await fs.writeFile(CACHE_FILE_PATH, JSON.stringify(events), "utf-8");
 }
 
-function getOldestEventTimestampOrNull(events: PosthogEvent[]): Date {
+function getOldestEventTimestampOrNull(events: PosthogEvent[]): Date | null {
   if (events.length <= 0) return null;
   return events[events.length - 1].timestamp;
 }
 
-function getNewestEventTimestampOrNull(events: PosthogEvent[]): Date {
+function getNewestEventTimestampOrNull(events: PosthogEvent[]): Date | null {
   if (events.length <= 0) return null;
   return events[0].timestamp;
 }
