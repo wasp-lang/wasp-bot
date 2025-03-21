@@ -1,21 +1,24 @@
+import { PosthogEvent } from "../../events";
 import { fetchEventsForReportGenerator } from "../events";
 import { generateCohortRetentionReport } from "./cohortRetentionReport";
+import { PeriodName } from "./period";
 import { generatePeriodProjectsReport } from "./projectsReport";
 import { generateUserActivityReport } from "./userActivityReport";
 
-// Generates a report that calculates usage for last numPeriod periods of size periodName,
-// where periodName should be 'day' or 'week' or 'month'.
-// Each period is a central time scope of calculation.
-//
-// You can optionally pass prefetched events, in which case you should make sure
-// they are prepared (our events removed, sorted) and that they are all events available for CLI,
-// for the whole history. You should obtain them with fetchAllCliEvents(), in that case they will
-// be all good.
-
+/**
+ * Generates a report that calculates usage for last numPeriod periods of size periodName.
+ * Each period is a central time scope of calculation.
+ *
+ * @param {number} numPeriods - The number of periods to calculate usage for
+ * @param {PeriodName} periodName - The size of the period
+ * @param {PosthogEvent[] | undefined} prefetchedEvents - Optional prefetched events. If provided, should be prepared (our events removed, sorted) and contain all events available for CLI for the whole history. Obtain with fetchAllCliEvents().
+ * @param {boolean} genCohortRetentionReport - Whether to generate cohort retention report. Defaults to true.
+ * @returns {Promise<WaspReport[]>} Array of Wasp reports
+ */
 export async function generateFullPeriodReport(
-  numPeriods,
-  periodName,
-  prefetchedEvents = undefined,
+  numPeriods: number,
+  periodName: PeriodName,
+  prefetchedEvents: PosthogEvent[] | undefined = undefined,
 ) {
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
 

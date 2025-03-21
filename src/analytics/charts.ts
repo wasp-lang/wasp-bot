@@ -5,17 +5,27 @@ export type ChartData = {
   periodEnds: string[];
 };
 
-// Expects data to be:
-//   data = { series: { name: [number] }, periodEnds: [string] }
-// Returns a string, URL leading to image-charts.com that contains query with exact
-// instructions how to display this chart via image.
-export function buildChartImageUrl(
+/**
+ * Builds a stacked vertical bar chart for user activity report
+ */
+export function buildUserActivityReportImageChartsObject(
   data: ChartData,
   title: string,
-  type = "line",
-) {
+): ImageCharts {
+  return createBaseChartConfiguration(data, title).cht("bvs"); // Type - "bars vertical stacked"
+}
+
+/**
+ * Creates a base chart configuration with common settings used across all chart types
+ * This establishes the default formatting, sizing, and data structure that all charts share
+ *
+ * @returns {ImageCharts} Base ImageCharts object with common configuration applied
+ */
+function createBaseChartConfiguration(
+  data: ChartData,
+  title: string,
+): ImageCharts {
   const chart = new ImageCharts()
-    .cht(type === "line" ? "ls" : "bvs") // Type: lines or vertical bars? Could also be other things.
     .chtt(title) // Title.
     .chd(
       "a:" +

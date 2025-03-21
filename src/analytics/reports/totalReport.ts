@@ -1,3 +1,4 @@
+import { PosthogEvent } from "../events";
 import {
   executionEnvs,
   groupEventsByExecutionEnv,
@@ -6,8 +7,12 @@ import {
 import { fetchEventsForReportGenerator } from "./events";
 import { groupEventsByProject } from "./utils";
 
-// Generates report for some general statistics that cover the whole (total) time (all of the events).
-export async function generateTotalReport(prefetchedEvents = undefined) {
+/**
+ * Generates report for some general statistics that cover the whole (total) time (all of the events).
+ */
+export async function generateTotalReport(
+  prefetchedEvents: PosthogEvent[] | undefined = undefined,
+) {
   // All events, sort by time (starting with oldest), with events caused by Wasp team members filtered out.
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
 

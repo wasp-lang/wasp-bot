@@ -1,21 +1,25 @@
 import _ from "lodash";
 
+import { PosthogEvent } from "../../events";
 import { groupEventsByExecutionEnv } from "../../executionEnvs";
 import { newSimpleTable } from "../../table";
 import { fetchEventsForReportGenerator } from "../events";
-import { getIntersection, groupEventsByUser } from "../utils";
-
+import {
+  getIntersection,
+  getUniqueActiveUserIds,
+  groupEventsByUser,
+} from "../utils";
 import {
   calcLastNPeriods,
-  getActiveUserIds,
   groupEventsByPeriods,
   isEventInPeriod,
-} from "./common";
+  PeriodName,
+} from "./period";
 
 export async function generateCohortRetentionReport(
-  numPeriods,
-  periodName,
-  prefetchedEvents = undefined,
+  numPeriods: number,
+  periodName: PeriodName,
+  prefetchedEvents: PosthogEvent[] | undefined = undefined,
 ) {
   const periodNameShort = periodName[0];
 
@@ -31,7 +35,7 @@ export async function generateCohortRetentionReport(
   const activeUsersSetsByPeriod = groupEventsByPeriods(
     localEvents,
     periods,
-  ).map((events) => new Set(getActiveUserIds(events)));
+  ).map((events) => new Set(getUniqueActiveUserIds(events)));
 
   const eventsByUser = groupEventsByUser(localEvents);
 

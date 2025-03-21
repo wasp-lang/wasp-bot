@@ -1,6 +1,7 @@
 import _ from "lodash";
 
-import { buildChartImageUrl } from "../../charts";
+import { buildUserActivityReportImageChartsObject } from "../../charts";
+import { PosthogEvent } from "../../events";
 import {
   executionEnvs,
   groupEventsByExecutionEnv,
@@ -13,12 +14,13 @@ import {
   calcLastNPeriods,
   getActiveUserIdsInPeriod,
   groupEventsByPeriods,
-} from "./common";
+  PeriodName,
+} from "./period";
 
 export async function generateUserActivityReport(
-  numPeriods,
-  periodName,
-  prefetchedEvents = undefined,
+  numPeriods: number,
+  periodName: PeriodName,
+  prefetchedEvents: PosthogEvent[] | undefined = undefined,
 ) {
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
   const periods = calcLastNPeriods(numPeriods, periodName);
@@ -83,10 +85,9 @@ export async function generateUserActivityReport(
       tableOfActiveUsersPerPeriodByAge.toString(),
       "```",
     ],
-    chart: buildChartImageUrl(
+    chart: buildUserActivityReportImageChartsObject(
       uniqueLocalActiveUsersPerPeriodByAge,
       `Num unique active users (per ${periodName})`,
-      "bars",
     ),
     csv: tableOfActiveUsersPerPeriodByAgeCsv,
   };
@@ -101,7 +102,7 @@ function calcUniqueNonLocalEventsInPeriod(periods, eventsByEnv) {
     uniqueNonLocalEventsInPeriod[envKey] = getActiveUserIdsInPeriod(
       events,
       _.last(periods),
-    ).length;
+    ).size;
   }
   return uniqueNonLocalEventsInPeriod;
 }
