@@ -3,20 +3,20 @@ import _ from "lodash";
 import { getEventContextValues } from "./eventContext";
 import { PosthogEvent } from "./events";
 
-export type ExecutionEnvrionment = keyof typeof executionEnvs;
+export type ExecutionEnvironment = keyof typeof executionEnvs;
 
 export type PosthogEventWithExecutionEnv = PosthogEvent & {
-  _executionEnv: ExecutionEnvrionment | null;
+  _executionEnv: ExecutionEnvironment | null;
 };
 
-export type EventsByExeuctionEnvrionment = Record<
-  ExecutionEnvrionment,
+export type EventsByExeuctionEnvironment = Record<
+  ExecutionEnvironment,
   PosthogEventWithExecutionEnv[]
 >;
 
 export type EventsByExecutionEnv = {
   localEvents: PosthogEventWithExecutionEnv[];
-  groupedNonLocalEvents: EventsByExeuctionEnvrionment;
+  groupedNonLocalEvents: EventsByExeuctionEnvironment;
 };
 
 /**
@@ -69,11 +69,11 @@ export function groupEventsByExecutionEnv(
 
 function getExecutionEnvFromEventContext(
   event: PosthogEvent,
-): ExecutionEnvrionment | null {
+): ExecutionEnvironment | null {
   const contextValues = getEventContextValues(event);
   for (const [key, actor] of Object.entries(executionEnvs)) {
     if (contextValues.includes(actor.contextKey)) {
-      return key as ExecutionEnvrionment;
+      return key as ExecutionEnvironment;
     }
   }
   return null;

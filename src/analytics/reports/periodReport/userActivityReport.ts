@@ -3,8 +3,8 @@ import _ from "lodash";
 import { buildUserActivityReportImageChartsObject } from "../../charts";
 import { PosthogEvent } from "../../events";
 import {
-  EventsByExeuctionEnvrionment,
-  ExecutionEnvrionment,
+  EventsByExeuctionEnvironment,
+  ExecutionEnvironment,
   executionEnvs,
   groupEventsByExecutionEnv,
   showPrettyMetrics,
@@ -100,13 +100,13 @@ export async function generateUserActivityReport(
 
 function calcUniqueNonLocalEventsInPeriod(
   periods: Period[],
-  eventsByExecutionEnv: EventsByExeuctionEnvrionment,
-): Record<ExecutionEnvrionment, number> {
+  eventsByExecutionEnv: EventsByExeuctionEnvironment,
+): Record<ExecutionEnvironment, number> {
   const uniqueNonLocalEventsInPeriod: Record<string, number> = {};
 
   for (const envKey of Object.keys(
     executionEnvs,
-  ) as Array<ExecutionEnvrionment>) {
+  ) as Array<ExecutionEnvironment>) {
     const events = eventsByExecutionEnv[envKey] ?? [];
     uniqueNonLocalEventsInPeriod[envKey] = getActiveUserIdsInPeriod(
       events,
@@ -114,7 +114,7 @@ function calcUniqueNonLocalEventsInPeriod(
     ).size;
   }
 
-  return uniqueNonLocalEventsInPeriod as Record<ExecutionEnvrionment, number>;
+  return uniqueNonLocalEventsInPeriod as Record<ExecutionEnvironment, number>;
 }
 
 /**
