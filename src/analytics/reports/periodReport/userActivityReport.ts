@@ -3,6 +3,8 @@ import _ from "lodash";
 import { buildUserActivityReportImageChartsObject } from "../../charts";
 import { PosthogEvent } from "../../events";
 import {
+  EventsByExeuctionEnvrionment,
+  ExecutionEnvrionment,
   executionEnvs,
   groupEventsByExecutionEnv,
   showPrettyMetrics,
@@ -14,6 +16,7 @@ import {
   calcLastNPeriods,
   getActiveUserIdsInPeriod,
   groupEventsByPeriods,
+  Period,
   PeriodName,
 } from "./period";
 
@@ -95,22 +98,33 @@ export async function generateUserActivityReport(
   return report;
 }
 
-function calcUniqueNonLocalEventsInPeriod(periods, eventsByEnv) {
-  const uniqueNonLocalEventsInPeriod = {};
-  for (const envKey of Object.keys(executionEnvs)) {
-    const events = eventsByEnv[envKey] ?? [];
+function calcUniqueNonLocalEventsInPeriod(
+  periods: Period[],
+  eventsByExecutionEnv: EventsByExeuctionEnvrionment,
+): Record<ExecutionEnvrionment, number> {
+  const uniqueNonLocalEventsInPeriod: Record<string, number> = {};
+
+  for (const envKey of Object.keys(
+    executionEnvs,
+  ) as Array<ExecutionEnvrionment>) {
+    const events = eventsByExecutionEnv[envKey] ?? [];
     uniqueNonLocalEventsInPeriod[envKey] = getActiveUserIdsInPeriod(
       events,
       _.last(periods),
     ).size;
   }
-  return uniqueNonLocalEventsInPeriod;
+
+  return uniqueNonLocalEventsInPeriod as Record<ExecutionEnvrionment, number>;
 }
 
-// The main metric we are calculating -> for each period, number of unique users, grouped by age (of usage).
-// We return it ready for displaying via chart or table.
-// Takes list of all events, ends of all periods, and period duration.
-function calcNumActiveUsersPerPeriodByAge(userEvents, periods) {
+/**
+ * The main metric we are calculating -> for each period, number of unique users, grouped by age (of usage).
+ * We return it ready for displaying via chart or table.
+ */
+function calcNumActiveUsersPerPeriodByAge(
+  userEvents: PosthogEvent[],
+  periods: Period[],
+) {
   const numUniqueActiveUsersPerPeriodByAge = {
     // All series have the same length, which is the length of .periodEnds.
     series: {
