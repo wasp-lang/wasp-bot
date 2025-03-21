@@ -5,19 +5,14 @@ import { PosthogEvent } from "./events";
 
 export type ExecutionEnvironment = keyof typeof executionEnvs;
 
-export type PosthogEventWithExecutionEnv = PosthogEvent & {
+export interface PosthogEventWithExecutionEnv extends PosthogEvent {
   _executionEnv: ExecutionEnvironment | null;
-};
+}
 
 export type EventsByExeuctionEnvironment = Record<
   ExecutionEnvironment,
   PosthogEventWithExecutionEnv[]
 >;
-
-export type EventsByExecutionEnv = {
-  localEvents: PosthogEventWithExecutionEnv[];
-  groupedNonLocalEvents: EventsByExeuctionEnvironment;
-};
 
 /**
  * Defines all non-local execution environments from which Wasp CLI sends
@@ -42,9 +37,10 @@ export const executionEnvs = {
  *
  * @returns Object containing local events and grouped non-local events
  */
-export function groupEventsByExecutionEnv(
-  events: PosthogEvent[],
-): EventsByExecutionEnv {
+export function groupEventsByExecutionEnv(events: PosthogEvent[]): {
+  localEvents: PosthogEventWithExecutionEnv[];
+  groupedNonLocalEvents: EventsByExeuctionEnvironment;
+} {
   const eventsWithExecutionEnv = events.map((event) => {
     const executionEnv = getExecutionEnvFromEventContext(event);
     return {
@@ -63,8 +59,9 @@ export function groupEventsByExecutionEnv(
   });
   return {
     localEvents,
-    groupedNonLocalEvents,
-  } as EventsByExecutionEnv;
+    groupedNonLocalEvents:
+      groupedNonLocalEvents as EventsByExeuctionEnvironment,
+  };
 }
 
 function getExecutionEnvFromEventContext(

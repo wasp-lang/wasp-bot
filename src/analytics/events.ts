@@ -15,7 +15,7 @@ const CACHE_FILE_PATH =
   process.env.WASP_ANALYTICS_CACHED_EVENTS_JSON_PATH ??
   "./wasp-analytics-cached-events.json";
 
-export type PosthogEvent = {
+export interface PosthogEvent {
   distinct_id: string;
   timestamp: Date;
   event?: string;
@@ -28,7 +28,7 @@ export type PosthogEvent = {
     context?: string;
     $ip?: string;
   };
-};
+}
 
 export async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
   console.log("Fetching all CLI events...");
