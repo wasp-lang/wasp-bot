@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import _ from "lodash";
 
 import { getEventContextValues } from "./eventContext";
 
@@ -41,7 +41,7 @@ export function groupEventsByExecutionEnv(events) {
 
 function getExecutionEnvFromEventContext(event) {
   const contextValues = getEventContextValues(event);
-  for (let [key, actor] of Object.entries(executionEnvs)) {
+  for (const [key, actor] of Object.entries(executionEnvs)) {
     if (contextValues.includes(actor.contextKey)) {
       return key;
     }

@@ -1,14 +1,13 @@
-import * as Discord from "discord.js";
-import * as schedule from "node-schedule";
-import * as Quote from "inspirational-quotes";
-import * as moment from "moment";
-import * as _ from "lodash";
-
+import Discord from "discord.js";
 import { config as dotenvConfig } from "dotenv";
+import Quote from "inspirational-quotes";
+import _ from "lodash";
+import schedule from "node-schedule";
 
-import logger from "./utils/logger";
-import * as reports from "./analytics/reports";
 import { getAnalyticsErrorMessage } from "./analytics/errors";
+import moment from "./analytics/moment";
+import * as reports from "./analytics/reports";
+import logger from "./utils/logger";
 
 dotenvConfig();
 
@@ -107,7 +106,7 @@ const handleMessage = async (bot, msg) => {
   }
 
   function getNumPeriodsFromAnalyticsCmd(cmd) {
-    let match = cmd.match(/numPeriods\s*=\s*(\d+)/);
+    const match = cmd.match(/numPeriods\s*=\s*(\d+)/);
     if (match) {
       return parseInt(match[1]);
     }
@@ -270,9 +269,10 @@ const initiateDailyStandup = async (bot) => {
         "Don't be too dogmatic, unless we're talking about Dogma the beer brewery.",
         "Milica, wannabe home brewer",
       ],
-      ["Let's send them some swag! Martin will take care of it.", "Matija"][
-        ("I don't have time to review PRs but it seems I do have time to implement these silly quotes.",
-        "Martin")
+      ["Let's send them some swag! Martin will take care of it.", "Matija"],
+      [
+        "I don't have time to review PRs but it seems I do have time to implement these silly quotes.",
+        "Martin",
       ],
     ]),
   );

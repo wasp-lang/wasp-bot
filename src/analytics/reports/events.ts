@@ -1,10 +1,10 @@
-import * as _ from "lodash";
+import retry from "async-retry";
+import _ from "lodash";
 
-import moment from "../moment";
-import { type PosthogEvent, fetchAllCliEvents } from "../events";
 import { addEventContextValue } from "../eventContext";
+import { type PosthogEvent, fetchAllCliEvents } from "../events";
 import { executionEnvs } from "../executionEnvs";
-import * as retry from "async-retry";
+import moment from "../moment";
 
 // These filters, when applyed to a list of events, remove
 // events that we don't want to go into analysis
@@ -120,7 +120,7 @@ export async function fetchEventsForReportGenerator() {
       retries: 10,
       minTimeout: 5 * 1000,
       maxTimeout: 60 * 1000,
-      onRetry: (e) => {
+      onRetry: (e: Error) => {
         console.error(
           "Error happened while fetching events for report generator, trying again:",
           e.message ?? e,

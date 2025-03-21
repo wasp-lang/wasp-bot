@@ -1,4 +1,4 @@
-import * as Table from "cli-table";
+import Table from "cli-table";
 
 export function newSimpleTable({ head, rows }) {
   const table = new Table({

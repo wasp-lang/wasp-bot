@@ -1,14 +1,15 @@
-import * as _ from "lodash";
-import { newSimpleTable } from "../../table";
+import _ from "lodash";
+
 import { groupEventsByExecutionEnv } from "../../executionEnvs";
+import { newSimpleTable } from "../../table";
 import { fetchEventsForReportGenerator } from "../events";
+import { getIntersection, groupEventsByUser } from "../utils";
 
-import { groupEventsByUser, getIntersection } from "../utils";
-
+import { WaspReport } from "..";
 import {
   calcLastNPeriods,
-  groupEventsByPeriods,
   getActiveUserIds,
+  groupEventsByPeriods,
   isEventInPeriod,
 } from "./common";
 
@@ -16,7 +17,7 @@ export async function generateCohortRetentionReport(
   numPeriods,
   periodName,
   prefetchedEvents = undefined,
-) {
+): Promise<WaspReport[]> {
   const periodNameShort = periodName[0];
 
   // All events, sorted by time (starting with oldest), with events caused by Wasp team members

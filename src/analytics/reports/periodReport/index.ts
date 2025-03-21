@@ -1,8 +1,8 @@
+import { WaspReport } from "..";
 import { fetchEventsForReportGenerator } from "../events";
-
+import { generateCohortRetentionReport } from "./cohortRetentionReport";
 import { generatePeriodProjectsReport } from "./projectsReport";
 import { generateUserActivityReport } from "./userActivityReport";
-import { generateCohortRetentionReport } from "./cohortRetentionReport";
 
 // Generates a report that calculates usage for last numPeriod periods of size periodName,
 // where periodName should be 'day' or 'week' or 'month'.
@@ -17,7 +17,7 @@ export async function generatePeriodReport(
   periodName,
   prefetchedEvents = undefined,
   genCohortRetentionReport = true,
-) {
+): Promise<WaspReport[]> {
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
 
   return [

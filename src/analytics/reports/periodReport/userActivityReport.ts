@@ -1,16 +1,15 @@
-import * as _ from "lodash";
+import _ from "lodash";
 
-import { newSimpleTable } from "../../table";
+import { WaspReport } from "..";
+import { buildChartImageUrl } from "../../charts";
 import {
   executionEnvs,
   groupEventsByExecutionEnv,
   showPrettyMetrics,
 } from "../../executionEnvs";
-import { buildChartImageUrl } from "../../charts";
-
+import { newSimpleTable } from "../../table";
 import { fetchEventsForReportGenerator } from "../events";
-import { groupEventsByUser, calcUserAgeInDays } from "../utils";
-
+import { calcUserAgeInDays, groupEventsByUser } from "../utils";
 import {
   calcLastNPeriods,
   getActiveUserIdsInPeriod,
@@ -21,7 +20,7 @@ export async function generateUserActivityReport(
   numPeriods,
   periodName,
   prefetchedEvents = undefined,
-) {
+): Promise<WaspReport[]> {
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
   const periods = calcLastNPeriods(numPeriods, periodName);
 
@@ -100,7 +99,7 @@ export async function generateUserActivityReport(
 
 function calcUniqueNonLocalEventsInPeriod(periods, eventsByEnv) {
   const uniqueNonLocalEventsInPeriod = {};
-  for (let envKey of Object.keys(executionEnvs)) {
+  for (const envKey of Object.keys(executionEnvs)) {
     const events = eventsByEnv[envKey] ?? [];
     uniqueNonLocalEventsInPeriod[envKey] = getActiveUserIdsInPeriod(
       events,
