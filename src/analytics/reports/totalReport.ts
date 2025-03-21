@@ -1,5 +1,7 @@
 import { PosthogEvent } from "../events";
 import {
+  EventsByExeuctionEnvironment,
+  ExecutionEnvironment,
   executionEnvs,
   groupEventsByExecutionEnv,
   showPrettyMetrics,
@@ -48,13 +50,20 @@ export async function generateTotalReport(
   return report;
 }
 
-function calcTotalUniqueEventsByExecutionEnv(eventsByEnv) {
-  const totalUniqueEventsByExecutionEnv = {};
-  for (const envKey of Object.keys(executionEnvs)) {
+function calcTotalUniqueEventsByExecutionEnv(
+  eventsByEnv: EventsByExeuctionEnvironment,
+): Record<ExecutionEnvironment, number> {
+  const totalUniqueEventsByExecutionEnv: Record<string, number> = {};
+  for (const envKey of Object.keys(
+    executionEnvs,
+  ) as Array<ExecutionEnvironment>) {
     const events = eventsByEnv[envKey] ?? [];
     totalUniqueEventsByExecutionEnv[envKey] = new Set(
-      events.map((e) => e.distinct_id),
+      events.map((event) => event.distinct_id),
     ).size;
   }
-  return totalUniqueEventsByExecutionEnv;
+  return totalUniqueEventsByExecutionEnv as Record<
+    ExecutionEnvironment,
+    number
+  >;
 }

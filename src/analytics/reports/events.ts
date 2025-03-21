@@ -1,7 +1,7 @@
 import retry from "async-retry";
 import _ from "lodash";
 
-import { addEventContextValue } from "../eventContext";
+import { addEventContextValueIfMissing } from "../eventContext";
 import { type PosthogEvent, fetchAllCliEvents } from "../events";
 import { executionEnvs } from "../executionEnvs";
 import moment from "../moment";
@@ -101,7 +101,7 @@ function markAsCiEventBurstsFromDifferentUsersFromSameIp(
     lastTimePerIpAndUser.set(eventIpAndUser, eventTime);
 
     if (thereAreRecentEventsWithSameIpButNotFromSameUser) {
-      return addEventContextValue(event, executionEnvs.ci.contextKey);
+      return addEventContextValueIfMissing(event, executionEnvs.ci.contextKey);
     } else {
       return event;
     }

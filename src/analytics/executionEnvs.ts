@@ -86,7 +86,7 @@ function getExecutionEnvFromEventContext(
  * @returns Formatted string representation of metrics in the format "[EnvName: MetricValue] [EnvName2: MetricValue2] ..."
  */
 export function showPrettyMetrics(
-  metricsByEnv: Record<string, number>,
+  metricsByEnv: Record<ExecutionEnvironment, number>,
 ): string {
   const output = [];
   for (const [key, metric] of Object.entries(metricsByEnv)) {
