@@ -7,8 +7,10 @@ import {
 export { fetchEventsForReportGenerator } from "./events";
 export { generateTotalReport } from "./totalReport";
 
+type ReportName = string;
+
 export type WaspReport = Record<
-  string,
+  ReportName,
   {
     text?: string[];
     csv?: (number | string)[][];

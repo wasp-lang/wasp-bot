@@ -19,14 +19,8 @@ export async function generateFullPeriodReport(
 ) {
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
 
-  const baseReports = await generatePeriodReportDefaultReports(
-    numPeriods,
-    periodName,
-    events,
-  );
-
   return {
-    ...baseReports,
+    ...(await generatePeriodReportBaseReports(numPeriods, periodName, events)),
     cohortRetentionReport: await generateCohortRetentionReport(
       numPeriods,
       periodName,
@@ -42,7 +36,7 @@ export async function generatePeriodReportWithoutCohortRetention(
 ) {
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
 
-  const baseReports = await generatePeriodReportDefaultReports(
+  const baseReports = await generatePeriodReportBaseReports(
     numPeriods,
     periodName,
     events,
@@ -51,11 +45,7 @@ export async function generatePeriodReportWithoutCohortRetention(
   return baseReports;
 }
 
-async function generatePeriodReportDefaultReports(
-  numPeriods,
-  periodName,
-  events = undefined,
-) {
+async function generatePeriodReportBaseReports(numPeriods, periodName, events) {
   return {
     userActivityReport: await generateUserActivityReport(
       numPeriods,
