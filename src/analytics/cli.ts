@@ -39,16 +39,16 @@ async function allTimeMonthlyActiveUsersAndProjectsCsvCliReport(events) {
   }
 }
 
-function showReportInCLI(report: reports.WaspReport) {
-  for (const metric of Object.values(report)) {
+function showReportInCLI(compositeReport: reports.CompositeReport) {
+  for (const report of Object.values(compositeReport)) {
     console.log();
-    if (metric.text) {
-      for (const textLine of metric.text) {
+    if (report.text) {
+      for (const textLine of report.text) {
         console.log(textLine);
       }
     }
-    if (metric.chart) {
-      console.log("- Chart: ", metric.chart.toURL());
+    if (report.chart) {
+      console.log("- Chart: ", report.chart.toURL());
     }
   }
 }

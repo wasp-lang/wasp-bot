@@ -5,6 +5,7 @@ import { newSimpleTable } from "../../table";
 import { fetchEventsForReportGenerator } from "../events";
 import { getIntersection, groupEventsByUser } from "../utils";
 
+import { SimpleReport } from "..";
 import {
   calcLastNPeriods,
   getActiveUserIds,
@@ -12,11 +13,13 @@ import {
   isEventInPeriod,
 } from "./common";
 
+type CohortRetentionReport = Pick<SimpleReport, "text">;
+
 export async function generateCohortRetentionReport(
   numPeriods,
   periodName,
   prefetchedEvents = undefined,
-) {
+): Promise<CohortRetentionReport> {
   const periodNameShort = periodName[0];
 
   // All events, sorted by time (starting with oldest), with events caused by Wasp team members

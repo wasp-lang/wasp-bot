@@ -11,7 +11,6 @@ import { generateUserActivityReport } from "./userActivityReport";
 // they are prepared (our events removed, sorted) and that they are all events available for CLI,
 // for the whole history. You should obtain them with fetchAllCliEvents(), in that case they will
 // be all good.
-
 export async function generateFullPeriodReport(
   numPeriods,
   periodName,
@@ -36,13 +35,7 @@ export async function generatePeriodReportWithoutCohortRetention(
 ) {
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
 
-  const baseReports = await generatePeriodReportBaseReports(
-    numPeriods,
-    periodName,
-    events,
-  );
-
-  return baseReports;
+  return await generatePeriodReportBaseReports(numPeriods, periodName, events);
 }
 
 async function generatePeriodReportBaseReports(numPeriods, periodName, events) {

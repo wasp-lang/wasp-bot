@@ -9,14 +9,13 @@ export { generateTotalReport } from "./totalReport";
 
 type ReportName = string;
 
-export type WaspReport = Record<
-  ReportName,
-  {
-    text?: string[];
-    csv?: (number | string)[][];
-    chart?: ImageCharts;
-  }
->;
+export type SimpleReport = {
+  text: string[];
+  csv: (number | string)[][];
+  chart: ImageCharts;
+};
+
+export type CompositeReport = Record<ReportName, Partial<SimpleReport>>;
 
 export async function generateDailyReport(
   prefetchedEvents = undefined,

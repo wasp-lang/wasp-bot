@@ -1,5 +1,6 @@
 import _ from "lodash";
 
+import { SimpleReport } from "..";
 import { buildChartImageUrl } from "../../charts";
 import {
   executionEnvs,
@@ -15,11 +16,13 @@ import {
   groupEventsByPeriods,
 } from "./common";
 
+type UserActivityReport = Pick<SimpleReport, "text" | "csv" | "chart">;
+
 export async function generateUserActivityReport(
   numPeriods,
   periodName,
   prefetchedEvents = undefined,
-) {
+): Promise<UserActivityReport> {
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
   const periods = calcLastNPeriods(numPeriods, periodName);
 

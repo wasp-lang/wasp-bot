@@ -228,12 +228,12 @@ const sendAnalyticsReport = async (
 
   waspTeamTextChannel.send(`⏳ Generating ${reportType} report...`);
 
-  const report: reports.WaspReport = await reportPromise;
+  const compositeReport: reports.CompositeReport = await reportPromise;
   waspTeamTextChannel.send(
     `=============== ${reportTitle} ANALYTICS REPORT ===============`,
   );
-  for (const metric of Object.values(report)) {
-    let text = metric.text?.join("\n");
+  for (const report of Object.values(compositeReport)) {
+    let text = report.text?.join("\n");
     if (text && text.length >= DISCORD_MAX_MSG_SIZE) {
       text =
         text.substring(0, DISCORD_MAX_MSG_SIZE - 50) +
@@ -241,9 +241,9 @@ const sendAnalyticsReport = async (
     }
 
     let embed = undefined;
-    if (metric.chart) {
+    if (report.chart) {
       embed = new Discord.MessageEmbed();
-      embed.setImage(metric.chart.toURL());
+      embed.setImage(report.chart.toURL());
     }
 
     waspTeamTextChannel.send(text, embed);
