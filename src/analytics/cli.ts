@@ -40,15 +40,15 @@ async function allTimeMonthlyActiveUsersAndProjectsCsvCliReport(events) {
 }
 
 function showReportInCLI(compositeReport: reports.CompositeReport) {
-  for (const report of Object.values(compositeReport)) {
+  for (const simpleReport of Object.values(compositeReport)) {
     console.log();
-    if (report.text) {
-      for (const textLine of report.text) {
+    if (simpleReport.text) {
+      for (const textLine of simpleReport.text) {
         console.log(textLine);
       }
     }
-    if (report.chart) {
-      console.log("- Chart: ", report.chart.toURL());
+    if (simpleReport.chart) {
+      console.log("- Chart: ", simpleReport.chart.toURL());
     }
   }
 }
