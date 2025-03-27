@@ -1,9 +1,9 @@
 import ImageCharts from "image-charts";
 
-export type ChartData = {
+export interface ChartData {
   series: Record<string, number[]>;
   periodEnds: string[];
-};
+}
 
 // Expects data to be:
 //   data = { series: { name: [number] }, periodEnds: [string] }
