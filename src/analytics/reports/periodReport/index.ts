@@ -54,7 +54,8 @@ export async function generatePeriodReport(
 }
 
 /**
- * Generates a period report excluding cohort retention report due to quadratic complexity.
+ * Generates a period report that spans Wasp's whole existance.
+ * The report excludes the cohort retention report due to quadratic complexity.
  */
 export async function generateAllTimePeriodReport(
   numPeriods,
