@@ -233,11 +233,12 @@ const sendAnalyticsReport = async (
     `=============== ${reportTitle} ANALYTICS REPORT ===============`,
   );
   for (const simpleReport of Object.values(compositeReport)) {
-    let text = simpleReport.text?.join("\n");
+    const text = simpleReport.text?.join("\n");
     if (text && text.length >= DISCORD_MAX_MSG_SIZE) {
-      text =
-        text.substring(0, DISCORD_MAX_MSG_SIZE - 50) +
-        "\n... ⚠️ MESSAGE CUT BECAUSE IT IS TOO LONG...";
+      const tooLongMessage = "\n... ⚠️ MESSAGE CUT BECAUSE IT IS TOO LONG...";
+
+      text.substring(0, DISCORD_MAX_MSG_SIZE - tooLongMessage.length) +
+        tooLongMessage;
     }
 
     let embed = undefined;

@@ -6,7 +6,7 @@ import { fetchEventsForReportGenerator } from "../events";
 import { groupEventsByProject } from "../utils";
 import { calcLastNPeriods } from "./common";
 
-type ProjectsReport = Pick<SimpleReport, "text" | "csv">;
+export type ProjectsReport = Pick<SimpleReport, "text" | "csv">;
 
 export async function generatePeriodProjectsReport(
   numPeriods,

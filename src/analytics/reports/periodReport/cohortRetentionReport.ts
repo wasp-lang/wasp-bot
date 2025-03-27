@@ -13,7 +13,7 @@ import {
   isEventInPeriod,
 } from "./common";
 
-type CohortRetentionReport = Pick<SimpleReport, "text">;
+export type CohortRetentionReport = Pick<SimpleReport, "text">;
 
 export async function generateCohortRetentionReport(
   numPeriods,

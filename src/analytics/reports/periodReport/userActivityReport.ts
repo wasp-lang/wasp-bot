@@ -16,7 +16,7 @@ import {
   groupEventsByPeriods,
 } from "./common";
 
-type UserActivityReport = Pick<SimpleReport, "text" | "csv" | "chart">;
+export type UserActivityReport = Pick<SimpleReport, "text" | "csv" | "chart">;
 
 export async function generateUserActivityReport(
   numPeriods,

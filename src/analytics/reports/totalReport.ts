@@ -7,7 +7,7 @@ import {
 import { fetchEventsForReportGenerator } from "./events";
 import { groupEventsByProject } from "./utils";
 
-type TotalReport = Pick<SimpleReport, "text">;
+export type TotalReport = Pick<SimpleReport, "text">;
 
 // Generates report for some general statistics that cover the whole (total) time (all of the events).
 export async function generateTotalReport(
