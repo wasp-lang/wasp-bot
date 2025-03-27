@@ -18,34 +18,30 @@ export type SimpleReport = {
 
 export type CompositeReport = { [reportName: string]: Partial<SimpleReport> };
 
-export async function generateDailyReport(
+export function generateDailyReport(
   prefetchedEvents: PosthogEvent[] | undefined = undefined,
   numPeriods: number = 14,
 ): Promise<PeriodReport> {
-  return await generatePeriodReport(prefetchedEvents, numPeriods, "day");
+  return generatePeriodReport(prefetchedEvents, numPeriods, "day");
 }
 
-export async function generateWeeklyReport(
+export function generateWeeklyReport(
   prefetchedEvents: PosthogEvent[] | undefined = undefined,
   numPeriods: number = 12,
 ): Promise<PeriodReport> {
-  return await generatePeriodReport(prefetchedEvents, numPeriods, "week");
+  return generatePeriodReport(prefetchedEvents, numPeriods, "week");
 }
 
-export async function generateMonthlyReport(
+export function generateMonthlyReport(
   prefetchedEvents: PosthogEvent[] | undefined = undefined,
   numPeriods: number = 12,
 ): Promise<PeriodReport> {
-  return await generatePeriodReport(prefetchedEvents, numPeriods, "month");
+  return generatePeriodReport(prefetchedEvents, numPeriods, "month");
 }
 
-export async function generateAllTimeMonthlyReport(
+export function generateAllTimeMonthlyReport(
   prefetchedEvents: PosthogEvent[] | undefined = undefined,
 ): Promise<AllTimePeriodReort> {
   const numMonths = moment().diff(moment("2021-01-01"), "months") + 1;
-  return await generateAllTimePeriodReport(
-    prefetchedEvents,
-    numMonths,
-    "month",
-  );
+  return generateAllTimePeriodReport(prefetchedEvents, numMonths, "month");
 }
