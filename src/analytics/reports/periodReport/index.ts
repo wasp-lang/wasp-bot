@@ -22,15 +22,6 @@ export type PeriodReport = BasePeriodReport & {
   cohortRetentionReport: CohortRetentionReport;
 };
 
-/**
- * Generates a report that calculates usage for last numPeriod periods of size periodName.
- * Each period is a central time scope of calculation.
- *
- * @param numPeriods - The number of periods to calculate usage for
- * @param periodName - The size of the period
- * @param prefetchedEvents - Optional prefetched events. If provided, should be prepared (our events removed, sorted) and contain all events available for CLI for the whole history. Obtain with fetchAllCliEvents().
- * @returns Array of Wasp reports
- */
 export async function generatePeriodReport(
   prefetchedEvents: PosthogEvent[] | undefined = undefined,
   numPeriods: number,
@@ -56,7 +47,8 @@ export async function generatePeriodReport(
 }
 
 /**
- * Generates a period report excluding cohort retention report due to quadratic complexity.
+ * Generates a period report that spans Wasp's whole existance.
+ * The report excludes the cohort retention report due to quadratic complexity.
  */
 export async function generateAllTimePeriodReport(
   prefetchedEvents: PosthogEvent[] | undefined = undefined,
