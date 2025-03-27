@@ -1,5 +1,6 @@
 import _ from "lodash";
 
+import { SimpleReport } from "..";
 import {
   buildUserActivityReportImageChartsObject,
   ChartData,
@@ -23,11 +24,13 @@ import {
   PeriodName,
 } from "./period";
 
+export type UserActivityReport = Pick<SimpleReport, "text" | "csv" | "chart">;
+
 export async function generateUserActivityReport(
   prefetchedEvents: PosthogEvent[] | undefined = undefined,
   numPeriods: number,
   periodName: PeriodName,
-) {
+): Promise<UserActivityReport> {
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
   const periods = calcLastNPeriods(numPeriods, periodName);
 

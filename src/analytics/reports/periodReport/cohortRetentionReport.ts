@@ -1,6 +1,7 @@
 import _ from "lodash";
 
 import { Moment } from "moment";
+import { SimpleReport } from "..";
 import { PosthogEvent } from "../../events";
 import { groupEventsByExecutionEnv } from "../../executionEnvs";
 import { newSimpleTable } from "../../table";
@@ -18,11 +19,13 @@ import {
   PeriodName,
 } from "./period";
 
+export type CohortRetentionReport = Pick<SimpleReport, "text">;
+
 export async function generateCohortRetentionReport(
   prefetchedEvents: PosthogEvent[] | undefined = undefined,
   numPeriods: number,
   periodName: PeriodName,
-) {
+): Promise<CohortRetentionReport> {
   const periodNameShort = periodName[0];
 
   // All events, sorted by time (starting with oldest), with events caused by Wasp team members

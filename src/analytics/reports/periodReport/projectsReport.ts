@@ -1,3 +1,4 @@
+import { SimpleReport } from "..";
 import { PosthogEvent } from "../../events";
 import { groupEventsByExecutionEnv } from "../../executionEnvs";
 import moment from "../../moment";
@@ -6,11 +7,13 @@ import { fetchEventsForReportGenerator } from "../events";
 import { groupEventsByProject } from "../utils";
 import { calcLastNPeriods, PeriodName } from "./period";
 
+export type ProjectsReport = Pick<SimpleReport, "text" | "csv">;
+
 export async function generatePeriodProjectsReport(
   prefetchedEvents: PosthogEvent[] | undefined = undefined,
   numPeriods: number,
   periodName: PeriodName,
-) {
+): Promise<ProjectsReport> {
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
 
   const { localEvents } = groupEventsByExecutionEnv(events);

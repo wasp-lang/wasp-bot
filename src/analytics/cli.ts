@@ -1,33 +1,27 @@
 import logger from "../utils/logger";
 import { getAnalyticsErrorMessage } from "./errors";
-import { PosthogEvent } from "./events";
-import {
-  fetchEventsForReportGenerator,
-  generateAllTimeMonthlyReport,
-  generateDailyReport,
-  generateMonthlyReport,
-  generateTotalReport,
-  generateWeeklyReport,
-  WaspReport,
-} from "./reports";
+import * as reports from "./reports";
+import { AllTimePeriodReort } from "./reports/periodReport";
 
 async function cliReport() {
-  const events = await fetchEventsForReportGenerator();
+  const events = await reports.fetchEventsForReportGenerator();
 
-  printTitle("TOTAL REPORT");
-  showReportInCLI(await generateTotalReport(events));
+  printReportTitle("TOTAL REPORT");
+  printReportInCLI(await reports.generateTotalReport(events));
 
-  printTitle("DAILY REPORT");
-  showReportInCLI(await generateDailyReport(events));
+  printReportTitle("DAILY REPORT");
+  printReportInCLI(await reports.generateDailyReport(events));
 
-  printTitle("WEEKLY REPORT");
-  showReportInCLI(await generateWeeklyReport(events));
+  printReportTitle("WEEKLY REPORT");
+  printReportInCLI(await reports.generateWeeklyReport(events));
 
-  printTitle("MONTHLY REPORT");
-  showReportInCLI(await generateMonthlyReport(events));
+  printReportTitle("MONTHLY REPORT");
+  printReportInCLI(await reports.generateMonthlyReport(events));
 
-  printTitle("ALL TIME MONTHLY REPORT (CSVs)");
-  await allTimeMonthlyActiveUsersAndProjectsCsvCliReport(events);
+  printReportTitle("ALL TIME MONTHLY REPORT (CSVs)");
+  printAllTimeMonthlyReportCsvInCLI(
+    await reports.generateAllTimeMonthlyReport(events),
+  );
 }
 
 /**
@@ -35,38 +29,38 @@ async function cliReport() {
  * while skipping cohort analytis because that would be too complex.
  * Useful for manually producing charts that show total progress of Wasp.
  */
-async function allTimeMonthlyActiveUsersAndProjectsCsvCliReport(
-  events: PosthogEvent[],
+function printAllTimeMonthlyReportCsvInCLI(
+  allTimePeriodReort: AllTimePeriodReort,
 ) {
-  const report = await generateAllTimeMonthlyReport(events);
+  const { userActivityReport, projectsReport } = allTimePeriodReort;
 
   console.log("\n[CSV] Num active users");
-  for (const row of report.userActivityReport.csv) {
+  for (const row of userActivityReport.csv) {
     console.log(row.join(","));
   }
 
   console.log("\n[CSV] Num projects");
   console.log("created diff,created cumm,built diff,built cumm");
-  for (const row of report.projectsReport.csv) {
+  for (const row of projectsReport.csv) {
     console.log(row.join(","));
   }
 }
 
-function showReportInCLI(report: WaspReport) {
-  for (const metric of Object.values(report)) {
+function printReportInCLI(compositeReport: reports.CompositeReport) {
+  for (const simpleReport of Object.values(compositeReport)) {
     console.log();
-    if (metric.text) {
-      for (const textLine of metric.text) {
+    if (simpleReport.text) {
+      for (const textLine of simpleReport.text) {
         console.log(textLine);
       }
     }
-    if (metric.chart) {
-      console.log("- Chart: ", metric.chart.toURL());
+    if (simpleReport.chart) {
+      console.log("- Chart: ", simpleReport.chart.toURL());
     }
   }
 }
 
-function printTitle(text: string) {
+function printReportTitle(text: string) {
   console.log(`\x1b[33m \n\n${text} \x1b[0m`);
 }
 
