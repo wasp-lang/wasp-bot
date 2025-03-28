@@ -4,7 +4,7 @@ import { Moment } from "moment";
 import { SimpleReport } from "..";
 import { PosthogEvent } from "../../events";
 import { groupEventsByExecutionEnv } from "../../executionEnvs";
-import { newSimpleTable } from "../../table";
+import { createCrossTable, CrossTableData } from "../../table";
 import { fetchEventsForReportGenerator } from "../events";
 import {
   getIntersection,
@@ -87,12 +87,12 @@ export async function generateCohortRetentionReport(
     return [numUsersAtStart.toString(), ...retentionPercentages];
   }
 
-  const table = newSimpleTable({
+  const table = createCrossTable({
     head: ["", ...periods.map((_, i) => `+${i}${periodNameShort}`)],
     rows: cohorts.map((cohort, i) => ({
       [`${periodNameShort} #${i}`]: calcCohortRetentionTableRow(cohort),
     })),
-  });
+  } satisfies CrossTableData);
 
   const fmt = (m: Moment) => m.format("DD-MM-YY");
   const firstPeriod = periods[0];

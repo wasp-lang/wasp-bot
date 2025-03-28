@@ -2,7 +2,7 @@ import { SimpleReport } from "..";
 import { PosthogEvent } from "../../events";
 import { groupEventsByExecutionEnv } from "../../executionEnvs";
 import moment from "../../moment";
-import { newSimpleTable } from "../../table";
+import { createCrossTable, CrossTableData } from "../../table";
 import { fetchEventsForReportGenerator } from "../events";
 import { groupEventsByProject } from "../utils";
 import { calcLastNPeriods, PeriodName } from "./period";
@@ -73,7 +73,7 @@ export async function generatePeriodProjectsReport(
     ];
   });
 
-  const table = newSimpleTable({
+  const table = createCrossTable({
     head: ["", "created", "built"],
     rows: csv.map(
       ([periodEnd, createdDiff, createdCumm, builtDiff, builtCumm]) => ({
@@ -84,7 +84,7 @@ export async function generatePeriodProjectsReport(
         ],
       }),
     ),
-  });
+  } satisfies CrossTableData);
 
   const report = {
     csv,

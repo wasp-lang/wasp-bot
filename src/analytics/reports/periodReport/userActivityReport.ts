@@ -13,7 +13,7 @@ import {
   groupEventsByExecutionEnv,
   showPrettyMetrics,
 } from "../../executionEnvs";
-import { newSimpleTable } from "../../table";
+import { createCrossTable, CrossTableData } from "../../table";
 import { fetchEventsForReportGenerator } from "../events";
 import { calcUserAgeInDays, groupEventsByUser } from "../utils";
 import {
@@ -55,8 +55,8 @@ export async function generateUserActivityReport(
     Math.round(_.mean(uniqueLocalActiveUsersPerPeriodByAge.series[ageRange])),
   );
 
-  const tableOfActiveUsersPerPeriodByAgeCsv = [
-    ["", ...ageRanges, "ALL"],
+  const activeUsersperPeriodByAgeHeaders = ["", ...ageRanges, "ALL"];
+  const activeUsersPerPeriodByAgeCsvData = [
     ...uniqueLocalActiveUsersPerPeriodByAge.periodEnds.map((periodEnd, i) => {
       const numUsersPerAge = ageRanges.map(
         (ageRange) => uniqueLocalActiveUsersPerPeriodByAge.series[ageRange][i],
@@ -65,17 +65,22 @@ export async function generateUserActivityReport(
     }),
   ];
 
-  const tableOfActiveUsersPerPeriodByAge = newSimpleTable({
-    head: tableOfActiveUsersPerPeriodByAgeCsv[0],
+  const tableOfActiveUsersPerPeriodByAge = createCrossTable({
+    head: activeUsersperPeriodByAgeHeaders as ["", ...string[]],
     rows: [
-      ...tableOfActiveUsersPerPeriodByAgeCsv
-        .slice(1)
-        .map(([periodEnd, ...numUsersPerAgeAndSum]) => ({
-          [periodEnd]: numUsersPerAgeAndSum,
-        })),
-      ["AVG", ...ageRangesAverages, _.sum(ageRangesAverages)],
+      ...activeUsersPerPeriodByAgeCsvData.map(
+        ([periodEnd, ...numUsersPerAgeAndSum]) => ({
+          [periodEnd]: numUsersPerAgeAndSum.map((num) => num.toString()),
+        }),
+      ),
+      {
+        AVG: [
+          ...ageRangesAverages.map((num) => num.toString()),
+          _.sum(ageRangesAverages).toString(),
+        ],
+      },
     ],
-  });
+  } satisfies CrossTableData);
 
   const totalNumOfLocalUsersInLastPeriod = _.sum(
     Object.values(uniqueLocalActiveUsersPerPeriodByAge.series).map((series) =>
@@ -98,7 +103,10 @@ export async function generateUserActivityReport(
       uniqueLocalActiveUsersPerPeriodByAge,
       `Num unique active users (per ${periodName})`,
     ),
-    csv: tableOfActiveUsersPerPeriodByAgeCsv,
+    csv: [
+      activeUsersperPeriodByAgeHeaders,
+      ...activeUsersPerPeriodByAgeCsvData,
+    ],
   };
 
   return report;

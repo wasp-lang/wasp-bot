@@ -22,6 +22,9 @@ export type PeriodReport = BasePeriodReport & {
   cohortRetentionReport: CohortRetentionReport;
 };
 
+/**
+ * Generates a period report that spans last numPeriod periods of size periodName.
+ */
 export async function generatePeriodReport(
   prefetchedEvents: PosthogEvent[] | undefined = undefined,
   numPeriods: number,
