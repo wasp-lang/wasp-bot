@@ -1,10 +1,7 @@
 import _ from "lodash";
 
 import { SimpleReport } from "..";
-import {
-  buildUserActivityReportImageChartsObject,
-  ChartData,
-} from "../../charts";
+import { buildUserActivityReportChart, ChartData } from "../../charts";
 import { PosthogEvent } from "../../events";
 import {
   EventsByExeuctionEnvironment,
@@ -99,7 +96,7 @@ export async function generateUserActivityReport(
       tableOfActiveUsersPerPeriodByAge.toString(),
       "```",
     ],
-    chart: buildUserActivityReportImageChartsObject(
+    chart: buildUserActivityReportChart(
       uniqueLocalActiveUsersPerPeriodByAge,
       `Num unique active users (per ${periodName})`,
     ),

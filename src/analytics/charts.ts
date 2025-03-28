@@ -8,11 +8,11 @@ export interface ChartData {
 /**
  * Builds a stacked vertical bar chart for user activity report.
  */
-export function buildUserActivityReportImageChartsObject(
+export function buildUserActivityReportChart(
   data: ChartData,
   title: string,
 ): ImageCharts {
-  return returnBaseChart(data, title).cht("bvs"); // Type - "bars vertical stacked"
+  return createBaseChart(data, title).cht("bvs"); // Type - "bars vertical stacked"
 }
 
 /**
@@ -21,7 +21,7 @@ export function buildUserActivityReportImageChartsObject(
  *
  * @returns Base ImageCharts object with common configuration applied
  */
-function returnBaseChart(data: ChartData, title: string): ImageCharts {
+function createBaseChart(data: ChartData, title: string): ImageCharts {
   const chart = new ImageCharts()
     .chtt(title) // Title.
     .chd(
