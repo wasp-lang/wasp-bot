@@ -1,11 +1,11 @@
 import _ from "lodash";
 
 import { Moment } from "moment";
-import { SimpleReport } from "..";
 import { PosthogEvent } from "../../events";
 import { groupEventsByExecutionEnv } from "../../executionEnvs";
 import { createCrossTable, CrossTableData } from "../../table";
 import { fetchEventsForReportGenerator } from "../events";
+import { CohortRetentionReport } from "../reports";
 import {
   getIntersection,
   getUniqueActiveUserIds,
@@ -18,8 +18,6 @@ import {
   Period,
   PeriodName,
 } from "./period";
-
-export type CohortRetentionReport = Pick<SimpleReport, "text">;
 
 export async function generateCohortRetentionReport(
   prefetchedEvents: PosthogEvent[] | undefined = undefined,

@@ -1,13 +1,11 @@
-import { SimpleReport } from "..";
 import { PosthogEvent } from "../../events";
 import { groupEventsByExecutionEnv } from "../../executionEnvs";
 import moment from "../../moment";
 import { createCrossTable, CrossTableData } from "../../table";
 import { fetchEventsForReportGenerator } from "../events";
+import { ProjectsReport } from "../reports";
 import { groupEventsByProject } from "../utils";
 import { calcLastNPeriods, PeriodName } from "./period";
-
-export type ProjectsReport = Pick<SimpleReport, "text" | "csv">;
 
 export async function generatePeriodProjectsReport(
   prefetchedEvents: PosthogEvent[] | undefined = undefined,

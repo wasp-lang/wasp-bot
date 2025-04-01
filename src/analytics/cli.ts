@@ -1,7 +1,11 @@
 import logger from "../utils/logger";
 import { getAnalyticsErrorMessage } from "./errors";
 import * as reports from "./reports";
-import { AllTimePeriodReort } from "./reports/periodReport";
+import {
+  AllTimePeriodReport,
+  ChartReport,
+  TextReport,
+} from "./reports/reports";
 
 async function cliReport() {
   const events = await reports.fetchEventsForReportGenerator();
@@ -30,7 +34,7 @@ async function cliReport() {
  * Useful for manually producing charts that show total progress of Wasp.
  */
 function printAllTimeMonthlyReportCsvInCLI(
-  allTimePeriodReort: AllTimePeriodReort,
+  allTimePeriodReort: AllTimePeriodReport,
 ) {
   const { userActivityReport, projectsReport } = allTimePeriodReort;
 
@@ -46,7 +50,9 @@ function printAllTimeMonthlyReportCsvInCLI(
   }
 }
 
-function printReportInCLI(compositeReport: reports.CompositeReport) {
+function printReportInCLI(
+  compositeReport: Record<string, Partial<TextReport & ChartReport>>,
+) {
   for (const simpleReport of Object.values(compositeReport)) {
     console.log();
     if (simpleReport.text) {

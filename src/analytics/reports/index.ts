@@ -1,22 +1,13 @@
-import ImageCharts from "image-charts";
 import { PosthogEvent } from "../events";
 import moment from "../moment";
 import {
   AllTimePeriodReort,
   generateAllTimePeriodReport,
   generatePeriodReport,
-  PeriodReport,
 } from "./periodReport";
+import { PeriodReport } from "./reports";
 export { fetchEventsForReportGenerator } from "./events";
 export { generateTotalReport } from "./totalReport";
-
-export type SimpleReport = {
-  text: string[];
-  csv: (number | string)[][];
-  chart: ImageCharts;
-};
-
-export type CompositeReport = { [reportName: string]: Partial<SimpleReport> };
 
 export function generateDailyReport(
   prefetchedEvents: PosthogEvent[] | undefined = undefined,

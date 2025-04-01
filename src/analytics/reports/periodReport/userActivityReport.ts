@@ -1,6 +1,5 @@
 import _ from "lodash";
 
-import { SimpleReport } from "..";
 import { buildUserActivityReportChart, ChartData } from "../../charts";
 import { PosthogEvent } from "../../events";
 import {
@@ -12,6 +11,7 @@ import {
 } from "../../executionEnvs";
 import { createCrossTable, CrossTableData } from "../../table";
 import { fetchEventsForReportGenerator } from "../events";
+import { UserActivityReport } from "../reports";
 import { calcUserAgeInDays, groupEventsByUser } from "../utils";
 import {
   calcLastNPeriods,
@@ -20,8 +20,6 @@ import {
   Period,
   PeriodName,
 } from "./period";
-
-export type UserActivityReport = Pick<SimpleReport, "text" | "csv" | "chart">;
 
 export async function generateUserActivityReport(
   prefetchedEvents: PosthogEvent[] | undefined = undefined,

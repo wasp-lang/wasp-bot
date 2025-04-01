@@ -2,14 +2,13 @@ import { PosthogEvent } from "../../events";
 import { fetchEventsForReportGenerator } from "../events";
 import {
   CohortRetentionReport,
-  generateCohortRetentionReport,
-} from "./cohortRetentionReport";
-import { PeriodName } from "./period";
-import { generatePeriodProjectsReport, ProjectsReport } from "./projectsReport";
-import {
-  generateUserActivityReport,
+  ProjectsReport,
   UserActivityReport,
-} from "./userActivityReport";
+} from "../reports";
+import { generateCohortRetentionReport } from "./cohortRetentionReport";
+import { PeriodName } from "./period";
+import { generatePeriodProjectsReport } from "./projectsReport";
+import { generateUserActivityReport } from "./userActivityReport";
 
 type BasePeriodReport = {
   userActivityReport: UserActivityReport;
@@ -32,7 +31,12 @@ export async function generatePeriodReport(
 ): Promise<PeriodReport> {
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
 
-  const basePeriodReport = await generatePeriodReportBaseReports(
+  const userActivityReport = await generateUserActivityReport(
+    events,
+    numPeriods,
+    periodName,
+  );
+  const projectsReport = await generatePeriodProjectsReport(
     events,
     numPeriods,
     periodName,
@@ -44,13 +48,14 @@ export async function generatePeriodReport(
   );
 
   return {
-    ...basePeriodReport,
+    userActivityReport,
+    projectsReport,
     cohortRetentionReport,
   };
 }
 
 /**
- * Generates a period report that spans Wasp's whole existance.
+ * Generates a report that spans Wasp's whole existance.
  * The report excludes the cohort retention report due to quadratic complexity.
  */
 export async function generateAllTimePeriodReport(
@@ -60,20 +65,6 @@ export async function generateAllTimePeriodReport(
 ) {
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
 
-  const baseReports = await generatePeriodReportBaseReports(
-    events,
-    numPeriods,
-    periodName,
-  );
-
-  return baseReports;
-}
-
-async function generatePeriodReportBaseReports(
-  events: PosthogEvent[],
-  numPeriods: number,
-  periodName: PeriodName,
-) {
   const userActivityReport = await generateUserActivityReport(
     events,
     numPeriods,
