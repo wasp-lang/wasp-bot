@@ -7,6 +7,7 @@ import schedule from "node-schedule";
 import { getAnalyticsErrorMessage } from "./analytics/errors";
 import moment from "./analytics/moment";
 import * as reports from "./analytics/reports";
+import { ChartReport, TextReport } from "./analytics/reports/reports";
 import logger from "./utils/logger";
 
 dotenvConfig();
@@ -228,31 +229,48 @@ const sendAnalyticsReport = async (
 
   waspTeamTextChannel.send(`⏳ Generating ${reportType} report...`);
 
-  const compositeReport: reports.CompositeReport = await reportPromise;
+  const compositeReport: Record<
+    string,
+    Partial<TextReport & ChartReport>
+  > = await reportPromise;
+
   waspTeamTextChannel.send(
     `=============== ${reportTitle} ANALYTICS REPORT ===============`,
   );
   for (const simpleReport of Object.values(compositeReport)) {
-    const text = simpleReport.text?.join("\n");
-    if (text && text.length >= DISCORD_MAX_MSG_SIZE) {
-      const tooLongMessage = "\n... ⚠️ MESSAGE CUT BECAUSE IT IS TOO LONG...";
-
-      text.substring(0, DISCORD_MAX_MSG_SIZE - tooLongMessage.length) +
-        tooLongMessage;
-    }
-
-    let embed = undefined;
-    if (simpleReport.chart) {
-      embed = new Discord.MessageEmbed();
-      embed.setImage(simpleReport.chart.toURL());
-    }
-
-    waspTeamTextChannel.send(text, embed);
+    waspTeamTextChannel.send(
+      covertTextReportToDiscordMessage(simpleReport),
+      covertChartReportToDiscordMessage(simpleReport),
+    );
   }
   waspTeamTextChannel.send(
     "=======================================================",
   );
 };
+
+function covertTextReportToDiscordMessage(textReport: Partial<TextReport>) {
+  let text: string | undefined = undefined;
+  if (textReport.text) {
+    text = textReport.text.join("\n");
+    if (text.length >= DISCORD_MAX_MSG_SIZE) {
+      const tooLongMessage = "\n... ⚠️ MESSAGE CUT BECAUSE IT IS TOO LONG...";
+
+      text.substring(0, DISCORD_MAX_MSG_SIZE - tooLongMessage.length) +
+        tooLongMessage;
+    }
+  }
+  return text;
+}
+
+function covertChartReportToDiscordMessage(chartReport: Partial<ChartReport>) {
+  let embed: Discord.MessageEmbed | undefined = undefined;
+  if (chartReport.chart) {
+    embed = new Discord.MessageEmbed();
+    embed.setImage(chartReport.chart.toURL());
+  }
+
+  return embed;
+}
 
 const initiateDailyStandup = async (bot) => {
   const dailyStandupChannel = await fetchChannelById(

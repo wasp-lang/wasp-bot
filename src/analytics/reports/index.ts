@@ -1,21 +1,11 @@
-import ImageCharts from "image-charts";
 import moment from "../moment";
 import {
-  AllTimePeriodReort,
   generateAllTimePeriodReport,
   generatePeriodReport,
-  PeriodReport,
 } from "./periodReport";
+import { AllTimePeriodReport, PeriodReport } from "./reports";
 export { fetchEventsForReportGenerator } from "./events";
 export { generateTotalReport } from "./totalReport";
-
-export type SimpleReport = {
-  text: string[];
-  csv: (number | string)[][];
-  chart: ImageCharts;
-};
-
-export type CompositeReport = { [reportName: string]: Partial<SimpleReport> };
 
 export function generateDailyReport(
   prefetchedEvents = undefined,
@@ -40,7 +30,7 @@ export function generateMonthlyReport(
 
 export function generateAllTimeMonthlyReport(
   prefetchedEvents = undefined,
-): Promise<AllTimePeriodReort> {
+): Promise<AllTimePeriodReport> {
   const numMonths = moment().diff(moment("2021-01-01"), "months") + 1;
   return generateAllTimePeriodReport(numMonths, "month", prefetchedEvents);
 }

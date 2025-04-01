@@ -1,6 +1,5 @@
 import _ from "lodash";
 
-import { SimpleReport } from "..";
 import { buildChartImageUrl } from "../../charts";
 import {
   executionEnvs,
@@ -9,14 +8,13 @@ import {
 } from "../../executionEnvs";
 import { newSimpleTable } from "../../table";
 import { fetchEventsForReportGenerator } from "../events";
+import { UserActivityReport } from "../reports";
 import { calcUserAgeInDays, groupEventsByUser } from "../utils";
 import {
   calcLastNPeriods,
   getActiveUserIdsInPeriod,
   groupEventsByPeriods,
 } from "./common";
-
-export type UserActivityReport = Pick<SimpleReport, "text" | "csv" | "chart">;
 
 export async function generateUserActivityReport(
   numPeriods,

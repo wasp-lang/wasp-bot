@@ -1,18 +1,16 @@
-import { SimpleReport } from ".";
 import {
   executionEnvs,
   groupEventsByExecutionEnv,
   showPrettyMetrics,
 } from "../executionEnvs";
 import { fetchEventsForReportGenerator } from "./events";
+import { TotalReport } from "./reports";
 import { groupEventsByProject } from "./utils";
-
-export type TotalReport = Pick<SimpleReport, "text">;
 
 // Generates report for some general statistics that cover the whole (total) time (all of the events).
 export async function generateTotalReport(
   prefetchedEvents = undefined,
-): Promise<{ totalReport: TotalReport }> {
+): Promise<TotalReport> {
   // All events, sort by time (starting with oldest), with events caused by Wasp team members filtered out.
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
 
@@ -35,7 +33,7 @@ export async function generateTotalReport(
   );
 
   const report = {
-    totalReport: {
+    totalUniqueReport: {
       text: [
         `Number of unique projects in total: ${numProjectsTotal}`,
         `Number of unique projects built in total: ${numProjectsBuiltTotal}`,

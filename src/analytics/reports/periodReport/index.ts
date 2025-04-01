@@ -1,13 +1,8 @@
 import { fetchEventsForReportGenerator } from "../events";
-import {
-  CohortRetentionReport,
-  generateCohortRetentionReport,
-} from "./cohortRetentionReport";
-import { generatePeriodProjectsReport, ProjectsReport } from "./projectsReport";
-import {
-  generateUserActivityReport,
-  UserActivityReport,
-} from "./userActivityReport";
+import { AllTimePeriodReport, PeriodReport } from "../reports";
+import { generateCohortRetentionReport } from "./cohortRetentionReport";
+import { generatePeriodProjectsReport } from "./projectsReport";
+import { generateUserActivityReport } from "./userActivityReport";
 
 // Generates a report that calculates usage for last numPeriod periods of size periodName,
 // where periodName should be 'day' or 'week' or 'month'.
@@ -18,17 +13,6 @@ import {
 // for the whole history. You should obtain them with fetchAllCliEvents(), in that case they will
 // be all good.
 
-type BasePeriodReport = {
-  userActivityReport: UserActivityReport;
-  projectsReport: ProjectsReport;
-};
-
-export type AllTimePeriodReort = BasePeriodReport;
-
-export type PeriodReport = BasePeriodReport & {
-  cohortRetentionReport: CohortRetentionReport;
-};
-
 export async function generatePeriodReport(
   numPeriods,
   periodName,
@@ -36,7 +20,12 @@ export async function generatePeriodReport(
 ): Promise<PeriodReport> {
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
 
-  const basePeriodReeport = await generatePeriodReportBaseReports(
+  const userActivityReport = await generateUserActivityReport(
+    numPeriods,
+    periodName,
+    events,
+  );
+  const projectsReport = await generatePeriodProjectsReport(
     numPeriods,
     periodName,
     events,
@@ -48,30 +37,23 @@ export async function generatePeriodReport(
   );
 
   return {
-    ...basePeriodReeport,
+    userActivityReport,
+    projectsReport,
     cohortRetentionReport,
   };
 }
 
 /**
- * Generates a period report that spans Wasp's whole existance.
+ * Generates a report that spans Wasp's whole existance.
  * The report excludes the cohort retention report due to quadratic complexity.
  */
 export async function generateAllTimePeriodReport(
   numPeriods,
   periodName,
   prefetchedEvents = undefined,
-): Promise<AllTimePeriodReort> {
+): Promise<AllTimePeriodReport> {
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
 
-  return await generatePeriodReportBaseReports(numPeriods, periodName, events);
-}
-
-async function generatePeriodReportBaseReports(
-  numPeriods,
-  periodName,
-  events,
-): Promise<BasePeriodReport> {
   const userActivityReport = await generateUserActivityReport(
     numPeriods,
     periodName,

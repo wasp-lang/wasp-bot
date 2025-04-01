@@ -1,12 +1,10 @@
-import { SimpleReport } from "..";
 import { groupEventsByExecutionEnv } from "../../executionEnvs";
 import moment from "../../moment";
 import { newSimpleTable } from "../../table";
 import { fetchEventsForReportGenerator } from "../events";
+import { ProjectsReport } from "../reports";
 import { groupEventsByProject } from "../utils";
 import { calcLastNPeriods } from "./common";
-
-export type ProjectsReport = Pick<SimpleReport, "text" | "csv">;
 
 export async function generatePeriodProjectsReport(
   numPeriods,

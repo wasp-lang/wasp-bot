@@ -3,17 +3,14 @@ import _ from "lodash";
 import { groupEventsByExecutionEnv } from "../../executionEnvs";
 import { newSimpleTable } from "../../table";
 import { fetchEventsForReportGenerator } from "../events";
+import { CohortRetentionReport } from "../reports";
 import { getIntersection, groupEventsByUser } from "../utils";
-
-import { SimpleReport } from "..";
 import {
   calcLastNPeriods,
   getActiveUserIds,
   groupEventsByPeriods,
   isEventInPeriod,
 } from "./common";
-
-export type CohortRetentionReport = Pick<SimpleReport, "text">;
 
 export async function generateCohortRetentionReport(
   numPeriods,
