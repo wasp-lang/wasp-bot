@@ -256,10 +256,8 @@ const sendAnalyticsReport = async (
     `=============== ${reportTitle} ANALYTICS REPORT ===============`,
   );
   for (const simpleReport of Object.values(compositeReport)) {
-    waspTeamTextChannel.send(
-      covertTextReportToDiscordMessage(simpleReport),
-      covertChartReportToDiscordMessage(simpleReport),
-    );
+    const options = covertReportToDiscordMessage(simpleReport);
+    waspTeamTextChannel.send(options);
   }
 
   waspTeamTextChannel.send(
@@ -267,32 +265,31 @@ const sendAnalyticsReport = async (
   );
 };
 
-function covertTextReportToDiscordMessage(
-  textReport: Partial<TextReport>,
-): string | undefined {
-  let text: string | undefined = undefined;
-  if (textReport.text) {
-    text = textReport.text.join("\n");
-    if (text.length >= DISCORD_MAX_MSG_SIZE) {
-      const tooLongMessage = "\n... ⚠️ MESSAGE CUT BECAUSE IT IS TOO LONG...";
+const tooLongMessage = "\n... ⚠️ MESSAGE CUT BECAUSE IT IS TOO LONG...";
 
-      text.substring(0, DISCORD_MAX_MSG_SIZE - tooLongMessage.length) +
+function covertReportToDiscordMessage(
+  report: Partial<TextReport & ChartReport>,
+): Discord.MessageOptions {
+  const options: Discord.MessageOptions = {};
+
+  if (report.text) {
+    let content: string = report.text.join("\n");
+    if (content.length >= DISCORD_MAX_MSG_SIZE) {
+      content =
+        content.substring(0, DISCORD_MAX_MSG_SIZE - tooLongMessage.length) +
         tooLongMessage;
     }
-  }
-  return text;
-}
-
-function covertChartReportToDiscordMessage(
-  chartReport: Partial<ChartReport>,
-): Discord.MessageEmbed | undefined {
-  let embed: Discord.MessageEmbed | undefined = undefined;
-  if (chartReport.chart) {
-    embed = new Discord.MessageEmbed();
-    embed.setImage(chartReport.chart.toURL());
+    options.content = content;
   }
 
-  return embed;
+  if (report.chart) {
+    const embed = new Discord.MessageEmbed();
+    embed.setImage(report.chart.toURL());
+
+    options.embed = embed;
+  }
+
+  return options;
 }
 
 const initiateDailyStandup = async (bot: Discord.Client) => {
