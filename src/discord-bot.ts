@@ -238,8 +238,8 @@ const sendAnalyticsReport = async (
     `=============== ${reportTitle} ANALYTICS REPORT ===============`,
   );
   for (const simpleReport of Object.values(compositeReport)) {
-    const { text, options } = covertReportToDiscordMessage(simpleReport);
-    waspTeamTextChannel.send(text, options);
+    const options = covertReportToDiscordMessage(simpleReport);
+    waspTeamTextChannel.send(options);
   }
   waspTeamTextChannel.send(
     "=======================================================",
@@ -250,15 +250,19 @@ const tooLongMessage = "\n... ⚠️ MESSAGE CUT BECAUSE IT IS TOO LONG...";
 
 function covertReportToDiscordMessage(
   report: Partial<TextReport & ChartReport>,
-) {
-  let text: string | undefined = report?.text.join("\n");
-  if (text && text.length >= DISCORD_MAX_MSG_SIZE) {
-    text =
-      text.substring(0, DISCORD_MAX_MSG_SIZE - tooLongMessage.length) +
-      tooLongMessage;
+): Discord.MessageOptions {
+  const options: Discord.MessageOptions = {};
+
+  if (report.text) {
+    let content: string = report.text.join("\n");
+    if (content.length >= DISCORD_MAX_MSG_SIZE) {
+      content =
+        content.substring(0, DISCORD_MAX_MSG_SIZE - tooLongMessage.length) +
+        tooLongMessage;
+    }
+    options.content = content;
   }
 
-  const options: Discord.MessageOptions = {};
   if (report.chart) {
     const embed = new Discord.MessageEmbed();
     embed.setImage(report.chart.toURL());
@@ -266,7 +270,7 @@ function covertReportToDiscordMessage(
     options.embed = embed;
   }
 
-  return { text, options };
+  return options;
 }
 
 const initiateDailyStandup = async (bot) => {
