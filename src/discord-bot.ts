@@ -229,47 +229,42 @@ const sendAnalyticsReport = async (
 
   waspTeamTextChannel.send(`⏳ Generating ${reportType} report...`);
 
-  const compositeReport: Record<
-    string,
-    Partial<TextReport & ChartReport>
-  > = await reportPromise;
+  const compositeReport: Record<string, TextReport & Partial<ChartReport>> =
+    await reportPromise;
 
   waspTeamTextChannel.send(
     `=============== ${reportTitle} ANALYTICS REPORT ===============`,
   );
   for (const simpleReport of Object.values(compositeReport)) {
-    waspTeamTextChannel.send(
-      covertTextReportToDiscordMessage(simpleReport),
-      covertChartReportToDiscordMessage(simpleReport),
-    );
+    const { text, options } = covertReportToDiscordMessage(simpleReport);
+    waspTeamTextChannel.send(text, options);
   }
   waspTeamTextChannel.send(
     "=======================================================",
   );
 };
 
-function covertTextReportToDiscordMessage(textReport: Partial<TextReport>) {
-  let text: string | undefined = undefined;
-  if (textReport.text) {
-    text = textReport.text.join("\n");
-    if (text.length >= DISCORD_MAX_MSG_SIZE) {
-      const tooLongMessage = "\n... ⚠️ MESSAGE CUT BECAUSE IT IS TOO LONG...";
+const tooLongMessage = "\n... ⚠️ MESSAGE CUT BECAUSE IT IS TOO LONG...";
 
+function covertReportToDiscordMessage(
+  report: TextReport & Partial<ChartReport>,
+) {
+  let text = report.text.join("\n");
+  if (text.length >= DISCORD_MAX_MSG_SIZE) {
+    text =
       text.substring(0, DISCORD_MAX_MSG_SIZE - tooLongMessage.length) +
-        tooLongMessage;
-    }
-  }
-  return text;
-}
-
-function covertChartReportToDiscordMessage(chartReport: Partial<ChartReport>) {
-  let embed: Discord.MessageEmbed | undefined = undefined;
-  if (chartReport.chart) {
-    embed = new Discord.MessageEmbed();
-    embed.setImage(chartReport.chart.toURL());
+      tooLongMessage;
   }
 
-  return embed;
+  const options: Discord.MessageOptions = {};
+  if (report.chart) {
+    const embed = new Discord.MessageEmbed();
+    embed.setImage(report.chart.toURL());
+
+    options.embed = embed;
+  }
+
+  return { text, options };
 }
 
 const initiateDailyStandup = async (bot) => {
