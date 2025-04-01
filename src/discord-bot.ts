@@ -229,8 +229,10 @@ const sendAnalyticsReport = async (
 
   waspTeamTextChannel.send(`⏳ Generating ${reportType} report...`);
 
-  const compositeReport: Record<string, TextReport & Partial<ChartReport>> =
-    await reportPromise;
+  const compositeReport: Record<
+    string,
+    Partial<TextReport & ChartReport>
+  > = await reportPromise;
 
   waspTeamTextChannel.send(
     `=============== ${reportTitle} ANALYTICS REPORT ===============`,
@@ -247,10 +249,10 @@ const sendAnalyticsReport = async (
 const tooLongMessage = "\n... ⚠️ MESSAGE CUT BECAUSE IT IS TOO LONG...";
 
 function covertReportToDiscordMessage(
-  report: TextReport & Partial<ChartReport>,
+  report: Partial<TextReport & ChartReport>,
 ) {
-  let text = report.text.join("\n");
-  if (text.length >= DISCORD_MAX_MSG_SIZE) {
+  let text: string | undefined = report?.text.join("\n");
+  if (text && text.length >= DISCORD_MAX_MSG_SIZE) {
     text =
       text.substring(0, DISCORD_MAX_MSG_SIZE - tooLongMessage.length) +
       tooLongMessage;
