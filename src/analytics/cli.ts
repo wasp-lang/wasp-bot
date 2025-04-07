@@ -1,61 +1,70 @@
 import logger from "../utils/logger";
 import { getAnalyticsErrorMessage } from "./errors";
 import * as reports from "./reports";
+import {
+  AllTimePeriodReport,
+  ChartReport,
+  TextReport,
+} from "./reports/reports";
 
 async function cliReport() {
   const events = await reports.fetchEventsForReportGenerator();
 
-  printTitle("TOTAL REPORT");
-  showReportInCLI(await reports.generateTotalReport(events));
+  printReportTitle("TOTAL REPORT");
+  printReportInCLI(await reports.generateTotalReport(events));
 
-  printTitle("DAILY REPORT");
-  showReportInCLI(await reports.generateDailyReport(events));
+  printReportTitle("DAILY REPORT");
+  printReportInCLI(await reports.generateDailyReport(events));
 
-  printTitle("WEEKLY REPORT");
-  showReportInCLI(await reports.generateWeeklyReport(events));
+  printReportTitle("WEEKLY REPORT");
+  printReportInCLI(await reports.generateWeeklyReport(events));
 
-  printTitle("MONTHLY REPORT");
-  showReportInCLI(await reports.generateMonthlyReport(events));
+  printReportTitle("MONTHLY REPORT");
+  printReportInCLI(await reports.generateMonthlyReport(events));
 
-  printTitle("ALL TIME MONTHLY REPORT (CSVs)");
-  await allTimeMonthlyActiveUsersAndProjectsCsvCliReport(events);
+  printReportTitle("ALL TIME MONTHLY REPORT (CSVs)");
+  printAllTimeMonthlyReportCsvInCLI(
+    await reports.generateAllTimeMonthlyReport(events),
+  );
 }
 
 // Outputs CSV of total metrics since the start of tracking them,
 // while skipping cohort analytis because that would be too complex.
 // Useful for manually producing charts that show total progress of Wasp.
-async function allTimeMonthlyActiveUsersAndProjectsCsvCliReport(events) {
-  const report = await reports.generateAllTimeMonthlyReport(events);
+function printAllTimeMonthlyReportCsvInCLI(
+  allTimePeriodReort: AllTimePeriodReport,
+) {
+  const { userActivityReport, projectsReport } = allTimePeriodReort;
 
   console.log("\n[CSV] Num active users");
-  const activeUsersReport = report[0];
-  for (const row of activeUsersReport.csv) {
+  for (const row of userActivityReport.csv) {
     console.log(row.join(","));
   }
 
   console.log("\n[CSV] Num projects");
-  console.log(",created diff,created cumm,built diff,built cumm");
-  const projectsReport = report[1];
+  console.log("created diff,created cumm,built diff,built cumm");
   for (const row of projectsReport.csv) {
     console.log(row.join(","));
   }
 }
 
-function showReportInCLI(report) {
-  for (const metric of report) {
+function printReportInCLI(
+  compositeReport: Record<string, Partial<TextReport & ChartReport>>,
+) {
+  for (const simpleReport of Object.values(compositeReport)) {
     console.log();
-    if (metric.text) {
-      for (const textLine of metric.text) {
+    if (simpleReport.text) {
+      for (const textLine of simpleReport.text) {
         console.log(textLine);
       }
     }
-    if (metric.chart) {
-      console.log("- Chart: ", metric.chart.toURL());
+    if (simpleReport.chart) {
+      console.log("- Chart: ", simpleReport.chart.toURL());
     }
   }
 }
 
-function printTitle(text) {
+function printReportTitle(text) {
   console.log(`\x1b[33m \n\n${text} \x1b[0m`);
 }
 

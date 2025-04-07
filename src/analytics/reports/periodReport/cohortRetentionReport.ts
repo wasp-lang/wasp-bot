@@ -1,14 +1,14 @@
-import * as _ from "lodash";
-import { newSimpleTable } from "../../table";
+import _ from "lodash";
+
 import { groupEventsByExecutionEnv } from "../../executionEnvs";
+import { newSimpleTable } from "../../table";
 import { fetchEventsForReportGenerator } from "../events";
-
-import { groupEventsByUser, getIntersection } from "../utils";
-
+import { CohortRetentionReport } from "../reports";
+import { getIntersection, groupEventsByUser } from "../utils";
 import {
   calcLastNPeriods,
-  groupEventsByPeriods,
   getActiveUserIds,
+  groupEventsByPeriods,
   isEventInPeriod,
 } from "./common";
 
@@ -16,7 +16,7 @@ export async function generateCohortRetentionReport(
   numPeriods,
   periodName,
   prefetchedEvents = undefined,
-) {
+): Promise<CohortRetentionReport> {
   const periodNameShort = periodName[0];
 
   // All events, sorted by time (starting with oldest), with events caused by Wasp team members
@@ -88,21 +88,19 @@ export async function generateCohortRetentionReport(
   const fmt = (m) => m.format("DD-MM-YY");
   const firstPeriod = periods[0];
   const lastPeriod = _.last(periods);
-  const report = [
-    {
-      text: [
-        "==== Cohort Retention ====",
-        "```",
-        table.toString(),
-        "```",
-        `Period of ${periodNameShort}  #0: ${fmt(firstPeriod[0])} - ${fmt(
-          firstPeriod[1],
-        )}`,
-        `Period of ${periodNameShort} #${periods.length - 1}: ${fmt(
-          lastPeriod[0],
-        )} - ${fmt(lastPeriod[1])}`,
-      ],
-    },
-  ];
+  const report = {
+    text: [
+      "==== Cohort Retention ====",
+      "```",
+      table.toString(),
+      "```",
+      `Period of ${periodNameShort}  #0: ${fmt(firstPeriod[0])} - ${fmt(
+        firstPeriod[1],
+      )}`,
+      `Period of ${periodNameShort} #${periods.length - 1}: ${fmt(
+        lastPeriod[0],
+      )} - ${fmt(lastPeriod[1])}`,
+    ],
+  };
   return report;
 }

@@ -1,16 +1,16 @@
+import { groupEventsByExecutionEnv } from "../../executionEnvs";
 import moment from "../../moment";
 import { newSimpleTable } from "../../table";
-import { groupEventsByExecutionEnv } from "../../executionEnvs";
 import { fetchEventsForReportGenerator } from "../events";
+import { ProjectsReport } from "../reports";
 import { groupEventsByProject } from "../utils";
-
 import { calcLastNPeriods } from "./common";
 
 export async function generatePeriodProjectsReport(
   numPeriods,
   periodName,
   prefetchedEvents = undefined,
-) {
+): Promise<ProjectsReport> {
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
 
   const { localEvents } = groupEventsByExecutionEnv(events);
@@ -83,16 +83,14 @@ export async function generatePeriodProjectsReport(
     ),
   });
 
-  const report = [
-    {
-      csv,
-      text: [
-        `==== Projects created/built per ${periodName} (cumm) ====`,
-        "```",
-        table.toString(),
-        "```",
-      ],
-    },
-  ];
+  const report = {
+    csv,
+    text: [
+      `==== Projects created/built per ${periodName} (cumm) ====`,
+      "```",
+      table.toString(),
+      "```",
+    ],
+  };
   return report;
 }

@@ -1,38 +1,36 @@
 import moment from "../moment";
+import {
+  generateAllTimePeriodReport,
+  generatePeriodReport,
+} from "./periodReport";
+import { AllTimePeriodReport, PeriodReport } from "./reports";
 export { fetchEventsForReportGenerator } from "./events";
 export { generateTotalReport } from "./totalReport";
-import { generatePeriodReport } from "./periodReport";
 
-export async function generateDailyReport(
+export function generateDailyReport(
   prefetchedEvents = undefined,
   numPeriods = undefined,
-) {
-  return generatePeriodReport(numPeriods ?? 14, "day", prefetchedEvents, false);
+): Promise<PeriodReport> {
+  return generatePeriodReport(numPeriods ?? 14, "day", prefetchedEvents);
 }
 
-export async function generateWeeklyReport(
+export function generateWeeklyReport(
   prefetchedEvents = undefined,
   numPeriods = undefined,
-) {
+): Promise<PeriodReport> {
   return generatePeriodReport(numPeriods ?? 12, "week", prefetchedEvents);
 }
 
-export async function generateMonthlyReport(
+export function generateMonthlyReport(
   prefetchedEvents = undefined,
   numPeriods = undefined,
-  genCohortRetentionReport = true,
-) {
-  return generatePeriodReport(
-    numPeriods ?? 12,
-    "month",
-    prefetchedEvents,
-    genCohortRetentionReport,
-  );
+): Promise<PeriodReport> {
+  return generatePeriodReport(numPeriods ?? 12, "month", prefetchedEvents);
 }
 
-export async function generateAllTimeMonthlyReport(
+export function generateAllTimeMonthlyReport(
   prefetchedEvents = undefined,
-) {
+): Promise<AllTimePeriodReport> {
   const numMonths = moment().diff(moment("2021-01-01"), "months") + 1;
-  return generateMonthlyReport(prefetchedEvents, numMonths, false);
+  return generateAllTimePeriodReport(numMonths, "month", prefetchedEvents);
 }

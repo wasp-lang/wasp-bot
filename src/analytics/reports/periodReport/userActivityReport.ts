@@ -1,16 +1,15 @@
-import * as _ from "lodash";
+import _ from "lodash";
 
-import { newSimpleTable } from "../../table";
+import { buildChartImageUrl } from "../../charts";
 import {
   executionEnvs,
   groupEventsByExecutionEnv,
   showPrettyMetrics,
 } from "../../executionEnvs";
-import { buildChartImageUrl } from "../../charts";
-
+import { newSimpleTable } from "../../table";
 import { fetchEventsForReportGenerator } from "../events";
-import { groupEventsByUser, calcUserAgeInDays } from "../utils";
-
+import { UserActivityReport } from "../reports";
+import { calcUserAgeInDays, groupEventsByUser } from "../utils";
 import {
   calcLastNPeriods,
   getActiveUserIdsInPeriod,
@@ -21,7 +20,7 @@ export async function generateUserActivityReport(
   numPeriods,
   periodName,
   prefetchedEvents = undefined,
-) {
+): Promise<UserActivityReport> {
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
   const periods = calcLastNPeriods(numPeriods, periodName);
 
@@ -74,33 +73,31 @@ export async function generateUserActivityReport(
     ),
   );
 
-  const report = [
-    {
-      text: [
-        "==== Unique Active Users ====",
-        `During last ${periodName}:`,
-        `- Local: ${totalNumOfLocalUsersInLastPeriod}`,
-        `- Cloud: ${prettyNonLocalMetrics}`,
-        `Table "Num unique active users per ${periodName} by age":`,
-        "```",
-        tableOfActiveUsersPerPeriodByAge.toString(),
-        "```",
-      ],
-      chart: buildChartImageUrl(
-        uniqueLocalActiveUsersPerPeriodByAge,
-        `Num unique active users (per ${periodName})`,
-        "bars",
-      ),
-      csv: tableOfActiveUsersPerPeriodByAgeCsv,
-    },
-  ];
+  const report = {
+    text: [
+      "==== Unique Active Users ====",
+      `During last ${periodName}:`,
+      `- Local: ${totalNumOfLocalUsersInLastPeriod}`,
+      `- Cloud: ${prettyNonLocalMetrics}`,
+      `Table "Num unique active users per ${periodName} by age":`,
+      "```",
+      tableOfActiveUsersPerPeriodByAge.toString(),
+      "```",
+    ],
+    chart: buildChartImageUrl(
+      uniqueLocalActiveUsersPerPeriodByAge,
+      `Num unique active users (per ${periodName})`,
+      "bars",
+    ),
+    csv: tableOfActiveUsersPerPeriodByAgeCsv,
+  };
 
   return report;
 }
 
 function calcUniqueNonLocalEventsInPeriod(periods, eventsByEnv) {
   const uniqueNonLocalEventsInPeriod = {};
-  for (let envKey of Object.keys(executionEnvs)) {
+  for (const envKey of Object.keys(executionEnvs)) {
     const events = eventsByEnv[envKey] ?? [];
     uniqueNonLocalEventsInPeriod[envKey] = getActiveUserIdsInPeriod(
       events,

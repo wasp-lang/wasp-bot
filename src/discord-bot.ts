@@ -1,14 +1,14 @@
-import * as Discord from "discord.js";
-import * as schedule from "node-schedule";
-import * as Quote from "inspirational-quotes";
-import * as moment from "moment";
-import * as _ from "lodash";
-
+import Discord from "discord.js";
 import { config as dotenvConfig } from "dotenv";
+import Quote from "inspirational-quotes";
+import _ from "lodash";
+import schedule from "node-schedule";
 
-import logger from "./utils/logger";
-import * as reports from "./analytics/reports";
 import { getAnalyticsErrorMessage } from "./analytics/errors";
+import moment from "./analytics/moment";
+import * as reports from "./analytics/reports";
+import { ChartReport, TextReport } from "./analytics/reports/reports";
+import logger from "./utils/logger";
 
 dotenvConfig();
 
@@ -107,7 +107,7 @@ const handleMessage = async (bot, msg) => {
   }
 
   function getNumPeriodsFromAnalyticsCmd(cmd) {
-    let match = cmd.match(/numPeriods\s*=\s*(\d+)/);
+    const match = cmd.match(/numPeriods\s*=\s*(\d+)/);
     if (match) {
       return parseInt(match[1]);
     }
@@ -225,34 +225,52 @@ const sendAnalyticsReport = async (
     reportTitle = "TOTAL";
   }
 
-  const waspTeamTextChannel = await fetchChannelById(bot, REPORTS_CHANNEL_ID);
+  const waspReportsChannel = await fetchChannelById(bot, REPORTS_CHANNEL_ID);
 
-  waspTeamTextChannel.send(`⏳ Generating ${reportType} report...`);
+  waspReportsChannel.send(`⏳ Generating ${reportType} report...`);
 
-  const report = await reportPromise;
-  waspTeamTextChannel.send(
+  const compositeReport: Record<
+    string,
+    Partial<TextReport & ChartReport>
+  > = await reportPromise;
+
+  waspReportsChannel.send(
     `=============== ${reportTitle} ANALYTICS REPORT ===============`,
   );
-  for (const metric of report) {
-    let text = metric.text?.join("\n");
-    if (text && text.length >= DISCORD_MAX_MSG_SIZE) {
-      text =
-        text.substring(0, DISCORD_MAX_MSG_SIZE - 50) +
-        "\n... ⚠️ MESSAGE CUT BECAUSE IT IS TOO LONG...";
-    }
-
-    let embed = undefined;
-    if (metric.chart) {
-      embed = new Discord.MessageEmbed();
-      embed.setImage(metric.chart.toURL());
-    }
-
-    waspTeamTextChannel.send(text, embed);
+  for (const simpleReport of Object.values(compositeReport)) {
+    waspReportsChannel.send(covertSimpleReportToDiscordMessage(simpleReport));
   }
-  waspTeamTextChannel.send(
+  waspReportsChannel.send(
     "=======================================================",
   );
 };
+
+const tooLongMessage = "\n... ⚠️ MESSAGE CUT BECAUSE IT IS TOO LONG...";
+
+function covertSimpleReportToDiscordMessage(
+  report: Partial<TextReport & ChartReport>,
+): Discord.MessageOptions {
+  const options: Discord.MessageOptions = {};
+
+  if (report.text) {
+    let content: string = report.text.join("\n");
+    if (content.length >= DISCORD_MAX_MSG_SIZE) {
+      content =
+        content.substring(0, DISCORD_MAX_MSG_SIZE - tooLongMessage.length) +
+        tooLongMessage;
+    }
+    options.content = content;
+  }
+
+  if (report.chart) {
+    const embed = new Discord.MessageEmbed();
+    embed.setImage(report.chart.toURL());
+
+    options.embed = embed;
+  }
+
+  return options;
+}
 
 const initiateDailyStandup = async (bot) => {
   const dailyStandupChannel = await fetchChannelById(
@@ -270,9 +288,10 @@ const initiateDailyStandup = async (bot) => {
         "Don't be too dogmatic, unless we're talking about Dogma the beer brewery.",
         "Milica, wannabe home brewer",
       ],
-      ["Let's send them some swag! Martin will take care of it.", "Matija"][
-        ("I don't have time to review PRs but it seems I do have time to implement these silly quotes.",
-        "Martin")
+      ["Let's send them some swag! Martin will take care of it.", "Matija"],
+      [
+        "I don't have time to review PRs but it seems I do have time to implement these silly quotes.",
+        "Martin",
       ],
     ]),
   );

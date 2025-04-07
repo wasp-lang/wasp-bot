@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import _ from "lodash";
 
 import moment from "../../moment";
 
@@ -49,7 +49,7 @@ export function calcLastNPeriods(numPeriods, periodName) {
 // If there are N periods, it will return a list with N sublists, where each sublist
 // contains events for a corresponding period.
 export function groupEventsByPeriods(events, periods) {
-  let eventsByPeriods = [];
+  const eventsByPeriods = [];
   let currentPeriodIdx = 0;
   let currentPeriodEvents = [];
   for (const event of events) {

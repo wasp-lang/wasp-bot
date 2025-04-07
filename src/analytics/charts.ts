@@ -1,11 +1,20 @@
-import * as ImageCharts from "image-charts";
+import ImageCharts from "image-charts";
+
+export interface ChartData {
+  series: { [column: string]: number[] };
+  periodEnds: string[];
+}
 
 // Expects data to be:
 //   data = { series: { name: [number] }, periodEnds: [string] }
 // Returns a string, URL leading to image-charts.com that contains query with exact
 // instructions how to display this chart via image.
-export function buildChartImageUrl(data, title, type = "line") {
-  const chart = ImageCharts()
+export function buildChartImageUrl(
+  data: ChartData,
+  title: string,
+  type = "line",
+) {
+  const chart = new ImageCharts()
     .cht(type === "line" ? "ls" : "bvs") // Type: lines or vertical bars? Could also be other things.
     .chtt(title) // Title.
     .chd(

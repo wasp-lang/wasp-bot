@@ -1,7 +1,6 @@
 import { type PosthogEvent } from "./events";
 
 /**
- * @param event
  * @returns Context values, all lowercase strings.
  */
 export function getEventContextValues(event: PosthogEvent): string[] {
