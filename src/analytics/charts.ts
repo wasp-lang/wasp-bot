@@ -1,7 +1,7 @@
 import ImageCharts from "image-charts";
 
 export interface ChartData {
-  series: Record<string, number[]>;
+  series: { [column: string]: number[] };
   periodEnds: string[];
 }
 
@@ -18,8 +18,6 @@ export function buildUserActivityReportChart(
 /**
  * Creates a base chart configuration with common settings used across all chart types.
  * This establishes the default formatting, sizing, and data structure that all charts share.
- *
- * @returns Base ImageCharts object with common configuration applied
  */
 function createBaseChart(data: ChartData, title: string): ImageCharts {
   const chart = new ImageCharts()

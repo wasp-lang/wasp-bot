@@ -1,25 +1,10 @@
 import { PosthogEvent } from "../../events";
 import { fetchEventsForReportGenerator } from "../events";
-import {
-  CohortRetentionReport,
-  ProjectsReport,
-  UserActivityReport,
-} from "../reports";
+import { AllTimePeriodReport, PeriodReport } from "../reports";
 import { generateCohortRetentionReport } from "./cohortRetentionReport";
 import { PeriodName } from "./period";
 import { generatePeriodProjectsReport } from "./projectsReport";
 import { generateUserActivityReport } from "./userActivityReport";
-
-type BasePeriodReport = {
-  userActivityReport: UserActivityReport;
-  projectsReport: ProjectsReport;
-};
-
-export type AllTimePeriodReort = BasePeriodReport;
-
-export type PeriodReport = BasePeriodReport & {
-  cohortRetentionReport: CohortRetentionReport;
-};
 
 /**
  * Generates a period report that spans last numPeriod periods of size periodName.
@@ -62,7 +47,7 @@ export async function generateAllTimePeriodReport(
   prefetchedEvents: PosthogEvent[] | undefined = undefined,
   numPeriods: number,
   periodName: PeriodName,
-) {
+): Promise<AllTimePeriodReport> {
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
 
   const userActivityReport = await generateUserActivityReport(

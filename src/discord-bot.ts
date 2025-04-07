@@ -240,34 +240,32 @@ const sendAnalyticsReport = async (
     reportTitle = "TOTAL";
   }
 
-  const waspTeamTextChannel = await fetchTextChannelById(
+  const waspReportsChannel = await fetchTextChannelById(
     bot,
     REPORTS_CHANNEL_ID,
   );
 
-  waspTeamTextChannel.send(`⏳ Generating ${reportType} report...`);
+  waspReportsChannel.send(`⏳ Generating ${reportType} report...`);
 
   const compositeReport: Record<
     string,
     Partial<TextReport & ChartReport>
   > = await reportPromise;
 
-  waspTeamTextChannel.send(
+  waspReportsChannel.send(
     `=============== ${reportTitle} ANALYTICS REPORT ===============`,
   );
   for (const simpleReport of Object.values(compositeReport)) {
-    const options = covertReportToDiscordMessage(simpleReport);
-    waspTeamTextChannel.send(options);
+    waspReportsChannel.send(covertSimpleReportToDiscordMessage(simpleReport));
   }
-
-  waspTeamTextChannel.send(
+  waspReportsChannel.send(
     "=======================================================",
   );
 };
 
 const tooLongMessage = "\n... ⚠️ MESSAGE CUT BECAUSE IT IS TOO LONG...";
 
-function covertReportToDiscordMessage(
+function covertSimpleReportToDiscordMessage(
   report: Partial<TextReport & ChartReport>,
 ): Discord.MessageOptions {
   const options: Discord.MessageOptions = {};

@@ -1,11 +1,10 @@
 import { PosthogEvent } from "../events";
 import moment from "../moment";
 import {
-  AllTimePeriodReort,
   generateAllTimePeriodReport,
   generatePeriodReport,
 } from "./periodReport";
-import { PeriodReport } from "./reports";
+import { AllTimePeriodReport, PeriodReport } from "./reports";
 export { fetchEventsForReportGenerator } from "./events";
 export { generateTotalReport } from "./totalReport";
 
@@ -32,7 +31,7 @@ export function generateMonthlyReport(
 
 export function generateAllTimeMonthlyReport(
   prefetchedEvents: PosthogEvent[] | undefined = undefined,
-): Promise<AllTimePeriodReort> {
+): Promise<AllTimePeriodReport> {
   const numMonths = moment().diff(moment("2021-01-01"), "months") + 1;
   return generateAllTimePeriodReport(prefetchedEvents, numMonths, "month");
 }
