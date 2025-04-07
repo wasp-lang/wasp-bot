@@ -1,48 +1,74 @@
-import retry from "async-retry";
 import _ from "lodash";
 
 import { addEventContextValueIfMissing } from "../eventContext";
-import { type PosthogEvent, fetchAllCliEvents } from "../events";
+import { type PosthogEvent, tryToFetchAllCliEvents } from "../events";
 import { executionEnvs } from "../executionEnvs";
 import moment from "../moment";
 
-// These filters, when applyed to a list of events, remove
-// events that we don't want to go into analysis
-// (e.g. because we (Wasp Team) created them).
-const validEventFilters = [
-  (event: PosthogEvent) => {
-    // These are telemetry user ids of Wasp team members
-    // from the situation when we accidentally left telemetry enabled.
-    // We track them here so we can ignore these events.
-    const ourDistinctIds = [
-      "bf3fa7a8-1c11-4f82-9542-ec1a2d28786b",
-      "53669068-7441-45eb-b11b-880ad4c9c8c2",
-      "380cc449-78db-4bd9-ae29-790e892c63a9",
-      "7b9d8578-120c-4c2a-b4a7-3994d2801a24",
-      "e7cd9e56-2766-4eb6-9e5c-44ecb9014690",
-      "8605f02d-5b32-466c-93d2-faaa787f43a0",
-      "dc396135-c50d-4064-9563-5813056b1cc8",
-    ];
-    return !ourDistinctIds.includes(event.distinct_id);
-  },
-  (event: PosthogEvent) => {
-    // Miho set up his own private CI server for his Wasp app but forgot
-    // to turn off telemetry (+ forgot to set env vars to indicate it is CI)
-    // so we filtering those out here.
-    const mihoCIServerIP = "49.12.82.252";
-    const periodOfProblematicEvents = [
-      moment("2023-11-11T20:00:00.000Z"),
-      moment("2023-11-11T23:00:00.000Z"),
-    ];
-    return !(
-      event?.properties?.$ip == mihoCIServerIP &&
-      moment(event.timestamp).isBetween(
-        periodOfProblematicEvents[0],
-        periodOfProblematicEvents[1],
-      )
-    );
-  },
+/**
+ * @returns All Posthog events, sorted by time (starting with oldest), with events caused by Wasp team members
+ * filtered out.
+ */
+export async function fetchEventsForReportGenerator(): Promise<PosthogEvent[]> {
+  const allEvents = await tryToFetchAllCliEvents();
+
+  console.log("\nNumber of CLI events fetched:", allEvents.length);
+
+  const waspTeamFilters = [isNotWaspTeamEvent, isNotMihoPrivateCIServerEvent];
+  const nonWaspTeamEvents = waspTeamFilters.reduce(
+    (events, f) => events.filter(f),
+    allEvents,
+  );
+
+  const sortedNonWaspTeamEvents = _.sortBy(nonWaspTeamEvents, "timestamp");
+  const validEvents = markAsCiEventBurstsFromDifferentUsersFromSameIp(
+    sortedNonWaspTeamEvents,
+  );
+
+  const sortedValidEvents = _.sortBy(validEvents, "timestamp");
+
+  console.log(
+    "unnecessary sorting = ",
+    JSON.stringify(validEvents) === JSON.stringify(sortedValidEvents),
+  );
+
+  return sortedValidEvents;
+}
+
+const waspTeamDistinctUserIds = [
+  "bf3fa7a8-1c11-4f82-9542-ec1a2d28786b",
+  "53669068-7441-45eb-b11b-880ad4c9c8c2",
+  "380cc449-78db-4bd9-ae29-790e892c63a9",
+  "7b9d8578-120c-4c2a-b4a7-3994d2801a24",
+  "e7cd9e56-2766-4eb6-9e5c-44ecb9014690",
+  "8605f02d-5b32-466c-93d2-faaa787f43a0",
+  "dc396135-c50d-4064-9563-5813056b1cc8",
+  "876c2f9b-853f-4ad2-a63a-c8b178912db5",
+  "57591c27-dfe8-46b3-8b46-3f4a14150292",
 ];
+
+function isNotWaspTeamEvent(event: PosthogEvent) {
+  return !waspTeamDistinctUserIds.includes(event.distinct_id);
+}
+
+const mihoCIServerIP = "49.12.82.252";
+const periodOfMihoCIServerProblematicEvents = [
+  moment("2023-11-11T20:00:00.000Z"),
+  moment("2023-11-11T23:00:00.000Z"),
+];
+
+// Miho set up his own private CI server for his Wasp app but forgot
+// to turn off telemetry (+ forgot to set env vars to indicate it is CI)
+// so we filtering those out here.
+function isNotMihoPrivateCIServerEvent(event: PosthogEvent) {
+  return (
+    event.properties.$ip === mihoCIServerIP &&
+    moment(event.timestamp).isBetween(
+      periodOfMihoCIServerProblematicEvents[0],
+      periodOfMihoCIServerProblematicEvents[1],
+    )
+  );
+}
 
 /**
  * When building wasp in CI, each build usually starts with a clean disk.
@@ -106,38 +132,4 @@ function markAsCiEventBurstsFromDifferentUsersFromSameIp(
       return event;
     }
   });
-}
-
-export async function fetchEventsForReportGenerator() {
-  // We retry it a couple of times because Posthog's API can sometimes be flaky.
-  // Good thing is that fetchAllCliEvents caches the fetched events, so each time we try again,
-  // we are continuing from where we left off.
-  const allEvents = await retry(
-    async () => {
-      return fetchAllCliEvents();
-    },
-    {
-      retries: 10,
-      minTimeout: 5 * 1000,
-      maxTimeout: 60 * 1000,
-      onRetry: (e: Error) => {
-        console.error(
-          "Error happened while fetching events for report generator, trying again:",
-          e.message ?? e,
-        );
-      },
-    },
-  );
-
-  console.log("\nNumber of CLI events fetched:", allEvents.length);
-
-  const allEventsSorted = _.sortBy(allEvents, "timestamp");
-
-  const validEvents = markAsCiEventBurstsFromDifferentUsersFromSameIp(
-    validEventFilters.reduce((events, f) => events.filter(f), allEventsSorted),
-  );
-
-  const validEventsSorted = _.sortBy(validEvents, "timestamp");
-
-  return validEventsSorted;
 }

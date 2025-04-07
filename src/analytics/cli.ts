@@ -35,7 +35,7 @@ async function cliReport() {
  */
 function printAllTimeMonthlyReportCsvInCLI(
   allTimePeriodReort: AllTimePeriodReport,
-) {
+): void {
   const { userActivityReport, projectsReport } = allTimePeriodReort;
 
   console.log("\n[CSV] Num active users");
@@ -52,7 +52,7 @@ function printAllTimeMonthlyReportCsvInCLI(
 
 function printReportInCLI(
   compositeReport: Record<string, Partial<TextReport & ChartReport>>,
-) {
+): void {
   for (const simpleReport of Object.values(compositeReport)) {
     console.log();
     if (simpleReport.text) {

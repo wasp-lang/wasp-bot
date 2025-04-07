@@ -6,22 +6,22 @@ import moment from "../moment";
 /**
  * Groups events by unique project identifier.
  * @param events - The array of PosthogEvent objects to group
- * @returns Record where key is unique project id (user id + project hash), value is array of events for that project
+ * @returns where key is unique project id (user id + project hash), value is array of events for that project
  */
-export function groupEventsByProject(
-  events: PosthogEvent[],
-): Record<string, PosthogEvent[]> {
+export function groupEventsByProject(events: PosthogEvent[]): {
+  [userAndProjectId: string]: PosthogEvent[];
+} {
   return _.groupBy(events, (e) => e.distinct_id + e.properties.project_hash);
 }
 
 /**
  * Groups events by unique user identifier.
  * @param events - The array of PosthogEvent objects to group
- * @returns Record where key is unique user id, value is array of events for that user
+ * @returns where key is unique user id, value is array of events for that user
  */
-export function groupEventsByUser(
-  events: PosthogEvent[],
-): Record<string, PosthogEvent[]> {
+export function groupEventsByUser(events: PosthogEvent[]): {
+  [userId: string]: PosthogEvent[];
+} {
   return _.groupBy(events, (e) => e.distinct_id);
 }
 
@@ -32,7 +32,7 @@ export function getIntersection<T>(setA: Set<T>, setB: Set<T>) {
 export function calcUserAgeInDays(
   newestEvent: PosthogEvent,
   oldestEvent: PosthogEvent,
-) {
+): number {
   return (
     moment(newestEvent.timestamp).diff(moment(oldestEvent.timestamp), "days") +
     1
@@ -44,6 +44,6 @@ export function calcUserAgeInDays(
  * @param events - The events to extract user IDs from
  * @returns An Set of unique user IDs
  */
-export function getUniqueActiveUserIds(events: PosthogEvent[]): Set<string> {
+export function getUniqueUserIds(events: PosthogEvent[]): Set<string> {
   return new Set(events.map((e) => e.distinct_id));
 }

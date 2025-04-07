@@ -6,11 +6,7 @@ import { groupEventsByExecutionEnv } from "../../executionEnvs";
 import { createCrossTable, CrossTableData } from "../../table";
 import { fetchEventsForReportGenerator } from "../events";
 import { CohortRetentionReport } from "../reports";
-import {
-  getIntersection,
-  getUniqueActiveUserIds,
-  groupEventsByUser,
-} from "../utils";
+import { getIntersection, getUniqueUserIds, groupEventsByUser } from "../utils";
 import {
   calcLastNPeriods,
   groupEventsByPeriods,
@@ -24,49 +20,10 @@ export async function generateCohortRetentionReport(
   numPeriods: number,
   periodName: PeriodName,
 ): Promise<CohortRetentionReport> {
-  const periodNameShort = periodName[0];
-
-  // All events, sorted by time (starting with oldest), with events caused by Wasp team members
-  // filtered out.
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
-
-  const { localEvents } = groupEventsByExecutionEnv(events);
-
   const periods = calcLastNPeriods(numPeriods, periodName);
 
-  // [<active_users_at_period_0>, <active_users_at_period_1>, ...]
-  const activeUsersSetsByPeriod = groupEventsByPeriods(
-    localEvents,
-    periods,
-  ).map((events) => new Set(getUniqueActiveUserIds(events)));
-
-  const eventsByUser = groupEventsByUser(localEvents);
-
-  // Finds all users that have their first event in the specified period.
-  function findNewUsersForPeriod(period: Period) {
-    return Object.entries(eventsByUser)
-      .filter(([, eventsOfUser]) => isEventInPeriod(eventsOfUser[0], period))
-      .map(([userId]) => userId);
-  }
-
-  // [
-  //   [cohort_0_after_0_periods, cohort_0_after_1_period, ...],
-  //   [cohort_1_after_0_periods, cohort_1_after_1_period, ...],
-  // ]
-  // where each value is number of users from that cohort remaining at that period.
-  const cohorts = [];
-  for (let i = 0; i < periods.length; i++) {
-    const cohort = [];
-    const cohortUsersSet = new Set(findNewUsersForPeriod(periods[i]));
-    cohort.push(cohortUsersSet.size);
-    for (let j = i + 1; j < periods.length; j++) {
-      const users = Array.from(
-        getIntersection(cohortUsersSet, activeUsersSetsByPeriod[j]),
-      );
-      cohort.push(users.length);
-    }
-    cohorts.push(cohort);
-  }
+  const cohorts = createUserActivityCohorts(events, periods);
 
   /**
    * @param {[number]} cohort [num_users_at_start, num_users_after_1_period, ...]
@@ -85,6 +42,7 @@ export async function generateCohortRetentionReport(
     return [numUsersAtStart.toString(), ...retentionPercentages];
   }
 
+  const periodNameShort = periodName[0];
   const table = createCrossTable({
     head: ["", ...periods.map((_, i) => `+${i}${periodNameShort}`)],
     rows: cohorts.map((cohort, i) => ({
@@ -110,4 +68,74 @@ export async function generateCohortRetentionReport(
     ],
   };
   return report;
+}
+
+/**
+ * Creates cohorts based on user activity within specified periods.
+ * Each cohort represents users who had their first event in a given period.
+ * @returns A 2D array representing cohorts. Each inner array contains the number of users
+ *          from that cohort remaining active in subsequent periods.
+ *          The structure is:
+ *          [
+ *            [cohort_0_after_0_periods, cohort_0_after_1_period, ...],
+ *            [cohort_1_after_0_periods, cohort_1_after_1_period, ...],
+ *          ]
+ *          where each value is the number of users from that cohort remaining at that period.
+ */
+function createUserActivityCohorts(
+  events: PosthogEvent[],
+  periods: Period[],
+): number[][] {
+  const { localEvents } = groupEventsByExecutionEnv(events);
+  const uniqueUsersByPeriod = groupEventsByPeriods(localEvents, periods).map(
+    (events) => getUniqueUserIds(events),
+  );
+
+  const eventsByUser = groupEventsByUser(localEvents);
+
+  const cohorts = [];
+  for (let cohortIndex = 0; cohortIndex < periods.length; cohortIndex++) {
+    const cohortUniqueUsers = uniqueUserIdsWithFirstEventEverInPeriod(
+      eventsByUser,
+      periods[cohortIndex],
+    );
+
+    const cohort = createUniqueUsersCohort(
+      cohortIndex,
+      cohortUniqueUsers,
+      uniqueUsersByPeriod,
+    );
+
+    cohorts.push(cohort);
+  }
+  return cohorts;
+}
+
+function uniqueUserIdsWithFirstEventEverInPeriod(
+  eventsByUser: { [userId: string]: PosthogEvent[] },
+  period: Period,
+): Set<string> {
+  return new Set(
+    Object.entries(eventsByUser)
+      .filter(([, eventsOfUser]) => isEventInPeriod(eventsOfUser[0], period))
+      .map(([userId]) => userId),
+  );
+}
+
+function createUniqueUsersCohort(
+  cohortIndex: number,
+  cohortUniqueUsers: Set<string>,
+  uniqueUsersByPeriod: Set<string>[],
+): number[] {
+  const cohort = [];
+  cohort.push(cohortUniqueUsers.size);
+  for (let j = cohortIndex + 1; j < uniqueUsersByPeriod.length; j++) {
+    const cohortUniqueUsersInPeriod = getIntersection(
+      cohortUniqueUsers,
+      uniqueUsersByPeriod[j],
+    );
+    cohort.push(cohortUniqueUsersInPeriod.size);
+  }
+
+  return cohort;
 }

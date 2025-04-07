@@ -2,7 +2,7 @@ import { Moment } from "moment";
 
 import { PosthogEvent } from "../../events";
 import moment from "../../moment";
-import { getUniqueActiveUserIds } from "../utils";
+import { getUniqueUserIds } from "../utils";
 
 export type Period = [Moment, Moment];
 
@@ -125,5 +125,5 @@ export function getActiveUserIdsInPeriod(
   events: PosthogEvent[],
   period: Period,
 ): Set<string> {
-  return getUniqueActiveUserIds(filterEventsInPeriod(events, period));
+  return getUniqueUserIds(filterEventsInPeriod(events, period));
 }

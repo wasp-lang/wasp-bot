@@ -3,17 +3,6 @@ import _ from "lodash";
 import { getEventContextValues } from "./eventContext";
 import { PosthogEvent } from "./events";
 
-export type ExecutionEnvironment = keyof typeof executionEnvs;
-
-export interface PosthogEventWithExecutionEnv extends PosthogEvent {
-  _executionEnv: ExecutionEnvironment | null;
-}
-
-export type EventsByExeuctionEnvironment = Record<
-  ExecutionEnvironment,
-  PosthogEventWithExecutionEnv[]
->;
-
 /**
  * Defines all non-local execution environments from which Wasp CLI sends
  * telemetry data to PostHog.
@@ -30,12 +19,21 @@ export const executionEnvs = {
   ci: { contextKey: "ci", name: "CI" },
 } as const;
 
+export type ExecutionEnvironment = keyof typeof executionEnvs;
+
+export interface PosthogEventWithExecutionEnv extends PosthogEvent {
+  _executionEnv: ExecutionEnvironment | null;
+}
+
+export type EventsByExeuctionEnvironment = Record<
+  ExecutionEnvironment,
+  PosthogEventWithExecutionEnv[]
+>;
+
 /**
  * Organizes events by the execution environment:
  * - non-local: e.g. Replit, Gitpod, Github Codespaces, CI, etc.
  * - local: User running Wasp on their computer
- *
- * @returns Object containing local events and grouped non-local events
  */
 export function groupEventsByExecutionEnv(events: PosthogEvent[]): {
   localEvents: PosthogEventWithExecutionEnv[];
@@ -78,8 +76,6 @@ function getExecutionEnvFromEventContext(
 
 /**
  * Formats metrics by execution environment into a pretty string representation.
- *
- * @param metricsByEnv - Object containing metric values keyed by environment identifiers
  * @returns Formatted string representation of metrics in the format "[EnvName: MetricValue] [EnvName2: MetricValue2] ..."
  */
 export function showPrettyMetrics(

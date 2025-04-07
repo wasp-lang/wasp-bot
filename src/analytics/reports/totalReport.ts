@@ -16,7 +16,6 @@ import { groupEventsByProject } from "./utils";
 export async function generateTotalReport(
   prefetchedEvents: PosthogEvent[] | undefined = undefined,
 ): Promise<TotalReport> {
-  // All events, sort by time (starting with oldest), with events caused by Wasp team members filtered out.
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
 
   const { localEvents, groupedNonLocalEvents } =

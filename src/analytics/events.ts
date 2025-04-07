@@ -1,3 +1,4 @@
+import retry from "async-retry";
 import axios from "axios";
 import { config as dotenvConfig } from "dotenv";
 import { promises as fs } from "fs";
@@ -8,9 +9,7 @@ dotenvConfig();
 const POSTHOG_KEY = process.env.WASP_POSTHOG_KEY;
 // POSTHOG_PROJECT_API_KEY is public, so it can be here.
 const POSTHOG_PROJECT_API_KEY = "CdDd2A0jKTI2vFAsrI9JWm3MqpOcgHz1bMyogAcwsE4";
-
 const OLDEST_EVENT_TIMESTAMP = "2021-01-22T19:42:56.684632+00:00";
-
 const CACHE_FILE_PATH =
   process.env.WASP_ANALYTICS_CACHED_EVENTS_JSON_PATH ??
   "./wasp-analytics-cached-events.json";
@@ -30,7 +29,30 @@ export interface PosthogEvent {
   };
 }
 
-export async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
+/**
+ * Tries to fetch all CLI events from Posthog, retrying in case of failure.
+ * It caches the fetched events, so each retry continues from where it left off.
+ */
+export async function tryToFetchAllCliEvents(): Promise<PosthogEvent[]> {
+  return await retry(
+    async () => {
+      return fetchAllCliEvents();
+    },
+    {
+      retries: 10,
+      minTimeout: 5 * 1000,
+      maxTimeout: 120 * 1000,
+      onRetry: (e: Error) => {
+        console.error(
+          "Error happened while fetching events for report generator, trying again:",
+          e.message ?? e,
+        );
+      },
+    },
+  );
+}
+
+async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
   console.log("Fetching all CLI events...");
 
   const cachedEvents = (await loadCachedEvents()) ?? [];
