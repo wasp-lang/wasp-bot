@@ -1,7 +1,7 @@
 import ImageCharts from "image-charts";
 
 export interface ChartData {
-  series: Record<string, number[]>;
+  series: { [column: string]: number[] };
   periodEnds: string[];
 }
 
