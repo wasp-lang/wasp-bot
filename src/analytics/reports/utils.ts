@@ -25,7 +25,7 @@ export function groupEventsByUser(events: PosthogEvent[]): {
   return _.groupBy(events, (e) => e.distinct_id);
 }
 
-export function getIntersection<T>(setA: Set<T>, setB: Set<T>) {
+export function getIntersection<T>(setA: Set<T>, setB: Set<T>): Set<T> {
   return new Set([...setA].filter((element) => setB.has(element)));
 }
 

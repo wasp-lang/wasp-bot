@@ -57,9 +57,11 @@ const periodOfMihoCIServerProblematicEvents = [
   moment("2023-11-11T23:00:00.000Z"),
 ];
 
-// Miho set up his own private CI server for his Wasp app but forgot
-// to turn off telemetry (+ forgot to set env vars to indicate it is CI)
-// so we filtering those out here.
+/**
+ * Miho set up his own private CI server for his Wasp app but forgot
+ * to turn off telemetry (+ forgot to set env vars to indicate it is CI)
+ * so we filtering those out here.
+ */
 function isNotMihoPrivateCIServerEvent(event: PosthogEvent) {
   return (
     event.properties.$ip === mihoCIServerIP &&
