@@ -12,7 +12,7 @@ export function createCrossTable(
   const table = new Table<CrossTableRow>({
     head: tableData.head,
     colAligns: [...tableData.head.map(() => "right" as const)], // TODO: see if extra "right" is needed
-    ...resetTableDecorations, // comment out to return default visuals
+    ...resetTableDecorations,
   });
   table.push(...tableData.rows);
 
@@ -29,7 +29,7 @@ export function createVerticalTable({
 }: VerticalTableData): Table<VerticalTableRow> {
   const table = new Table<VerticalTableRow>({
     colAligns: [...rows.map(() => "right" as const)],
-    ...resetTableDecorations, // comment out to return default visuals
+    ...resetTableDecorations,
   });
   table.push(...rows);
 
@@ -53,14 +53,14 @@ export function createHorizontalTable(
     return new Table<HorizontalTableRow>({
       rows: tableData.rowsWithHeader,
       colAligns: [...tableData.rowsWithHeader.map(() => "right" as const)],
-      ...resetTableDecorations, // comment out to return default visuals
+      ...resetTableDecorations,
     });
   }
 
   const table = new Table<HorizontalTableRow>({
     head: tableData.head,
     colAligns: [...tableData.head.map(() => "right" as const)],
-    ...resetTableDecorations, // comment out to return default visuals
+    ...resetTableDecorations,
   });
   table.push(...tableData.rows);
 
