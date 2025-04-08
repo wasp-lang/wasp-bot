@@ -55,7 +55,7 @@ export async function tryToFetchAllCliEvents(): Promise<PosthogEvent[]> {
 async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
   console.log("Fetching all CLI events...");
 
-  const cachedEvents = (await loadCachedEvents()) ?? [];
+  const cachedEvents = await loadCachedEvents();
   console.log("Number of already locally cached events: ", cachedEvents.length);
 
   let events = cachedEvents;
