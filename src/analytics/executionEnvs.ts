@@ -25,7 +25,7 @@ export interface PosthogEventWithExecutionEnv extends PosthogEvent {
   _executionEnv: ExecutionEnvironment | null;
 }
 
-export type EventsByExeuctionEnvironment = Record<
+export type EventsByExecutionEnvironment = Record<
   ExecutionEnvironment,
   PosthogEventWithExecutionEnv[]
 >;
@@ -37,7 +37,7 @@ export type EventsByExeuctionEnvironment = Record<
  */
 export function groupEventsByExecutionEnv(events: PosthogEvent[]): {
   localEvents: PosthogEventWithExecutionEnv[];
-  groupedNonLocalEvents: EventsByExeuctionEnvironment;
+  groupedNonLocalEvents: EventsByExecutionEnvironment;
 } {
   const eventsWithExecutionEnv = events.map((event) => {
     const executionEnv = getExecutionEnvFromEventContext(event);
@@ -54,11 +54,10 @@ export function groupEventsByExecutionEnv(events: PosthogEvent[]): {
   );
   const groupedNonLocalEvents = _.groupBy(nonLocalEvents, (event) => {
     return event._executionEnv;
-  });
+  }) as EventsByExecutionEnvironment;
   return {
     localEvents,
-    groupedNonLocalEvents:
-      groupedNonLocalEvents as EventsByExeuctionEnvironment,
+    groupedNonLocalEvents,
   };
 }
 
@@ -66,8 +65,8 @@ function getExecutionEnvFromEventContext(
   event: PosthogEvent,
 ): ExecutionEnvironment | null {
   const contextValues = getEventContextValues(event);
-  for (const [key, actor] of Object.entries(executionEnvs)) {
-    if (contextValues.includes(actor.contextKey)) {
+  for (const [key, executionEnv] of Object.entries(executionEnvs)) {
+    if (contextValues.includes(executionEnv.contextKey)) {
       return key as ExecutionEnvironment;
     }
   }

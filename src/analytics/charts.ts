@@ -6,13 +6,14 @@ export interface ChartData {
 }
 
 /**
- * Builds a stacked vertical bar chart for user activity report.
+ * Creates a stacked vertical bar chart for user activity report.
  */
-export function buildUserActivityReportChart(
+export function createUserActivityReportChart(
   data: ChartData,
   title: string,
 ): ImageCharts {
-  return createBaseChart(data, title).cht("bvs"); // Type - "bars vertical stacked"
+  const barsVerticalStackedChartType = "bvs";
+  return createBaseChart(data, title).cht(barsVerticalStackedChartType);
 }
 
 /**

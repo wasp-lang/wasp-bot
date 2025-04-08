@@ -24,24 +24,24 @@ const DISCORD_MAX_MSG_SIZE = 2000;
 const timezone = "Europe/Zagreb";
 
 export const start = () => {
-  const bot = new Discord.Client({});
-  bot.login(BOT_TOKEN);
+  const client = new Discord.Client({});
+  client.login(BOT_TOKEN);
 
-  bot.on("ready", async () => {
-    logger.info(`Logged in as: ${bot.user.tag}.`);
+  client.on("ready", async () => {
+    logger.info(`Logged in as: ${client.user?.tag}.`);
 
     // Initiate daily standup every day at 8:00.
     schedule.scheduleJob(
       { dayOfWeek: [1, 2, 3, 4, 5], hour: 8, minute: 0, tz: timezone },
       async () => {
-        await initiateDailyStandup(bot);
+        await initiateDailyStandup(client);
       },
     );
 
     // Every day at 7:00 am, send analytics reports.
     schedule.scheduleJob({ hour: 7, minute: 0, tz: timezone }, async () => {
       const reportsChannel = await fetchTextChannelById(
-        bot,
+        client,
         REPORTS_CHANNEL_ID,
       );
       await reportsChannel.send(
@@ -54,17 +54,17 @@ export const start = () => {
         const events = await reports.fetchEventsForReportGenerator();
 
         // Send total and daily analytics report every day.
-        await sendAnalyticsReport(bot, "total", events);
-        await sendAnalyticsReport(bot, "daily", events);
+        await sendAnalyticsReport(client, "total", events);
+        await sendAnalyticsReport(client, "daily", events);
 
         // It today is Monday, also send weekly analytics report.
         if (moment().isoWeekday() === 1) {
-          await sendAnalyticsReport(bot, "weekly", events);
+          await sendAnalyticsReport(client, "weekly", events);
         }
 
         // It today is first day of the month, also send monthly analytics report.
         if (moment().date() === 1) {
-          await sendAnalyticsReport(bot, "monthly", events);
+          await sendAnalyticsReport(client, "monthly", events);
         }
       } catch (e) {
         logger.error(e);
@@ -76,10 +76,10 @@ export const start = () => {
     });
   });
 
-  bot.on("message", async (msg) => handleMessage(bot, msg));
+  client.on("message", async (msg) => handleMessage(client, msg));
 
-  bot.on("messageUpdate", async (oldMessage, newMessage) =>
-    handleMessage(bot, newMessage),
+  client.on("messageUpdate", async (_oldMessage, newMessage) =>
+    handleMessage(client, newMessage),
   );
 };
 
@@ -87,16 +87,19 @@ const handleMessage = async (
   bot: Discord.Client,
   message: Discord.Message | Discord.PartialMessage,
 ) => {
+  if (!message.author || !message.content) {
+    return;
+  }
   // Ignore messages from the bot itself.
-  if (message.author.id === bot.user.id) {
+  if (message.author.id === bot.user?.id) {
     return;
   }
 
-  const member = message.guild.member(message.author);
+  const member = message.guild?.member(message.author);
 
   if (
     message.channel.id.toString() === INTRODUCTIONS_CHANNEL_ID &&
-    member.roles.cache.get(GUEST_ROLE_ID)
+    member?.roles.cache.get(GUEST_ROLE_ID)
   ) {
     const trimmedMsg = message.content.trim().length;
     if (trimmedMsg < 20) {
@@ -119,7 +122,6 @@ const handleMessage = async (
     if (match) {
       return parseInt(match[1]);
     }
-    return null;
   }
 
   if (
@@ -223,7 +225,7 @@ const sendAnalyticsReport = async (
   bot: Discord.Client,
   reportType: "daily" | "weekly" | "monthly" | "total",
   prefetchedEvents: PosthogEvent[] | undefined = undefined,
-  numPeriods: number = undefined,
+  numPeriods: number | undefined = undefined,
 ) => {
   let reportPromise, reportTitle;
   if (reportType == "monthly") {
@@ -238,6 +240,9 @@ const sendAnalyticsReport = async (
   } else if (reportType == "total") {
     reportPromise = reports.generateTotalReport(prefetchedEvents);
     reportTitle = "TOTAL";
+  } else {
+    logger.error("Unkown reportType: ", reportType);
+    return;
   }
 
   const waspReportsChannel = await fetchTextChannelById(

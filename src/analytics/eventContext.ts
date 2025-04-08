@@ -24,7 +24,7 @@ export function setEventContextValues(
   return {
     ...event,
     properties: {
-      ...(event.properties || {}),
+      ...(event.properties ?? {}),
       context: values.join(" "),
     },
   };

@@ -1,9 +1,9 @@
 import _ from "lodash";
 
-import { buildUserActivityReportChart, ChartData } from "../../charts";
+import { ChartData, createUserActivityReportChart } from "../../charts";
 import { PosthogEvent } from "../../events";
 import {
-  EventsByExeuctionEnvironment,
+  EventsByExecutionEnvironment,
   ExecutionEnvironment,
   executionEnvs,
   groupEventsByExecutionEnv,
@@ -94,7 +94,7 @@ export async function generateUserActivityReport(
       tableOfActiveUsersPerPeriodByAge.toString(),
       "```",
     ],
-    chart: buildUserActivityReportChart(
+    chart: createUserActivityReportChart(
       uniqueLocalActiveUsersPerPeriodByAge,
       `Num unique active users (per ${periodName})`,
     ),
@@ -109,17 +109,15 @@ export async function generateUserActivityReport(
 
 function calcUniqueNonLocalEventsInPeriod(
   periods: Period[],
-  eventsByExecutionEnv: EventsByExeuctionEnvironment,
+  eventsByExecutionEnv: EventsByExecutionEnvironment,
 ): Record<ExecutionEnvironment, number> {
   const uniqueNonLocalEventsInPeriod: Record<string, number> = {};
 
-  for (const envKey of Object.keys(
-    executionEnvs,
-  ) as Array<ExecutionEnvironment>) {
+  for (const envKey of Object.keys(executionEnvs) as ExecutionEnvironment[]) {
     const events = eventsByExecutionEnv[envKey] ?? [];
     uniqueNonLocalEventsInPeriod[envKey] = getActiveUserIdsInPeriod(
       events,
-      _.last(periods),
+      periods.at(-1)!,
     ).size;
   }
 
@@ -137,7 +135,7 @@ function calcUniqueNonLocalEventsInPeriod(
 function calcNumActiveUsersPerPeriodByAge(
   userEvents: PosthogEvent[],
   periods: Period[],
-) {
+): ChartData {
   const numUniqueActiveUsersPerPeriodByAge: ChartData = {
     // All series have the same length, which is the length of .periodEnds.
     series: {
@@ -159,9 +157,8 @@ function calcNumActiveUsersPerPeriodByAge(
     const ages = Object.entries(eventsInThisPeriodByUsers).map(
       ([userId, eventsInThisPeriodByThisUser]) => {
         const oldestEventEverByThisUser = eventsByUsers[userId][0];
-        const newestEventInThisPeriodByThisUser = _.last(
-          eventsInThisPeriodByThisUser,
-        );
+        const newestEventInThisPeriodByThisUser =
+          eventsInThisPeriodByThisUser.at(-1)!;
         return calcUserAgeInDays(
           newestEventInThisPeriodByThisUser,
           oldestEventEverByThisUser,

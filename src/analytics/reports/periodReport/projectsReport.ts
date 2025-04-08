@@ -1,7 +1,7 @@
 import { PosthogEvent } from "../../events";
 import { groupEventsByExecutionEnv } from "../../executionEnvs";
 import moment from "../../moment";
-import { createCrossTable, CrossTableData } from "../../table";
+import { createCrossTable } from "../../table";
 import { fetchEventsForReportGenerator } from "../events";
 import { ProjectsReport } from "../reports";
 import { groupEventsByProject } from "../utils";
@@ -34,7 +34,7 @@ export async function generatePeriodProjectsReport(
   );
 
   const calcProjectFirstBuildTime = (allProjectEvents: PosthogEvent[]) => {
-    const buildEvents = allProjectEvents.filter((e) => e.properties.is_build);
+    const buildEvents = allProjectEvents.filter((e) => e.properties?.is_build);
     return buildEvents.length == 0
       ? undefined
       : moment.min(buildEvents.map((e) => moment(e.timestamp)));
@@ -46,7 +46,7 @@ export async function generatePeriodProjectsReport(
   // [num_projects_built_before_end_of_period_0, num_projects_built_before_end_of_period_1, ...]
   const numProjectsBuiltTillPeriod = periods.map(
     ([, pEnd]) =>
-      projectFirstBuildTimes.filter((t) => t.isSameOrBefore(pEnd)).length,
+      projectFirstBuildTimes.filter((t) => t?.isSameOrBefore(pEnd)).length,
   );
 
   // Organize metrics into a "CSV"-like list of lists, where each element is
@@ -68,7 +68,7 @@ export async function generatePeriodProjectsReport(
       createdCumm,
       builtDiff,
       builtCumm,
-    ];
+    ] as const;
   });
 
   const table = createCrossTable({
@@ -82,7 +82,7 @@ export async function generatePeriodProjectsReport(
         ],
       }),
     ),
-  } satisfies CrossTableData);
+  });
 
   const report = {
     csv,

@@ -1,12 +1,10 @@
-import _ from "lodash";
-
 import { Moment } from "moment";
 import { PosthogEvent } from "../../events";
 import { groupEventsByExecutionEnv } from "../../executionEnvs";
 import { createCrossTable, CrossTableData } from "../../table";
 import { fetchEventsForReportGenerator } from "../events";
 import { CohortRetentionReport } from "../reports";
-import { getIntersection, getUniqueUserIds, groupEventsByUser } from "../utils";
+import { getUniqueUserIds, groupEventsByUser } from "../utils";
 import {
   calcLastNPeriods,
   groupEventsByPeriods,
@@ -52,7 +50,7 @@ export async function generateCohortRetentionReport(
 
   const fmt = (m: Moment) => m.format("DD-MM-YY");
   const firstPeriod = periods[0];
-  const lastPeriod = _.last(periods);
+  const lastPeriod = periods.at(-1)!;
   const report = {
     text: [
       "==== Cohort Retention ====",
@@ -93,21 +91,18 @@ function createUserActivityCohorts(
 
   const eventsByUser = groupEventsByUser(localEvents);
 
-  const cohorts = [];
-  for (let cohortIndex = 0; cohortIndex < periods.length; cohortIndex++) {
+  const cohorts = periods.map((period, cohortIndex) => {
     const cohortUniqueUsers = uniqueUserIdsWithFirstEventEverInPeriod(
       eventsByUser,
-      periods[cohortIndex],
+      period,
     );
-
-    const cohort = createUniqueUsersCohort(
+    return createUniqueUsersCohort(
       cohortIndex,
       cohortUniqueUsers,
       uniqueUsersByPeriod,
     );
+  });
 
-    cohorts.push(cohort);
-  }
   return cohorts;
 }
 
@@ -117,7 +112,7 @@ function uniqueUserIdsWithFirstEventEverInPeriod(
 ): Set<string> {
   return new Set(
     Object.entries(eventsByUser)
-      .filter(([, eventsOfUser]) => isEventInPeriod(eventsOfUser[0], period))
+      .filter(([, usersEvents]) => isEventInPeriod(usersEvents[0], period))
       .map(([userId]) => userId),
   );
 }
@@ -127,15 +122,12 @@ function createUniqueUsersCohort(
   cohortUniqueUsers: Set<string>,
   uniqueUsersByPeriod: Set<string>[],
 ): number[] {
-  const cohort = [];
-  cohort.push(cohortUniqueUsers.size);
-  for (let j = cohortIndex + 1; j < uniqueUsersByPeriod.length; j++) {
-    const cohortUniqueUsersInPeriod = getIntersection(
-      cohortUniqueUsers,
-      uniqueUsersByPeriod[j],
-    );
-    cohort.push(cohortUniqueUsersInPeriod.size);
-  }
-
-  return cohort;
+  return [
+    cohortUniqueUsers.size,
+    ...uniqueUsersByPeriod.slice(cohortIndex + 1).map((periodUniqueUsers) => {
+      const cohortUniqueUsersInPeriod =
+        cohortUniqueUsers.intersection(periodUniqueUsers);
+      return cohortUniqueUsersInPeriod.size;
+    }),
+  ];
 }

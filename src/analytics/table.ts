@@ -1,12 +1,15 @@
 import Table from "cli-table";
 
+type CrossTableRow = Record<string, string[]>;
 export interface CrossTableData {
   head: ["", ...string[]];
-  rows: Record<string, string[]>[];
+  rows: CrossTableRow[];
 }
 
-export function createCrossTable(tableData: CrossTableData) {
-  const table = new Table({
+export function createCrossTable(
+  tableData: CrossTableData,
+): Table<CrossTableRow> {
+  const table = new Table<CrossTableRow>({
     head: tableData.head,
     colAligns: [...tableData.head.map(() => "right" as const)], // TODO: see if extra "right" is needed
     ...resetTableDecorations, // comment out to return default visuals
@@ -16,12 +19,15 @@ export function createCrossTable(tableData: CrossTableData) {
   return table;
 }
 
+type VerticalTableRow = Record<string, string>;
 export interface VerticalTableData {
-  rows: Record<string, string>[];
+  rows: VerticalTableRow[];
 }
 
-export function createVerticalTable({ rows }: VerticalTableData) {
-  const table = new Table({
+export function createVerticalTable({
+  rows,
+}: VerticalTableData): Table<VerticalTableRow> {
+  const table = new Table<VerticalTableRow>({
     colAligns: [...rows.map(() => "right" as const)],
     ...resetTableDecorations, // comment out to return default visuals
   });
@@ -30,25 +36,28 @@ export function createVerticalTable({ rows }: VerticalTableData) {
   return table;
 }
 
+type HorizontalTableRow = string[];
 export type HorizontalTableData =
   | {
       head: string[];
-      rows: string[][];
+      rows: HorizontalTableRow[];
     }
   | {
-      rowsWithHeader: string[][];
+      rowsWithHeader: HorizontalTableRow[];
     };
 
-export function createHorizontalTable(tableData: HorizontalTableData) {
+export function createHorizontalTable(
+  tableData: HorizontalTableData,
+): Table<HorizontalTableRow> {
   if ("rowsWithHeader" in tableData) {
-    return new Table({
+    return new Table<HorizontalTableRow>({
       rows: tableData.rowsWithHeader,
       colAligns: [...tableData.rowsWithHeader.map(() => "right" as const)],
       ...resetTableDecorations, // comment out to return default visuals
     });
   }
 
-  const table = new Table({
+  const table = new Table<HorizontalTableRow>({
     head: tableData.head,
     colAligns: [...tableData.head.map(() => "right" as const)],
     ...resetTableDecorations, // comment out to return default visuals
@@ -85,4 +94,4 @@ const resetTableDecorations: Pick<
   },
   colors: false,
   style: { head: [], border: [] },
-} as const;
+};

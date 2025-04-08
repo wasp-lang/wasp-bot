@@ -7,7 +7,7 @@ import {
   TextReport,
 } from "./reports/reports";
 
-async function cliReport() {
+async function cliReport(): Promise<void> {
   const events = await reports.fetchEventsForReportGenerator();
 
   printReportTitle("TOTAL REPORT");

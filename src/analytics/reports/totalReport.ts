@@ -1,6 +1,6 @@
 import { PosthogEvent } from "../events";
 import {
-  EventsByExeuctionEnvironment,
+  EventsByExecutionEnvironment,
   ExecutionEnvironment,
   executionEnvs,
   groupEventsByExecutionEnv,
@@ -24,7 +24,7 @@ export async function generateTotalReport(
   const localEventsByProject = groupEventsByProject(localEvents);
   const numProjectsTotal = Object.keys(localEventsByProject).length;
   const numProjectsBuiltTotal = Object.values(localEventsByProject).filter(
-    (events) => events.some((e) => e.properties.is_build),
+    (events) => events.some((e) => e.properties?.is_build),
   ).length;
   const numUniqueUsersTotal = new Set(localEvents.map((e) => e.distinct_id))
     .size;
@@ -51,7 +51,7 @@ export async function generateTotalReport(
 }
 
 function calcTotalUniqueEventsByExecutionEnv(
-  eventsByEnv: EventsByExeuctionEnvironment,
+  eventsByEnv: EventsByExecutionEnvironment,
 ): Record<ExecutionEnvironment, number> {
   const totalUniqueEventsByExecutionEnv: Record<string, number> = {};
   for (const envKey of Object.keys(

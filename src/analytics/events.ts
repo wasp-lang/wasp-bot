@@ -69,7 +69,7 @@ async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
   while (!allOldEventsFetched) {
     const { isThereMore, events: fetchedEvents } = await fetchEvents({
       eventType: "cli",
-      before: getOldestEventTimestampOrNull(events),
+      before: getOldestEventTimestamp(events),
     });
     events = [...events, ...fetchedEvents];
     await saveCachedEvents(events);
@@ -85,8 +85,8 @@ async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
   while (!allNewEventsFetched) {
     const { isThereMore, events: fetchedEvents } = await fetchEvents({
       eventType: "cli",
-      after: getNewestEventTimestampOrNull(events),
-      before: getOldestEventTimestampOrNull(newEvents),
+      after: getNewestEventTimestamp(events),
+      before: getOldestEventTimestamp(newEvents),
     });
     newEvents = [...newEvents, ...fetchedEvents];
     allNewEventsFetched = !isThereMore;
@@ -97,7 +97,7 @@ async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
   // NOTE: Sometimes, likely due to rate limiting from PostHog side, `isThereMore` will falsely be
   //   set to `false` even when there is more data. To handle that, we check here if we actually got
   //   all the events, by checking if the oldest event we fetched is indeed old enough.
-  const oldestFetchedEventTimestamp = getOldestEventTimestampOrNull(events);
+  const oldestFetchedEventTimestamp = getOldestEventTimestamp(events);
   const didWeFetchAllOldEvents =
     !!oldestFetchedEventTimestamp &&
     moment(oldestFetchedEventTimestamp).isSameOrBefore(
@@ -173,12 +173,7 @@ async function fetchEvents({
  *   - There might be missing events before or after the cached range
  */
 async function loadCachedEvents(): Promise<PosthogEvent[]> {
-  try {
-    return JSON.parse(await fs.readFile(CACHE_FILE_PATH, "utf-8"));
-  } catch (e) {
-    if ("code" in e && e.code === "ENOENT") return [];
-    throw e;
-  }
+  return JSON.parse((await fs.readFile(CACHE_FILE_PATH, "utf-8")) || "[]");
 }
 
 /**
@@ -188,12 +183,10 @@ async function saveCachedEvents(events: PosthogEvent[]): Promise<void> {
   await fs.writeFile(CACHE_FILE_PATH, JSON.stringify(events), "utf-8");
 }
 
-function getOldestEventTimestampOrNull(events: PosthogEvent[]): Date | null {
-  if (events.length <= 0) return null;
-  return events[events.length - 1].timestamp;
+function getOldestEventTimestamp(events: PosthogEvent[]): Date | undefined {
+  return events.at(-1)?.timestamp;
 }
 
-function getNewestEventTimestampOrNull(events: PosthogEvent[]): Date | null {
-  if (events.length <= 0) return null;
-  return events[0].timestamp;
+function getNewestEventTimestamp(events: PosthogEvent[]): Date | undefined {
+  return events.at(0)?.timestamp;
 }

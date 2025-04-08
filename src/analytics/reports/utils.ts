@@ -11,7 +11,7 @@ import moment from "../moment";
 export function groupEventsByProject(events: PosthogEvent[]): {
   [userAndProjectId: string]: PosthogEvent[];
 } {
-  return _.groupBy(events, (e) => e.distinct_id + e.properties.project_hash);
+  return _.groupBy(events, (e) => e.distinct_id + e.properties?.project_hash);
 }
 
 /**

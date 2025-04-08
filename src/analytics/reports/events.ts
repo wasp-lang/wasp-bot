@@ -64,7 +64,7 @@ const periodOfMihoCIServerProblematicEvents = [
  */
 function isNotMihoPrivateCIServerEvent(event: PosthogEvent) {
   return (
-    event.properties.$ip === mihoCIServerIP &&
+    event.properties?.$ip === mihoCIServerIP &&
     moment(event.timestamp).isBetween(
       periodOfMihoCIServerProblematicEvents[0],
       periodOfMihoCIServerProblematicEvents[1],
@@ -107,11 +107,11 @@ function markAsCiEventBurstsFromDifferentUsersFromSameIp(
     const eventTime = moment(event.timestamp);
     const eventIpAndUser = `${eventIp}:${event.distinct_id}`;
 
-    const areClose = (t1: moment.Moment, t2: moment.Moment): boolean => {
+    const areClose = (t1?: moment.Moment, t2?: moment.Moment): boolean => {
       // NOTE: Why 25 hours? Empirically, we saw this number to remove these problematic
       //   event bursts well. Also, it is just a bit over 24 hours, so if somebody
       //   has daily CI happening every 24 hours, it should catch that also.
-      return t1 && t2 && Math.abs(t1.diff(t2, "hours")) < 25;
+      return !!t1 && !!t2 && Math.abs(t1.diff(t2, "hours")) < 25;
     };
 
     const thereIsRecentEventWithSameIpAndUser = areClose(
