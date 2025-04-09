@@ -9,7 +9,7 @@ import {
   groupEventsByExecutionEnv,
   showPrettyMetrics,
 } from "../../executionEnvs";
-import { createCrossTable, CrossTableData } from "../../table";
+import { createCrossTable } from "../../table";
 import { fetchEventsForReportGenerator } from "../events";
 import { UserActivityReport } from "../reports";
 import { calcUserAgeInDays, groupEventsByUser } from "../utils";
@@ -75,7 +75,7 @@ export async function generateUserActivityReport(
         ],
       },
     ],
-  } satisfies CrossTableData);
+  });
 
   const totalNumOfLocalUsersInLastPeriod = _.sum(
     Object.values(uniqueLocalActiveUsersPerPeriodByAge.series).map((series) =>
