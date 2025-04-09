@@ -23,25 +23,25 @@ const INTRODUCTIONS_CHANNEL_ID = "689916376542085170";
 const DISCORD_MAX_MSG_SIZE = 2000;
 const timezone = "Europe/Zagreb";
 
-export const start = () => {
-  const client = new Discord.Client({});
-  client.login(BOT_TOKEN);
+export function start(): void {
+  const discordClient = new Discord.Client({});
+  discordClient.login(BOT_TOKEN);
 
-  client.on("ready", async () => {
-    logger.info(`Logged in as: ${client.user?.tag}.`);
+  discordClient.on("ready", async () => {
+    logger.info(`Logged in as: ${discordClient.user?.tag}.`);
 
     // Initiate daily standup every day at 8:00.
     schedule.scheduleJob(
       { dayOfWeek: [1, 2, 3, 4, 5], hour: 8, minute: 0, tz: timezone },
       async () => {
-        await initiateDailyStandup(client);
+        await initiateDailyStandup(discordClient);
       },
     );
 
     // Every day at 7:00 am, send analytics reports.
     schedule.scheduleJob({ hour: 7, minute: 0, tz: timezone }, async () => {
       const reportsChannel = await fetchTextChannelById(
-        client,
+        discordClient,
         REPORTS_CHANNEL_ID,
       );
       await reportsChannel.send(
@@ -54,17 +54,17 @@ export const start = () => {
         const events = await reports.fetchEventsForReportGenerator();
 
         // Send total and daily analytics report every day.
-        await sendAnalyticsReport(client, "total", events);
-        await sendAnalyticsReport(client, "daily", events);
+        await sendAnalyticsReport(discordClient, "total", events);
+        await sendAnalyticsReport(discordClient, "daily", events);
 
         // It today is Monday, also send weekly analytics report.
         if (moment().isoWeekday() === 1) {
-          await sendAnalyticsReport(client, "weekly", events);
+          await sendAnalyticsReport(discordClient, "weekly", events);
         }
 
         // It today is first day of the month, also send monthly analytics report.
         if (moment().date() === 1) {
-          await sendAnalyticsReport(client, "monthly", events);
+          await sendAnalyticsReport(discordClient, "monthly", events);
         }
       } catch (e) {
         logger.error(e);
@@ -76,22 +76,22 @@ export const start = () => {
     });
   });
 
-  client.on("message", async (msg) => handleMessage(client, msg));
+  discordClient.on("message", async (msg) => handleMessage(discordClient, msg));
 
-  client.on("messageUpdate", async (_oldMessage, newMessage) =>
-    handleMessage(client, newMessage),
+  discordClient.on("messageUpdate", async (_oldMessage, newMessage) =>
+    handleMessage(discordClient, newMessage),
   );
-};
+}
 
-const handleMessage = async (
-  bot: Discord.Client,
+async function handleMessage(
+  discordClient: Discord.Client,
   message: Discord.Message | Discord.PartialMessage,
-) => {
-  if (!message.author || !message.content) {
+): Promise<Discord.Message | void> {
+  if (!(message instanceof Discord.Message)) {
     return;
   }
   // Ignore messages from the bot itself.
-  if (message.author.id === bot.user?.id) {
+  if (message.author.id === discordClient.user?.id) {
     return;
   }
 
@@ -117,62 +117,48 @@ const handleMessage = async (
     }
   }
 
-  function getNumPeriodsFromAnalyticsCommand(cmd: string) {
-    const match = cmd.match(/numPeriods\s*=\s*(\d+)/);
-    if (match) {
-      return parseInt(match[1]);
-    }
-  }
-
   if (
     message.content.startsWith("!analytics") &&
     message.channel.id.toString() === REPORTS_CHANNEL_ID
   ) {
     if (message.content.includes("weekly")) {
       await sendAnalyticsReport(
-        bot,
+        discordClient,
         "weekly",
         undefined,
         getNumPeriodsFromAnalyticsCommand(message.content),
       );
     } else if (message.content.includes("monthly")) {
       await sendAnalyticsReport(
-        bot,
+        discordClient,
         "monthly",
         undefined,
         getNumPeriodsFromAnalyticsCommand(message.content),
       );
     } else if (message.content.includes("daily")) {
       await sendAnalyticsReport(
-        bot,
+        discordClient,
         "daily",
         undefined,
         getNumPeriodsFromAnalyticsCommand(message.content),
       );
     } else if (message.content.includes("total")) {
-      await sendAnalyticsReport(bot, "total");
+      await sendAnalyticsReport(discordClient, "total");
     } else {
-      await sendAnalyticsHelp(bot);
+      await sendAnalyticsHelp(discordClient);
     }
   }
-};
-
-async function fetchTextChannelById(
-  bot: Discord.Client,
-  channelId: Discord.Snowflake,
-): Promise<Discord.TextChannel> {
-  const guild = await bot.guilds.fetch(GUILD_ID);
-  const channel = guild.channels.resolve(channelId);
-
-  if (!channel || !channel.isText()) {
-    throw new Error(`Channel ${channelId} is not a text channel`);
-  }
-
-  return channel as Discord.TextChannel;
 }
 
-const sendAnalyticsHelp = async (bot: Discord.Client) => {
-  const channel = await fetchTextChannelById(bot, REPORTS_CHANNEL_ID);
+function getNumPeriodsFromAnalyticsCommand(cmd: string): number | undefined {
+  const match = cmd.match(/numPeriods\s*=\s*(\d+)/);
+  if (match) {
+    return parseInt(match[1]);
+  }
+}
+
+async function sendAnalyticsHelp(discordClient: Discord.Client): Promise<void> {
+  const channel = await fetchTextChannelById(discordClient, REPORTS_CHANNEL_ID);
   await channel.send(
     `Available commands:
   !analytics daily [numPeriods=<int>]
@@ -219,14 +205,14 @@ If you want more control and generate some reports manually, you can check out
 wasp-lang/wasp-bot repo and generate them locally, README has instructions on this.
 `,
   );
-};
+}
 
-const sendAnalyticsReport = async (
-  bot: Discord.Client,
+async function sendAnalyticsReport(
+  discordClient: Discord.Client,
   reportType: "daily" | "weekly" | "monthly" | "total",
   prefetchedEvents: PosthogEvent[] | undefined = undefined,
   numPeriods: number | undefined = undefined,
-) => {
+): Promise<void> {
   let reportPromise, reportTitle;
   if (reportType == "monthly") {
     reportPromise = reports.generateMonthlyReport(prefetchedEvents, numPeriods);
@@ -246,7 +232,7 @@ const sendAnalyticsReport = async (
   }
 
   const waspReportsChannel = await fetchTextChannelById(
-    bot,
+    discordClient,
     REPORTS_CHANNEL_ID,
   );
 
@@ -266,21 +252,23 @@ const sendAnalyticsReport = async (
   waspReportsChannel.send(
     "=======================================================",
   );
-};
-
-const tooLongMessage = "\n... ⚠️ MESSAGE CUT BECAUSE IT IS TOO LONG...";
+}
 
 function covertSimpleReportToDiscordMessage(
   report: Partial<TextReport & ChartReport>,
 ): Discord.MessageOptions {
   const options: Discord.MessageOptions = {};
-
   if (report.text) {
     let content: string = report.text.join("\n");
+
     if (content.length >= DISCORD_MAX_MSG_SIZE) {
+      const MESSAGE_TOO_LONG_SUFFIX =
+        "\n... ⚠️ MESSAGE CUT BECAUSE IT IS TOO LONG...";
       content =
-        content.substring(0, DISCORD_MAX_MSG_SIZE - tooLongMessage.length) +
-        tooLongMessage;
+        content.substring(
+          0,
+          DISCORD_MAX_MSG_SIZE - MESSAGE_TOO_LONG_SUFFIX.length,
+        ) + MESSAGE_TOO_LONG_SUFFIX;
     }
     options.content = content;
   }
@@ -295,9 +283,11 @@ function covertSimpleReportToDiscordMessage(
   return options;
 }
 
-const initiateDailyStandup = async (bot: Discord.Client) => {
+async function initiateDailyStandup(
+  discordClient: Discord.Client,
+): Promise<void> {
   const dailyStandupChannel = await fetchTextChannelById(
-    bot,
+    discordClient,
     DAILY_STANDUP_CHANNEL_ID,
   );
 
@@ -326,4 +316,18 @@ const initiateDailyStandup = async (bot: Discord.Client) => {
       "\n\n💡 Daily quote: " +
       quote,
   );
-};
+}
+
+async function fetchTextChannelById(
+  discordClient: Discord.Client,
+  channelId: Discord.Snowflake,
+): Promise<Discord.TextChannel> {
+  const guild = await discordClient.guilds.fetch(GUILD_ID);
+  const channel = guild.channels.resolve(channelId);
+
+  if (!channel || !(channel instanceof Discord.TextChannel)) {
+    throw new Error(`Channel ${channelId} is not a text channel`);
+  }
+
+  return channel;
+}
