@@ -173,7 +173,12 @@ async function fetchEvents({
  *   - There might be missing events before or after the cached range
  */
 async function loadCachedEvents(): Promise<PosthogEvent[]> {
-  return JSON.parse((await fs.readFile(CACHE_FILE_PATH, "utf-8")) || "[]");
+  const cacheFileContent = await fs.readFile(CACHE_FILE_PATH, "utf-8");
+  if (cacheFileContent !== "") {
+    return JSON.parse(cacheFileContent);
+  } else {
+    return [];
+  }
 }
 
 /**
