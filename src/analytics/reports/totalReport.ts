@@ -54,9 +54,7 @@ function calcTotalUniqueEventsByExecutionEnv(
   eventsByEnv: EventsByExecutionEnvironment,
 ): Record<ExecutionEnvironment, number> {
   const totalUniqueEventsByExecutionEnv: Record<string, number> = {};
-  for (const envKey of Object.keys(
-    executionEnvs,
-  ) as Array<ExecutionEnvironment>) {
+  for (const envKey of Object.keys(executionEnvs) as ExecutionEnvironment[]) {
     const events = eventsByEnv[envKey] ?? [];
     totalUniqueEventsByExecutionEnv[envKey] = new Set(
       events.map((event) => event.distinct_id),
