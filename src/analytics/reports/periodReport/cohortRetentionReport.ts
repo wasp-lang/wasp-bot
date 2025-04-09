@@ -30,7 +30,7 @@ export async function generateCohortRetentionReport(
    *    - `["10", "6 (60%)", "3 (30%)", "0 (0%)"]`
    *    - `["0", "N/A", "N/A"]`
    */
-  function calcCohortRetentionTableRow(cohort: number[]) {
+  function calcCohortRetentionTableRow(cohort: number[]): string[] {
     const [numUsersAtStart, ...numUsersThroughPeriods] = cohort;
     const retentionPercentages = numUsersThroughPeriods.map((n) =>
       numUsersAtStart === 0

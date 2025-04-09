@@ -19,17 +19,9 @@ export async function fetchEventsForReportGenerator(): Promise<PosthogEvent[]> {
     (events, f) => events.filter(f),
     allEvents,
   );
-
   const sortedNonWaspTeamEvents = _.sortBy(nonWaspTeamEvents, "timestamp");
-  const validEvents = markAsCiEventBurstsFromDifferentUsersFromSameIp(
+  const sortedValidEvents = markAsCiEventBurstsFromDifferentUsersFromSameIp(
     sortedNonWaspTeamEvents,
-  );
-
-  const sortedValidEvents = _.sortBy(validEvents, "timestamp");
-
-  console.log(
-    "unnecessary sorting = ",
-    JSON.stringify(validEvents) === JSON.stringify(sortedValidEvents),
   );
 
   return sortedValidEvents;
@@ -47,7 +39,7 @@ const waspTeamDistinctUserIds = [
   "57591c27-dfe8-46b3-8b46-3f4a14150292",
 ];
 
-function isNotWaspTeamEvent(event: PosthogEvent) {
+function isNotWaspTeamEvent(event: PosthogEvent): boolean {
   return !waspTeamDistinctUserIds.includes(event.distinct_id);
 }
 
@@ -62,7 +54,7 @@ const periodOfMihoCIServerProblematicEvents = [
  * to turn off telemetry (+ forgot to set env vars to indicate it is CI)
  * so we filtering those out here.
  */
-function isNotMihoPrivateCIServerEvent(event: PosthogEvent) {
+function isNotMihoPrivateCIServerEvent(event: PosthogEvent): boolean {
   return (
     event.properties?.$ip === mihoCIServerIP &&
     moment(event.timestamp).isBetween(

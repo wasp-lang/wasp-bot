@@ -66,7 +66,7 @@ function printReportInCLI(
   }
 }
 
-function printReportTitle(text: string) {
+function printReportTitle(text: string): void {
   console.log(`\x1b[33m \n\n${text} \x1b[0m`);
 }
 

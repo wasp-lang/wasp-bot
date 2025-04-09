@@ -6,6 +6,10 @@ export interface CrossTableData {
   rows: CrossTableRow[];
 }
 
+/**
+ * A cross table is a table that has both column and row headers,
+ * allowing for the intersection of data to be displayed.
+ */
 export function createCrossTable(
   tableData: CrossTableData,
 ): Table<CrossTableRow> {
