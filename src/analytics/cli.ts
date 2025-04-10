@@ -7,7 +7,7 @@ import {
   TextReport,
 } from "./reports/reports";
 
-async function cliReport() {
+async function cliReport(): Promise<void> {
   const events = await reports.fetchEventsForReportGenerator();
 
   printReportTitle("TOTAL REPORT");
@@ -28,12 +28,14 @@ async function cliReport() {
   );
 }
 
-// Outputs CSV of total metrics since the start of tracking them,
-// while skipping cohort analytis because that would be too complex.
-// Useful for manually producing charts that show total progress of Wasp.
+/**
+ * Outputs CSV of total metrics since the start of tracking them,
+ * while skipping cohort analytis because that would be too complex.
+ * Useful for manually producing charts that show total progress of Wasp.
+ */
 function printAllTimeMonthlyReportCsvInCLI(
   allTimePeriodReort: AllTimePeriodReport,
-) {
+): void {
   const { userActivityReport, projectsReport } = allTimePeriodReort;
 
   console.log("\n[CSV] Num active users");
@@ -50,7 +52,7 @@ function printAllTimeMonthlyReportCsvInCLI(
 
 function printReportInCLI(
   compositeReport: Record<string, Partial<TextReport & ChartReport>>,
-) {
+): void {
   for (const simpleReport of Object.values(compositeReport)) {
     console.log();
     if (simpleReport.text) {
@@ -64,7 +66,7 @@ function printReportInCLI(
   }
 }
 
-function printReportTitle(text) {
+function printReportTitle(text: string): void {
   console.log(`\x1b[33m \n\n${text} \x1b[0m`);
 }
 

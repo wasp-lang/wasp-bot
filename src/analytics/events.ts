@@ -1,6 +1,7 @@
+import retry from "async-retry";
 import axios from "axios";
-import { promises as fs } from "fs";
 import { config as dotenvConfig } from "dotenv";
+import { promises as fs } from "fs";
 import moment from "./moment";
 
 dotenvConfig();
@@ -8,9 +9,7 @@ dotenvConfig();
 const POSTHOG_KEY = process.env.WASP_POSTHOG_KEY;
 // POSTHOG_PROJECT_API_KEY is public, so it can be here.
 const POSTHOG_PROJECT_API_KEY = "CdDd2A0jKTI2vFAsrI9JWm3MqpOcgHz1bMyogAcwsE4";
-
 const OLDEST_EVENT_TIMESTAMP = "2021-01-22T19:42:56.684632+00:00";
-
 const CACHE_FILE_PATH =
   process.env.WASP_ANALYTICS_CACHED_EVENTS_JSON_PATH ??
   "./wasp-analytics-cached-events.json";
@@ -30,10 +29,33 @@ export interface PosthogEvent {
   };
 }
 
-export async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
+/**
+ * Tries to fetch all CLI events from Posthog, retrying in case of failure.
+ * It caches the fetched events, so each retry continues from where it left off.
+ */
+export async function tryToFetchAllCliEvents(): Promise<PosthogEvent[]> {
+  return await retry(
+    async () => {
+      return fetchAllCliEvents();
+    },
+    {
+      retries: 10,
+      minTimeout: 5 * 1000,
+      maxTimeout: 120 * 1000,
+      onRetry: (e: Error) => {
+        console.error(
+          "Error happened while fetching events for report generator, trying again:",
+          e.message ?? e,
+        );
+      },
+    },
+  );
+}
+
+async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
   console.log("Fetching all CLI events...");
 
-  const cachedEvents = (await loadCachedEvents()) ?? [];
+  const cachedEvents = await loadCachedEvents();
   console.log("Number of already locally cached events: ", cachedEvents.length);
 
   let events = cachedEvents;
@@ -47,7 +69,7 @@ export async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
   while (!allOldEventsFetched) {
     const { isThereMore, events: fetchedEvents } = await fetchEvents({
       eventType: "cli",
-      before: getOldestEventTimestampOrNull(events),
+      before: getOldestEventTimestamp(events),
     });
     events = [...events, ...fetchedEvents];
     await saveCachedEvents(events);
@@ -58,13 +80,13 @@ export async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
   // They are fetched starting with the newest ones and going backwards.
   // Only once we fetch all of them, we add them to the cache. This is done to guarantee continuity of cached events.
   console.log("Fetching events newer than the cache...");
-  let newEvents = [];
+  let newEvents: PosthogEvent[] = [];
   let allNewEventsFetched = false;
   while (!allNewEventsFetched) {
     const { isThereMore, events: fetchedEvents } = await fetchEvents({
       eventType: "cli",
-      after: getNewestEventTimestampOrNull(events),
-      before: getOldestEventTimestampOrNull(newEvents),
+      after: getNewestEventTimestamp(events),
+      before: getOldestEventTimestamp(newEvents),
     });
     newEvents = [...newEvents, ...fetchedEvents];
     allNewEventsFetched = !isThereMore;
@@ -75,7 +97,7 @@ export async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
   // NOTE: Sometimes, likely due to rate limiting from PostHog side, `isThereMore` will falsely be
   //   set to `false` even when there is more data. To handle that, we check here if we actually got
   //   all the events, by checking if the oldest event we fetched is indeed old enough.
-  const oldestFetchedEventTimestamp = getOldestEventTimestampOrNull(events);
+  const oldestFetchedEventTimestamp = getOldestEventTimestamp(events);
   const didWeFetchAllOldEvents =
     !!oldestFetchedEventTimestamp &&
     moment(oldestFetchedEventTimestamp).isSameOrBefore(
@@ -141,31 +163,35 @@ async function fetchEvents({
   };
 }
 
-// Returns: [PosthogEvent]
-// where events are guaranteed to be continuous, with no missing events between the cached events.
-// Newest event is first (index 0), and oldest event is last, and cached events are continuous,
-// in the sense that there is no events between the oldest and newest that is missing.
-// There might be missing events before or after though.
+/**
+ * Loads cached PostHog events from a JSON file.
+ *
+ * @returns An array of PostHog events where:
+ *   - Events are guaranteed to be continuous, with no missing events between the cached events
+ *   - Newest event is first (index 0), and oldest event is last
+ *   - No events are missing between the oldest and newest cached events
+ *   - There might be missing events before or after the cached range
+ */
 async function loadCachedEvents(): Promise<PosthogEvent[]> {
-  try {
-    return JSON.parse(await fs.readFile(CACHE_FILE_PATH, "utf-8"));
-  } catch (e) {
-    if (e.code === "ENOENT") return [];
-    throw e;
+  const cacheFileContent = await fs.readFile(CACHE_FILE_PATH, "utf-8");
+  if (cacheFileContent !== "") {
+    return JSON.parse(cacheFileContent);
+  } else {
+    return [];
   }
 }
 
-// Expects events that follow the same rules as the ones returned by `loadCachedEvents()`.
+/**
+ * Expects events that follow the same rules as the ones returned by `loadCachedEvents()`.
+ */
 async function saveCachedEvents(events: PosthogEvent[]): Promise<void> {
   await fs.writeFile(CACHE_FILE_PATH, JSON.stringify(events), "utf-8");
 }
 
-function getOldestEventTimestampOrNull(events: PosthogEvent[]): Date {
-  if (events.length <= 0) return null;
-  return events[events.length - 1].timestamp;
+function getOldestEventTimestamp(events: PosthogEvent[]): Date | undefined {
+  return events.at(-1)?.timestamp;
 }
 
-function getNewestEventTimestampOrNull(events: PosthogEvent[]): Date {
-  if (events.length <= 0) return null;
-  return events[0].timestamp;
+function getNewestEventTimestamp(events: PosthogEvent[]): Date | undefined {
+  return events.at(0)?.timestamp;
 }

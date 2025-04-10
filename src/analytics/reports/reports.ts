@@ -1,11 +1,12 @@
 import ImageCharts from "image-charts";
 
 export interface TextReport {
-  text: string[];
+  text: readonly string[];
 }
 
+type CsvReportRow = readonly (number | string | null)[];
 export interface CsvReport {
-  csv: (number | string)[][];
+  csv: readonly CsvReportRow[];
 }
 
 export interface ChartReport {
