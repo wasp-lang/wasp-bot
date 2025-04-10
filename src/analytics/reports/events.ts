@@ -55,7 +55,7 @@ const periodOfMihoCIServerProblematicEvents = [
  * so we filtering those out here.
  */
 function isNotMihoPrivateCIServerEvent(event: PosthogEvent): boolean {
-  return (
+  return !(
     event.properties?.$ip === mihoCIServerIP &&
     moment(event.timestamp).isBetween(
       periodOfMihoCIServerProblematicEvents[0],
