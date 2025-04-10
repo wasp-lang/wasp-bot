@@ -283,6 +283,39 @@ function covertSimpleReportToDiscordMessage(
   return options;
 }
 
+interface Quote {
+  text: string;
+  author: string;
+}
+
+function formatQuote(quote: Quote): string {
+  return `${quote.text} | ${quote.author}`;
+}
+
+const WASP_QUOTES: Quote[] = [
+  {
+    text: "No hour of life is wasted that is spent in the saddle.",
+    author: "Vince",
+  },
+  {
+    text: "Food nourishes the body, but meetings nourish the soul.",
+    author: "Filip",
+  },
+  { text: "Shirt is just a social construct.", author: "Miho" },
+  {
+    text: "Don't be too dogmatic, unless we're talking about Dogma the beer brewery.",
+    author: "Milica, wannabe home brewer",
+  },
+  {
+    text: "Let's send them some swag! Martin will take care of it.",
+    author: "Matija",
+  },
+  {
+    text: "I don't have time to review PRs but it seems I do have time to implement these silly quotes.",
+    author: "Martin",
+  },
+];
+
 async function initiateDailyStandup(
   discordClient: Discord.Client,
 ): Promise<void> {
@@ -291,30 +324,15 @@ async function initiateDailyStandup(
     DAILY_STANDUP_CHANNEL_ID,
   );
 
-  const wisdomQuote = ((q) => `${q.text} | ${q.author}`)(Quote.getQuote());
-  const waspQuote = ((q) => `${q[0]} | ${q[1]}`)(
-    _.sample([
-      ["No hour of life is wasted that is spent in the saddle.", "Vince"],
-      ["Food nourishes the body, but meetings nourish the soul.", "Filip"],
-      ["Shirt is just a social construct.", "Miho"],
-      [
-        "Don't be too dogmatic, unless we're talking about Dogma the beer brewery.",
-        "Milica, wannabe home brewer",
-      ],
-      ["Let's send them some swag! Martin will take care of it.", "Matija"],
-      [
-        "I don't have time to review PRs but it seems I do have time to implement these silly quotes.",
-        "Martin",
-      ],
-    ]),
-  );
+  const wisdomQuote = Quote.getQuote();
+  const waspQuote = _.sample(WASP_QUOTES)!;
   const quote = Math.random() < 0.1 ? waspQuote : wisdomQuote;
 
   dailyStandupChannel.send(
-    "☀️ Time for daily standup!" +
-      "\nHow was your day yesterday, what are you working on today, and what are the challenges you are encountering?" +
-      "\n\n💡 Daily quote: " +
-      quote,
+    `☀️ Time for daily standup!
+    How was your day yesterday, what are you working on today, and what are the challenges you are encountering?
+    
+    💡 Daily quote: ${formatQuote(quote)}`,
   );
 }
 
