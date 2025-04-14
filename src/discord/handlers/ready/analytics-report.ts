@@ -21,20 +21,17 @@ export async function initiateAnalyticsReport(
 
   await reportsChannel.send("⏳ Fetching analytics events...");
   try {
-    // By prefetching events, we can reuse them when generating multiple reports and not just daily ones.
+    // By prefetching events, we can reuse them for all reports
     const events = await reports.fetchEventsForReportGenerator();
 
-    // Send total and daily analytics report every day.
     await sendAnalyticsReport(discordClient, "total", events);
     await sendAnalyticsReport(discordClient, "daily", events);
 
-    // It today is Monday, also send weekly analytics report.
-    if (moment().isoWeekday() === 1) {
+    if (isFirstDayOfWeek()) {
       await sendAnalyticsReport(discordClient, "weekly", events);
     }
 
-    // It today is first day of the month, also send monthly analytics report.
-    if (moment().date() === 1) {
+    if (isFirstDayOfMonth()) {
       await sendAnalyticsReport(discordClient, "monthly", events);
     }
   } catch (e) {
@@ -44,4 +41,12 @@ export async function initiateAnalyticsReport(
       `Failed to send daily analytics report: ${message}`,
     );
   }
+}
+
+function isFirstDayOfWeek(): boolean {
+  return moment().isoWeekday() === 1;
+}
+
+function isFirstDayOfMonth(): boolean {
+  return moment().date() === 1;
 }
