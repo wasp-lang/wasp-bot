@@ -227,7 +227,7 @@ async function sendAnalyticsReport(
     reportPromise = reports.generateTotalReport(prefetchedEvents);
     reportTitle = "TOTAL";
   } else {
-    logger.error("Unkown reportType: ", reportType);
+    logger.error("Unknown reportType: ", reportType);
     return;
   }
 
