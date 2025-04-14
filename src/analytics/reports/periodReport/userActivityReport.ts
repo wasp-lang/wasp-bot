@@ -9,7 +9,7 @@ import {
   groupEventsByExecutionEnv,
   showPrettyMetrics,
 } from "../../executionEnvs";
-import { createCrossTable } from "../../table";
+import { Table } from "../../table";
 import { fetchEventsForReportGenerator } from "../events";
 import { UserActivityReport } from "../reports";
 import { calcUserAgeInDays, groupEventsByUser } from "../utils";
@@ -60,7 +60,7 @@ export async function generateUserActivityReport(
     }),
   ];
 
-  const tableOfActiveUsersPerPeriodByAge = createCrossTable({
+  const tableOfActiveUsersPerPeriodByAge = Table.createCrossTable({
     head: activeUsersperPeriodByAgeHeaders as ["", ...string[]],
     rows: [
       ...activeUsersPerPeriodByAgeCsvData.map(
@@ -90,9 +90,7 @@ export async function generateUserActivityReport(
       `- Local: ${totalNumOfLocalUsersInLastPeriod}`,
       `- Cloud: ${prettyNonLocalMetrics}`,
       `Table "Num unique active users per ${periodName} by age":`,
-      "```",
-      tableOfActiveUsersPerPeriodByAge.toString(),
-      "```",
+      tableOfActiveUsersPerPeriodByAge.toMarkdown(),
     ],
     chart: createUserActivityReportChart(
       uniqueLocalActiveUsersPerPeriodByAge,

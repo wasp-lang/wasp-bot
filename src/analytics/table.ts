@@ -1,4 +1,4 @@
-import Table from "cli-table";
+import CliTable from "cli-table";
 
 type CrossTableRow = Record<string, string[]>;
 export interface CrossTableData {
@@ -6,38 +6,9 @@ export interface CrossTableData {
   rows: CrossTableRow[];
 }
 
-/**
- * A cross table is a table that has both column and row headers,
- * allowing for the intersection of data to be displayed.
- */
-export function createCrossTable(
-  tableData: CrossTableData,
-): Table<CrossTableRow> {
-  const table = new Table<CrossTableRow>({
-    head: tableData.head,
-    colAligns: [...tableData.head.map(() => "right" as const)],
-    ...resetTableDecorations,
-  });
-  table.push(...tableData.rows);
-
-  return table;
-}
-
 type VerticalTableRow = Record<string, string>;
 export interface VerticalTableData {
   rows: VerticalTableRow[];
-}
-
-export function createVerticalTable({
-  rows,
-}: VerticalTableData): Table<VerticalTableRow> {
-  const table = new Table<VerticalTableRow>({
-    colAligns: [...rows.map(() => "right" as const)],
-    ...resetTableDecorations,
-  });
-  table.push(...rows);
-
-  return table;
 }
 
 type HorizontalTableRow = string[];
@@ -50,25 +21,73 @@ export type HorizontalTableData =
       rowsWithHeader: HorizontalTableRow[];
     };
 
-export function createHorizontalTable(
-  tableData: HorizontalTableData,
-): Table<HorizontalTableRow> {
-  if ("rowsWithHeader" in tableData) {
-    return new Table<HorizontalTableRow>({
-      rows: tableData.rowsWithHeader,
-      colAligns: [...tableData.rowsWithHeader.map(() => "right" as const)],
-      ...resetTableDecorations,
-    });
+export class Table<
+  T extends CrossTableRow | HorizontalTableRow | VerticalTableRow,
+> {
+  #table: CliTable<T>;
+
+  private constructor(table: CliTable<T>) {
+    this.#table = table;
   }
 
-  const table = new Table<HorizontalTableRow>({
-    head: tableData.head,
-    colAligns: [...tableData.head.map(() => "right" as const)],
-    ...resetTableDecorations,
-  });
-  table.push(...tableData.rows);
+  /**
+   * A cross table is a table that has both column and row headers,
+   * allowing for the intersection of data to be displayed.
+   */
+  public static createCrossTable(
+    tableData: CrossTableData,
+  ): Table<Record<string, string[]>> {
+    const table = new CliTable<Record<string, string[]>>({
+      head: tableData.head,
+      colAligns: tableData.head.map(() => "right" as const),
+      ...resetTableDecorations,
+    });
+    table.push(...tableData.rows);
 
-  return table;
+    return new Table(table);
+  }
+
+  public static createVerticalTable(
+    tableData: VerticalTableData,
+  ): Table<Record<string, string>> {
+    const table = new CliTable<Record<string, string>>({
+      colAligns: tableData.rows.map(() => "right" as const),
+      ...resetTableDecorations,
+    });
+    table.push(...tableData.rows);
+
+    return new Table(table);
+  }
+
+  public static createHorizontalTable(
+    tableData: HorizontalTableData,
+  ): Table<string[]> {
+    if ("rowsWithHeader" in tableData) {
+      const cliTable = new CliTable<string[]>({
+        rows: tableData.rowsWithHeader,
+        colAligns: tableData.rowsWithHeader.map(() => "right" as const),
+        ...resetTableDecorations,
+      });
+
+      return new Table(cliTable);
+    }
+
+    const cliTable = new CliTable<string[]>({
+      head: tableData.head,
+      colAligns: tableData.head.map(() => "right" as const),
+      ...resetTableDecorations,
+    });
+    cliTable.push(...tableData.rows);
+
+    return new Table(cliTable);
+  }
+
+  public toMarkdown(): string {
+    const markdownCodeBlock = "```";
+    return [markdownCodeBlock, this.#table.toString(), markdownCodeBlock].join(
+      "\n",
+    );
+  }
 }
 
 /**
@@ -76,7 +95,7 @@ export function createHorizontalTable(
  * This makes the table easier to print to Discord by simplifying its appearance.
  */
 const resetTableDecorations: Pick<
-  ConstructorParameters<typeof Table>[0],
+  ConstructorParameters<typeof CliTable>[0],
   "chars" | "colors" | "style"
 > = {
   chars: {

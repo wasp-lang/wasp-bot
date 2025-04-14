@@ -1,7 +1,7 @@
 import { PosthogEvent } from "../../events";
 import { groupEventsByExecutionEnv } from "../../executionEnvs";
 import moment from "../../moment";
-import { createCrossTable } from "../../table";
+import { Table } from "../../table";
 import { fetchEventsForReportGenerator } from "../events";
 import { ProjectsReport } from "../reports";
 import { groupEventsByProject } from "../utils";
@@ -71,7 +71,7 @@ export async function generatePeriodProjectsReport(
     ] as const;
   });
 
-  const table = createCrossTable({
+  const table = Table.createCrossTable({
     head: ["", "created", "built"],
     rows: csv.map(
       ([periodEnd, createdDiff, createdCumm, builtDiff, builtCumm]) => ({
@@ -88,9 +88,7 @@ export async function generatePeriodProjectsReport(
     csv,
     text: [
       `==== Projects created/built per ${periodName} (cumm) ====`,
-      "```",
-      table.toString(),
-      "```",
+      table.toMarkdown(),
     ],
   };
   return report;
