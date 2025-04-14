@@ -15,7 +15,7 @@ export function createCrossTable(
 ): Table<CrossTableRow> {
   const table = new Table<CrossTableRow>({
     head: tableData.head,
-    colAligns: [...tableData.head.map(() => "right" as const)], // TODO: see if extra "right" is needed
+    colAligns: [...tableData.head.map(() => "right" as const)],
     ...resetTableDecorations,
   });
   table.push(...tableData.rows);
