@@ -5,10 +5,10 @@ export async function handleMessageUpdate(
   discordClient: Discord.Client,
   _oldMessage: Discord.Message | Discord.PartialMessage,
   newMessage: Discord.Message | Discord.PartialMessage,
-): Promise<Discord.Message | void> {
+): Promise<void> {
   if (!(newMessage instanceof Discord.Message)) {
     return;
   }
 
-  handleMessage(discordClient, newMessage);
+  await handleMessage(discordClient, newMessage);
 }

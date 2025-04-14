@@ -15,8 +15,9 @@ export function start(): void {
 
   discordClient.on("ready", async () => await handleReady(discordClient));
 
-  discordClient.on("message", async (message) =>
-    handleMessage(discordClient, message),
+  discordClient.on(
+    "message",
+    async (message) => await handleMessage(discordClient, message),
   );
 
   discordClient.on(

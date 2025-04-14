@@ -1,9 +1,9 @@
 import Discord from "discord.js";
-import { handleAnalyticsMessage, isAnalyticsMessage } from "./analytics";
 import {
   handleIntroductionsChannel,
   isIntroductionsMessage,
 } from "./introductions";
+import { handleAnalyticsMessage, isReportsMessage } from "./reports";
 
 export async function handleMessage(
   discordClient: Discord.Client,
@@ -19,9 +19,9 @@ export async function handleMessage(
   }
 
   if (isIntroductionsMessage(message)) {
-    handleIntroductionsChannel(message);
-  } else if (isAnalyticsMessage(message)) {
-    handleAnalyticsMessage(discordClient, message);
+    await handleIntroductionsChannel(message);
+  } else if (isReportsMessage(message)) {
+    await handleAnalyticsMessage(discordClient, message);
   }
 }
 

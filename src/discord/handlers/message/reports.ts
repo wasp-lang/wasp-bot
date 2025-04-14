@@ -4,17 +4,23 @@ import { fetchTextChannelById } from "../../utils";
 
 const REPORTS_CHANNEL_ID = "835130205928030279";
 
-export function isAnalyticsMessage(message: Discord.Message) {
-  return (
-    message.content.startsWith("!analytics") &&
-    message.channel.id.toString() === REPORTS_CHANNEL_ID
-  );
+export function isReportsMessage(message: Discord.Message): boolean {
+  return message.channel.id.toString() === REPORTS_CHANNEL_ID;
+}
+
+export async function handleReportMessage(
+  discordClient: Discord.Client,
+  message: Discord.Message,
+): Promise<void> {
+  if (message.content.startsWith("!analytics")) {
+    await handleAnalyticsMessage(discordClient, message);
+  }
 }
 
 export async function handleAnalyticsMessage(
   discordClient: Discord.Client,
   message: Discord.Message,
-) {
+): Promise<void> {
   if (message.content.includes("weekly")) {
     await sendAnalyticsReport(
       discordClient,
