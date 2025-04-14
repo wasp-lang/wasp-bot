@@ -36,8 +36,8 @@ export class Table<
    */
   public static createCrossTable(
     tableData: CrossTableData,
-  ): Table<Record<string, string[]>> {
-    const table = new CliTable<Record<string, string[]>>({
+  ): Table<CrossTableRow> {
+    const table = new CliTable<CrossTableRow>({
       head: tableData.head,
       colAligns: tableData.head.map(() => "right" as const),
       ...resetTableDecorations,
@@ -49,8 +49,8 @@ export class Table<
 
   public static createVerticalTable(
     tableData: VerticalTableData,
-  ): Table<Record<string, string>> {
-    const table = new CliTable<Record<string, string>>({
+  ): Table<VerticalTableRow> {
+    const table = new CliTable<VerticalTableRow>({
       colAligns: tableData.rows.map(() => "right" as const),
       ...resetTableDecorations,
     });
@@ -61,9 +61,9 @@ export class Table<
 
   public static createHorizontalTable(
     tableData: HorizontalTableData,
-  ): Table<string[]> {
+  ): Table<HorizontalTableRow> {
     if ("rowsWithHeader" in tableData) {
-      const cliTable = new CliTable<string[]>({
+      const cliTable = new CliTable<HorizontalTableRow>({
         rows: tableData.rowsWithHeader,
         colAligns: tableData.rowsWithHeader.map(() => "right" as const),
         ...resetTableDecorations,
@@ -72,7 +72,7 @@ export class Table<
       return new Table(cliTable);
     }
 
-    const cliTable = new CliTable<string[]>({
+    const cliTable = new CliTable<HorizontalTableRow>({
       head: tableData.head,
       colAligns: tableData.head.map(() => "right" as const),
       ...resetTableDecorations,
