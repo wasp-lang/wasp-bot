@@ -13,11 +13,6 @@ export async function handleMessage(
     return;
   }
 
-  const member = message.guild?.member(message.author);
-  if (!member) {
-    return;
-  }
-
   if (isIntroductionsMessage(message)) {
     await handleIntroductionsChannel(message);
   } else if (isReportsMessage(message)) {
