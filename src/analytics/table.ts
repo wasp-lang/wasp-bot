@@ -24,10 +24,10 @@ export type HorizontalTableData =
 export class Table<
   T extends CrossTableRow | HorizontalTableRow | VerticalTableRow,
 > {
-  #table: CliTable<T>;
+  #cliTable: CliTable<T>;
 
   private constructor(table: CliTable<T>) {
-    this.#table = table;
+    this.#cliTable = table;
   }
 
   /**
@@ -37,26 +37,26 @@ export class Table<
   public static createCrossTable(
     tableData: CrossTableData,
   ): Table<CrossTableRow> {
-    const table = new CliTable<CrossTableRow>({
+    const cliTable = new CliTable<CrossTableRow>({
       head: tableData.head,
       colAligns: tableData.head.map(() => "right" as const),
       ...resetTableDecorations,
     });
-    table.push(...tableData.rows);
+    cliTable.push(...tableData.rows);
 
-    return new Table(table);
+    return new Table(cliTable);
   }
 
   public static createVerticalTable(
     tableData: VerticalTableData,
   ): Table<VerticalTableRow> {
-    const table = new CliTable<VerticalTableRow>({
+    const cliTable = new CliTable<VerticalTableRow>({
       colAligns: tableData.rows.map(() => "right" as const),
       ...resetTableDecorations,
     });
-    table.push(...tableData.rows);
+    cliTable.push(...tableData.rows);
 
-    return new Table(table);
+    return new Table(cliTable);
   }
 
   public static createHorizontalTable(
@@ -84,9 +84,11 @@ export class Table<
 
   public toMarkdown(): string {
     const markdownCodeBlock = "```";
-    return [markdownCodeBlock, this.#table.toString(), markdownCodeBlock].join(
-      "\n",
-    );
+    return [
+      markdownCodeBlock,
+      this.#cliTable.toString(),
+      markdownCodeBlock,
+    ].join("\n");
   }
 }
 
