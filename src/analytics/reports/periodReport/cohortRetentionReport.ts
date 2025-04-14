@@ -1,7 +1,7 @@
 import { Moment } from "moment";
 import { PosthogEvent } from "../../events";
 import { groupEventsByExecutionEnv } from "../../executionEnvs";
-import { createCrossTable } from "../../table";
+import { Table } from "../../table";
 import { fetchEventsForReportGenerator } from "../events";
 import { CohortRetentionReport } from "../reports";
 import { getUniqueUserIds, groupEventsByUser } from "../utils";
@@ -41,7 +41,7 @@ export async function generateCohortRetentionReport(
   }
 
   const periodNameShort = periodName[0];
-  const table = createCrossTable({
+  const table = Table.createCrossTable({
     head: ["", ...periods.map((_, i) => `+${i}${periodNameShort}`)],
     rows: cohorts.map((cohort, i) => ({
       [`${periodNameShort} #${i}`]: calcCohortRetentionTableRow(cohort),
@@ -54,9 +54,7 @@ export async function generateCohortRetentionReport(
   const report = {
     text: [
       "==== Cohort Retention ====",
-      "```",
-      table.toString(),
-      "```",
+      table.toMarkdown(),
       `Period of ${periodNameShort}  #0: ${fmt(firstPeriod[0])} - ${fmt(
         firstPeriod[1],
       )}`,
