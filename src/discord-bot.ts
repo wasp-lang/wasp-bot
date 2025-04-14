@@ -21,6 +21,8 @@ const GUEST_ROLE_ID = "812299047175716934";
 const INTRODUCTIONS_CHANNEL_ID = "689916376542085170";
 
 const DISCORD_MAX_MSG_SIZE = 2000;
+const DISCORD_MESSAGE_TOO_LONG_SUFFIX =
+  "\n... ⚠️ MESSAGE CUT BECAUSE IT IS TOO LONG...";
 const timezone = "Europe/Zagreb";
 
 export function start(): void {
@@ -262,13 +264,11 @@ function covertSimpleReportToDiscordMessage(
     let content: string = report.text.join("\n");
 
     if (content.length >= DISCORD_MAX_MSG_SIZE) {
-      const MESSAGE_TOO_LONG_SUFFIX =
-        "\n... ⚠️ MESSAGE CUT BECAUSE IT IS TOO LONG...";
       content =
         content.substring(
           0,
-          DISCORD_MAX_MSG_SIZE - MESSAGE_TOO_LONG_SUFFIX.length,
-        ) + MESSAGE_TOO_LONG_SUFFIX;
+          DISCORD_MAX_MSG_SIZE - DISCORD_MESSAGE_TOO_LONG_SUFFIX.length,
+        ) + DISCORD_MESSAGE_TOO_LONG_SUFFIX;
     }
     options.content = content;
   }
