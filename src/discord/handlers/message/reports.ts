@@ -12,9 +12,13 @@ export async function handleReportChannel(
   discordClient: Discord.Client,
   message: Discord.Message,
 ): Promise<void> {
-  if (message.content.startsWith("!analytics")) {
+  if (isAnalyticsMessage(message)) {
     await handleAnalyticsMessage(discordClient, message);
   }
+}
+
+function isAnalyticsMessage(message: Discord.Message): boolean {
+  return message.content.startsWith("!analytics");
 }
 
 export async function handleAnalyticsMessage(
