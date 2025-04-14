@@ -1,4 +1,7 @@
+import { PosthogEvent } from "../events";
 import {
+  EventsByExecutionEnvironment,
+  ExecutionEnvironment,
   executionEnvs,
   groupEventsByExecutionEnv,
   showPrettyMetrics,
@@ -7,11 +10,12 @@ import { fetchEventsForReportGenerator } from "./events";
 import { TotalReport } from "./reports";
 import { groupEventsByProject } from "./utils";
 
-// Generates report for some general statistics that cover the whole (total) time (all of the events).
+/**
+ * Generates report for some general statistics that cover the whole (total) time (all of the events).
+ */
 export async function generateTotalReport(
-  prefetchedEvents = undefined,
+  prefetchedEvents: PosthogEvent[] | undefined = undefined,
 ): Promise<TotalReport> {
-  // All events, sort by time (starting with oldest), with events caused by Wasp team members filtered out.
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
 
   const { localEvents, groupedNonLocalEvents } =
@@ -20,7 +24,7 @@ export async function generateTotalReport(
   const localEventsByProject = groupEventsByProject(localEvents);
   const numProjectsTotal = Object.keys(localEventsByProject).length;
   const numProjectsBuiltTotal = Object.values(localEventsByProject).filter(
-    (events) => events.some((e) => e.properties.is_build),
+    (events) => events.some((e) => e.properties?.is_build),
   ).length;
   const numUniqueUsersTotal = new Set(localEvents.map((e) => e.distinct_id))
     .size;
@@ -46,13 +50,18 @@ export async function generateTotalReport(
   return report;
 }
 
-function calcTotalUniqueEventsByExecutionEnv(eventsByEnv) {
-  const totalUniqueEventsByExecutionEnv = {};
-  for (const envKey of Object.keys(executionEnvs)) {
+function calcTotalUniqueEventsByExecutionEnv(
+  eventsByEnv: EventsByExecutionEnvironment,
+): Record<ExecutionEnvironment, number> {
+  const totalUniqueEventsByExecutionEnv: Record<string, number> = {};
+  for (const envKey of Object.keys(executionEnvs) as ExecutionEnvironment[]) {
     const events = eventsByEnv[envKey] ?? [];
     totalUniqueEventsByExecutionEnv[envKey] = new Set(
-      events.map((e) => e.distinct_id),
+      events.map((event) => event.distinct_id),
     ).size;
   }
-  return totalUniqueEventsByExecutionEnv;
+  return totalUniqueEventsByExecutionEnv as Record<
+    ExecutionEnvironment,
+    number
+  >;
 }

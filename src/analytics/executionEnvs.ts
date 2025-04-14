@@ -1,11 +1,14 @@
 import _ from "lodash";
 
 import { getEventContextValues } from "./eventContext";
+import { PosthogEvent } from "./events";
 
-// Defines all non-local execution environemnts from which Wasp CLI sends
-// telemetry data to PostHog.
-// - "contextKey" is used to identify the execution env in the event context
-// - "name" is used to display the env in the output
+/**
+ * Defines all non-local execution environments from which Wasp CLI sends
+ * telemetry data to PostHog.
+ * - "contextKey" is used to identify the execution env in the event context
+ * - "name" is used to display the env in the output
+ */
 export const executionEnvs = {
   replit: { contextKey: "replit", name: "Replit" },
   gitpod: { contextKey: "gitpod", name: "Gitpod" },
@@ -14,51 +17,72 @@ export const executionEnvs = {
     name: "GH Codespaces",
   },
   ci: { contextKey: "ci", name: "CI" },
-};
+} as const;
 
-// Organize events by the execution env:
-//   - non-local: e.g. Replit, Gitpod, Github Codepsaces, CI, ... .
-//   - local: User running Wasp on their computer.
-export function groupEventsByExecutionEnv(events) {
-  const eventsWithExecutionEnv = events.map((e) => {
-    const executionEnv = getExecutionEnvFromEventContext(e);
-    return { ...e, _executionEnv: executionEnv };
+export type ExecutionEnvironment = keyof typeof executionEnvs;
+
+export interface PosthogEventWithExecutionEnv extends PosthogEvent {
+  _executionEnv: ExecutionEnvironment | null;
+}
+
+export type EventsByExecutionEnvironment = Record<
+  ExecutionEnvironment,
+  PosthogEventWithExecutionEnv[]
+>;
+
+/**
+ * Organizes events by the execution environment:
+ * - non-local: e.g. Replit, Gitpod, Github Codespaces, CI, etc.
+ * - local: User running Wasp on their computer
+ */
+export function groupEventsByExecutionEnv(events: PosthogEvent[]): {
+  localEvents: PosthogEventWithExecutionEnv[];
+  groupedNonLocalEvents: EventsByExecutionEnvironment;
+} {
+  const eventsWithExecutionEnv = events.map((event) => {
+    const executionEnv = getExecutionEnvFromEventContext(event);
+    return {
+      ...event,
+      _executionEnv: executionEnv,
+    } satisfies PosthogEventWithExecutionEnv;
   });
   const [localEvents, nonLocalEvents] = _.partition(
     eventsWithExecutionEnv,
-    (e) => {
-      return e._executionEnv === null;
+    (event) => {
+      return event._executionEnv === null;
     },
   );
-  const groupedNonLocalEvents = _.groupBy(nonLocalEvents, (e) => {
-    return e._executionEnv;
-  });
+  const groupedNonLocalEvents = _.groupBy(nonLocalEvents, (event) => {
+    return event._executionEnv;
+  }) as EventsByExecutionEnvironment;
   return {
     localEvents,
     groupedNonLocalEvents,
   };
 }
 
-function getExecutionEnvFromEventContext(event) {
+function getExecutionEnvFromEventContext(
+  event: PosthogEvent,
+): ExecutionEnvironment | null {
   const contextValues = getEventContextValues(event);
-  for (const [key, actor] of Object.entries(executionEnvs)) {
-    if (contextValues.includes(actor.contextKey)) {
-      return key;
+  for (const [key, executionEnv] of Object.entries(executionEnvs)) {
+    if (contextValues.includes(executionEnv.contextKey)) {
+      return key as ExecutionEnvironment;
     }
   }
   return null;
 }
 
-// Takes metrics by execution env, and returns a pretty string representation of them.
-// Given
-//   `{ ci: 5, gitpod: 2 }`
-// Where ci and gitpod are keys in `executionEnvs` and 5 and 2 are metric values,
-// It returns:
-//   `"[CI: 5] [Gitpod: 2]"`
-export function showPrettyMetrics(metricsByEnv) {
+/**
+ * Formats metrics by execution environment into a pretty string representation.
+ * @returns Formatted string representation of metrics in the format "[EnvName: MetricValue] [EnvName2: MetricValue2] ..."
+ */
+export function showPrettyMetrics(
+  metricsByEnv: Record<ExecutionEnvironment, number>,
+): string {
   const output = [];
   for (const [key, metric] of Object.entries(metricsByEnv)) {
-    const context = executionEnvs[key];
+    const context = executionEnvs[key as ExecutionEnvironment];
     output.push(`[${context.name}: ${metric}]`);
   }
   return output.join(" ");

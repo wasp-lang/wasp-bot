@@ -1,30 +1,45 @@
 import _ from "lodash";
 
+import { PosthogEvent } from "../events";
 import moment from "../moment";
 
 /**
- * @param {[PosthogEvent]} events
- * @returns {{ [string]: [PosthogEvent] }} Key is unique project id, value is a list of events that belong to it.
+ * Groups events by unique project identifier.
+ * @param events - The array of PosthogEvent objects to group
+ * @returns where key is unique project id (user id + project hash), value is array of events for that project
  */
-export function groupEventsByProject(events) {
-  return _.groupBy(events, (e) => e.distinct_id + e.properties.project_hash);
+export function groupEventsByProject(events: PosthogEvent[]): {
+  [userAndProjectId: string]: PosthogEvent[];
+} {
+  return _.groupBy(events, (e) => e.distinct_id + e.properties?.project_hash);
 }
 
 /**
- * @param {[PosthogEvent]} events
- * @returns {{ [string]: [PosthogEvent] }} Key is unique user id, value is a list of events that belong to it.
+ * Groups events by unique user identifier.
+ * @param events - The array of PosthogEvent objects to group
+ * @returns where key is unique user id, value is array of events for that user
  */
-export function groupEventsByUser(events) {
+export function groupEventsByUser(events: PosthogEvent[]): {
+  [userId: string]: PosthogEvent[];
+} {
   return _.groupBy(events, (e) => e.distinct_id);
 }
 
-export function getIntersection(setA, setB) {
-  return new Set([...setA].filter((element) => setB.has(element)));
-}
-
-export function calcUserAgeInDays(newestEvent, oldestEvent) {
+export function calcUserAgeInDays(
+  newestEvent: PosthogEvent,
+  oldestEvent: PosthogEvent,
+): number {
   return (
     moment(newestEvent.timestamp).diff(moment(oldestEvent.timestamp), "days") +
     1
   );
+}
+
+/**
+ * Extracts unique user IDs from a list of events.
+ * @param events - The events to extract user IDs from
+ * @returns An Set of unique user IDs
+ */
+export function getUniqueUserIds(events: PosthogEvent[]): Set<string> {
+  return new Set(events.map((e) => e.distinct_id));
 }

@@ -5,6 +5,7 @@ import _ from "lodash";
 import schedule from "node-schedule";
 
 import { getAnalyticsErrorMessage } from "./analytics/errors";
+import { PosthogEvent } from "./analytics/events";
 import moment from "./analytics/moment";
 import * as reports from "./analytics/reports";
 import { ChartReport, TextReport } from "./analytics/reports/reports";
@@ -19,26 +20,32 @@ const DAILY_STANDUP_CHANNEL_ID = "842082539720146975";
 const GUEST_ROLE_ID = "812299047175716934";
 const INTRODUCTIONS_CHANNEL_ID = "689916376542085170";
 
+const DISCORD_MAX_MSG_SIZE = 2000;
+const DISCORD_MESSAGE_TOO_LONG_SUFFIX =
+  "\n... ⚠️ MESSAGE CUT BECAUSE IT IS TOO LONG...";
 const timezone = "Europe/Zagreb";
 
-export const start = () => {
-  const bot = new Discord.Client({});
-  bot.login(BOT_TOKEN);
+export function start(): void {
+  const discordClient = new Discord.Client({});
+  discordClient.login(BOT_TOKEN);
 
-  bot.on("ready", async () => {
-    logger.info(`Logged in as: ${bot.user.tag}.`);
+  discordClient.on("ready", async () => {
+    logger.info(`Logged in as: ${discordClient.user?.tag}.`);
 
     // Initiate daily standup every day at 8:00.
     schedule.scheduleJob(
       { dayOfWeek: [1, 2, 3, 4, 5], hour: 8, minute: 0, tz: timezone },
       async () => {
-        await initiateDailyStandup(bot);
+        await initiateDailyStandup(discordClient);
       },
     );
 
     // Every day at 7:00 am, send analytics reports.
     schedule.scheduleJob({ hour: 7, minute: 0, tz: timezone }, async () => {
-      const reportsChannel = await fetchChannelById(bot, REPORTS_CHANNEL_ID);
+      const reportsChannel = await fetchTextChannelById(
+        discordClient,
+        REPORTS_CHANNEL_ID,
+      );
       await reportsChannel.send(
         "📊 What time is it? It is time for daily analytics report!",
       );
@@ -49,17 +56,17 @@ export const start = () => {
         const events = await reports.fetchEventsForReportGenerator();
 
         // Send total and daily analytics report every day.
-        await sendAnalyticsReport(bot, "total", events);
-        await sendAnalyticsReport(bot, "daily", events);
+        await sendAnalyticsReport(discordClient, "total", events);
+        await sendAnalyticsReport(discordClient, "daily", events);
 
         // It today is Monday, also send weekly analytics report.
         if (moment().isoWeekday() === 1) {
-          await sendAnalyticsReport(bot, "weekly", events);
+          await sendAnalyticsReport(discordClient, "weekly", events);
         }
 
         // It today is first day of the month, also send monthly analytics report.
         if (moment().date() === 1) {
-          await sendAnalyticsReport(bot, "monthly", events);
+          await sendAnalyticsReport(discordClient, "monthly", events);
         }
       } catch (e) {
         logger.error(e);
@@ -71,89 +78,89 @@ export const start = () => {
     });
   });
 
-  bot.on("message", async (msg) => handleMessage(bot, msg));
+  discordClient.on("message", async (msg) => handleMessage(discordClient, msg));
 
-  bot.on("messageUpdate", async (oldMessage, newMessage) =>
-    handleMessage(bot, newMessage),
+  discordClient.on("messageUpdate", async (_oldMessage, newMessage) =>
+    handleMessage(discordClient, newMessage),
   );
-};
+}
 
-const handleMessage = async (bot, msg) => {
+async function handleMessage(
+  discordClient: Discord.Client,
+  message: Discord.Message | Discord.PartialMessage,
+): Promise<Discord.Message | void> {
+  if (!(message instanceof Discord.Message)) {
+    return;
+  }
   // Ignore messages from the bot itself.
-  if (msg.author.id === bot.user.id) {
+  if (message.author.id === discordClient.user?.id) {
     return;
   }
 
-  const member = msg.guild.member(msg.author);
+  const member = message.guild?.member(message.author);
 
   if (
-    msg.channel.id.toString() === INTRODUCTIONS_CHANNEL_ID &&
-    member.roles.cache.get(GUEST_ROLE_ID)
+    message.channel.id.toString() === INTRODUCTIONS_CHANNEL_ID &&
+    member?.roles.cache.get(GUEST_ROLE_ID)
   ) {
-    const trimmedMsg = msg.content.trim().length;
+    const trimmedMsg = message.content.trim().length;
     if (trimmedMsg < 20) {
-      return msg.reply(
+      return message.reply(
         `\n👋 Great to have you here! Pls introduce yourself with a message that's at least 2️⃣0️⃣ characters long and I will give you full access to the server.`,
       );
     }
     try {
       await member.roles.remove(GUEST_ROLE_ID);
-      return msg.reply(
+      return message.reply(
         "Nice getting to know you ☕️! You now have full access to the Wasp Discord 🐝. Welcome!",
       );
     } catch (error) {
-      return msg.reply(`Error: ${error}`);
+      return message.reply(`Error: ${error}`);
     }
-  }
-
-  function getNumPeriodsFromAnalyticsCmd(cmd) {
-    const match = cmd.match(/numPeriods\s*=\s*(\d+)/);
-    if (match) {
-      return parseInt(match[1]);
-    }
-    return null;
   }
 
   if (
-    msg.content.startsWith("!analytics") &&
-    msg.channel.id.toString() === REPORTS_CHANNEL_ID
+    message.content.startsWith("!analytics") &&
+    message.channel.id.toString() === REPORTS_CHANNEL_ID
   ) {
-    if (msg.content.includes("weekly")) {
+    if (message.content.includes("weekly")) {
       await sendAnalyticsReport(
-        bot,
+        discordClient,
         "weekly",
         undefined,
-        getNumPeriodsFromAnalyticsCmd(msg.content),
+        getNumPeriodsFromAnalyticsCommand(message.content),
       );
-    } else if (msg.content.includes("monthly")) {
+    } else if (message.content.includes("monthly")) {
       await sendAnalyticsReport(
-        bot,
+        discordClient,
         "monthly",
         undefined,
-        getNumPeriodsFromAnalyticsCmd(msg.content),
+        getNumPeriodsFromAnalyticsCommand(message.content),
       );
-    } else if (msg.content.includes("daily")) {
+    } else if (message.content.includes("daily")) {
       await sendAnalyticsReport(
-        bot,
+        discordClient,
         "daily",
         undefined,
-        getNumPeriodsFromAnalyticsCmd(msg.content),
+        getNumPeriodsFromAnalyticsCommand(message.content),
       );
-    } else if (msg.content.includes("total")) {
-      await sendAnalyticsReport(bot, "total");
+    } else if (message.content.includes("total")) {
+      await sendAnalyticsReport(discordClient, "total");
     } else {
-      await sendAnalyticsHelp(bot);
+      await sendAnalyticsHelp(discordClient);
     }
   }
-};
-
-async function fetchChannelById(bot, channelId) {
-  const guild = await bot.guilds.fetch(GUILD_ID);
-  return guild.channels.resolve(channelId);
 }
 
-const sendAnalyticsHelp = async (bot) => {
-  const channel = await fetchChannelById(bot, REPORTS_CHANNEL_ID);
+function getNumPeriodsFromAnalyticsCommand(cmd: string): number | undefined {
+  const match = cmd.match(/numPeriods\s*=\s*(\d+)/);
+  if (match) {
+    return parseInt(match[1]);
+  }
+}
+
+async function sendAnalyticsHelp(discordClient: Discord.Client): Promise<void> {
+  const channel = await fetchTextChannelById(discordClient, REPORTS_CHANNEL_ID);
   await channel.send(
     `Available commands:
   !analytics daily [numPeriods=<int>]
@@ -200,16 +207,14 @@ If you want more control and generate some reports manually, you can check out
 wasp-lang/wasp-bot repo and generate them locally, README has instructions on this.
 `,
   );
-};
+}
 
-const DISCORD_MAX_MSG_SIZE = 2000;
-
-const sendAnalyticsReport = async (
-  bot,
-  reportType,
-  prefetchedEvents = undefined,
-  numPeriods = undefined,
-) => {
+async function sendAnalyticsReport(
+  discordClient: Discord.Client,
+  reportType: "daily" | "weekly" | "monthly" | "total",
+  prefetchedEvents: PosthogEvent[] | undefined = undefined,
+  numPeriods: number | undefined = undefined,
+): Promise<void> {
   let reportPromise, reportTitle;
   if (reportType == "monthly") {
     reportPromise = reports.generateMonthlyReport(prefetchedEvents, numPeriods);
@@ -223,9 +228,15 @@ const sendAnalyticsReport = async (
   } else if (reportType == "total") {
     reportPromise = reports.generateTotalReport(prefetchedEvents);
     reportTitle = "TOTAL";
+  } else {
+    logger.error("Unknown reportType: ", reportType);
+    return;
   }
 
-  const waspReportsChannel = await fetchChannelById(bot, REPORTS_CHANNEL_ID);
+  const waspReportsChannel = await fetchTextChannelById(
+    discordClient,
+    REPORTS_CHANNEL_ID,
+  );
 
   waspReportsChannel.send(`⏳ Generating ${reportType} report...`);
 
@@ -243,21 +254,21 @@ const sendAnalyticsReport = async (
   waspReportsChannel.send(
     "=======================================================",
   );
-};
-
-const tooLongMessage = "\n... ⚠️ MESSAGE CUT BECAUSE IT IS TOO LONG...";
+}
 
 function covertSimpleReportToDiscordMessage(
   report: Partial<TextReport & ChartReport>,
 ): Discord.MessageOptions {
   const options: Discord.MessageOptions = {};
-
   if (report.text) {
     let content: string = report.text.join("\n");
+
     if (content.length >= DISCORD_MAX_MSG_SIZE) {
       content =
-        content.substring(0, DISCORD_MAX_MSG_SIZE - tooLongMessage.length) +
-        tooLongMessage;
+        content.substring(
+          0,
+          DISCORD_MAX_MSG_SIZE - DISCORD_MESSAGE_TOO_LONG_SUFFIX.length,
+        ) + DISCORD_MESSAGE_TOO_LONG_SUFFIX;
     }
     options.content = content;
   }
@@ -272,35 +283,69 @@ function covertSimpleReportToDiscordMessage(
   return options;
 }
 
-const initiateDailyStandup = async (bot) => {
-  const dailyStandupChannel = await fetchChannelById(
-    bot,
+interface Quote {
+  text: string;
+  author: string;
+}
+
+function formatQuote(quote: Quote): string {
+  return `${quote.text} | ${quote.author}`;
+}
+
+const WASP_QUOTES: Quote[] = [
+  {
+    text: "No hour of life is wasted that is spent in the saddle.",
+    author: "Vince",
+  },
+  {
+    text: "Food nourishes the body, but meetings nourish the soul.",
+    author: "Filip",
+  },
+  { text: "Shirt is just a social construct.", author: "Miho" },
+  {
+    text: "Don't be too dogmatic, unless we're talking about Dogma the beer brewery.",
+    author: "Milica, wannabe home brewer",
+  },
+  {
+    text: "Let's send them some swag! Martin will take care of it.",
+    author: "Matija",
+  },
+  {
+    text: "I don't have time to review PRs but it seems I do have time to implement these silly quotes.",
+    author: "Martin",
+  },
+];
+
+async function initiateDailyStandup(
+  discordClient: Discord.Client,
+): Promise<void> {
+  const dailyStandupChannel = await fetchTextChannelById(
+    discordClient,
     DAILY_STANDUP_CHANNEL_ID,
   );
 
-  const wisdomQuote = ((q) => `${q.text} | ${q.author}`)(Quote.getQuote());
-  const waspQuote = ((q) => `${q[0]} | ${q[1]}`)(
-    _.sample([
-      ["No hour of life is wasted that is spent in the saddle.", "Vince"],
-      ["Food nourishes the body, but meetings nourish the soul.", "Filip"],
-      ["Shirt is just a social construct.", "Miho"],
-      [
-        "Don't be too dogmatic, unless we're talking about Dogma the beer brewery.",
-        "Milica, wannabe home brewer",
-      ],
-      ["Let's send them some swag! Martin will take care of it.", "Matija"],
-      [
-        "I don't have time to review PRs but it seems I do have time to implement these silly quotes.",
-        "Martin",
-      ],
-    ]),
-  );
+  const wisdomQuote = Quote.getQuote();
+  const waspQuote = _.sample(WASP_QUOTES)!;
   const quote = Math.random() < 0.1 ? waspQuote : wisdomQuote;
 
   dailyStandupChannel.send(
-    "☀️ Time for daily standup!" +
-      "\nHow was your day yesterday, what are you working on today, and what are the challenges you are encountering?" +
-      "\n\n💡 Daily quote: " +
-      quote,
+    `☀️ Time for daily standup!
+    How was your day yesterday, what are you working on today, and what are the challenges you are encountering?
+    
+    💡 Daily quote: ${formatQuote(quote)}`,
   );
-};
+}
+
+async function fetchTextChannelById(
+  discordClient: Discord.Client,
+  channelId: Discord.Snowflake,
+): Promise<Discord.TextChannel> {
+  const guild = await discordClient.guilds.fetch(GUILD_ID);
+  const channel = guild.channels.resolve(channelId);
+
+  if (!channel || !(channel instanceof Discord.TextChannel)) {
+    throw new Error(`Channel ${channelId} is not a text channel`);
+  }
+
+  return channel;
+}
