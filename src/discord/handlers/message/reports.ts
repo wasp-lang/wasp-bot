@@ -8,7 +8,7 @@ export function isReportsMessage(message: Discord.Message): boolean {
   return message.channel.id.toString() === REPORTS_CHANNEL_ID;
 }
 
-export async function handleReportMessage(
+export async function handleReportChannel(
   discordClient: Discord.Client,
   message: Discord.Message,
 ): Promise<void> {

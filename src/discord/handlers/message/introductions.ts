@@ -10,26 +10,28 @@ export function isIntroductionsMessage(message: Discord.Message): boolean {
 export async function handleIntroductionsChannel(
   message: Discord.Message,
 ): Promise<void> {
+  if (isGuestUser(message)) {
+    await handleGuestMessage(message);
+  }
+}
+
+function isGuestUser(message: Discord.Message): boolean {
   const member = message.guild?.member(message.author);
-  if (!member) {
-    return;
-  }
+  return !!member?.roles.cache.get(GUEST_ROLE_ID);
+}
 
-  // for now we only ever handle guests
-  if (!member.roles.cache.get(GUEST_ROLE_ID)) {
-    return;
-  }
-
-  const trimmedMsg = message.content.trim().length;
-  if (trimmedMsg < 20) {
+async function handleGuestMessage(message: Discord.Message): Promise<void> {
+  const trimmedMessageLength = message.content.trim().length;
+  if (trimmedMessageLength < 20) {
     await message.reply(
-      "👋 Great to have you here! Pls introduce yourself with a message that's at least 2️⃣0️⃣ characters long and I will give you full access to the server.",
+      "👋 Great to have you here! Please introduce yourself with a message that's at least 2️⃣0️⃣ characters long and I will give you full access to the server.",
     );
   }
   try {
-    await member.roles.remove(GUEST_ROLE_ID);
+    const member = message.guild?.member(message.author);
+    await member?.roles.remove(GUEST_ROLE_ID);
     await message.reply(
-      "Nice getting to know you ☕️! You now have full access to the Wasp Discord 🐝. Welcome!",
+      "Nice getting to know you ☕️! You now have full access to the Wasp Discord Server 🐝. Welcome!",
     );
   } catch (error) {
     await message.reply(`Error: ${error}`);
