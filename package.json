@@ -7,7 +7,7 @@
     "buildAndStartBot": "npm run build && npm run startBot",
     "buildAndCalcAnalytics": "npm run build && npm run calcAnalytics",
     "start": "npm run startBot",
-    "startBot": "node ./dist/bot.js",
+    "startBot": "node ./dist/start-discord-bot.js",
     "calcAnalytics": "node ./dist/analytics/cli.js",
     "build": "tsc",
     "prepare": "husky",
