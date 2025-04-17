@@ -6,3 +6,4 @@ dist/
 .env*
 !.env.project
 !.env.vault
+.flaskenv*
