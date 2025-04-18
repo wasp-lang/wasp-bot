@@ -1,8 +1,7 @@
 import { Plugin } from "chart.js";
 
 /**
- * @name matrixAutoScaleCellSize
- * @description A Chart.js plugin that dynamically adjusts the size of matrix cells to fit the chart area.
+ * A Chart.js plugin that dynamically adjusts the size of matrix cells to fit the chart area.
  *
  * This plugin calculates the optimal width and height for matrix cells based on the chart's available
  * area and the maximum x and y values in the dataset. It ensures that cells scale proportionally
