@@ -1,6 +1,10 @@
 **/node_modules
-**/.env
 **/wasp-analytics-cached-events.json
 **/dist
 .husky/_/**/*
 fly.toml
+
+.env*
+!.env.project
+!.env.vault
+.flaskenv*
