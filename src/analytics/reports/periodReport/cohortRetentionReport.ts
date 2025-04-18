@@ -186,10 +186,17 @@ async function createCohortRetentionHeatMap(
           true,
         );
 
-        const baseValue = cohorts[dataPoint.y][0];
-        const percent =
-          baseValue > 0 ? Math.round((dataPoint.value / baseValue) * 100) : 0;
-        const label = `${percent}%`;
+        let label: string;
+        if (dataPoint.x === 0) {
+          label = dataPoint.value.toString();
+        } else {
+          const initialValue = cohorts[dataPoint.y][0];
+          const percent =
+            initialValue > 0
+              ? Math.round((dataPoint.value / initialValue) * 100)
+              : 0;
+          label = `${percent}%`;
+        }
 
         ctx.save();
         ctx.fillStyle = "black";
@@ -202,6 +209,16 @@ async function createCohortRetentionHeatMap(
     },
   };
 
+  const maximumPercentageAfterInitialCohortSize: number = Math.max(
+    ...cohorts.flatMap((cohort) =>
+      cohort.map((value) => value / cohort[0]).slice(1),
+    ),
+  );
+  const colorInterpolator = createColorInterpolator([
+    "#f04a63",
+    "#FFA071",
+    "#FFEE8C",
+  ]);
   const chartConfiguration: ChartConfiguration = {
     type: "matrix",
     data: {
@@ -212,13 +229,20 @@ async function createCohortRetentionHeatMap(
               x: periodIndex,
               y: cohortIndex,
               value: value,
+              percentage: value / cohort[0],
             }));
           }),
           label: "Cohort Retention",
           backgroundColor: (context: any) => {
             const data = context.dataset.data[context.dataIndex];
-            const alpha = data.value / cohorts[data.y][0];
-            return `rgba(54, 162, 235, ${alpha})`; // Blue-ish color with varying alpha
+
+            if (data.x === 0) {
+              return "#93e693";
+            }
+
+            const interpolation =
+              data.percentage / maximumPercentageAfterInitialCohortSize;
+            return colorInterpolator(interpolation);
           },
           borderColor: "rgba(0, 0, 0, 0.1)",
           borderWidth: 1,
