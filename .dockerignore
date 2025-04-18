@@ -1,7 +1,7 @@
 **/node_modules
 **/wasp-analytics-cached-events.json
 **/dist
-.husky/_/**/*
+.husky/**/*
 .github/**/*
 
 # Ignore deployment file
