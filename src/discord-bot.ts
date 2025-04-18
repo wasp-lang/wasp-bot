@@ -8,7 +8,6 @@ import { getAnalyticsErrorMessage } from "./analytics/errors";
 import { PosthogEvent } from "./analytics/events";
 import moment from "./analytics/moment";
 import * as reports from "./analytics/reports";
-import { ChartReport, TextReport } from "./analytics/reports/reports";
 import {
   ChartReport,
   LocalChartReport,

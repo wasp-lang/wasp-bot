@@ -2,7 +2,8 @@
 import { ChartConfiguration, ChartDataset, Plugin } from "chart.js";
 import { MatrixDataPoint } from "chartjs-chart-matrix";
 import { Moment } from "moment";
-import { renderChart } from "../../../charts/canvas";
+import { renderChart } from "../../canvas";
+import { createColorInterpolator } from "../../color";
 import { PosthogEvent } from "../../events";
 import { groupEventsByExecutionEnv } from "../../executionEnvs";
 import { createCrossTable } from "../../table";
