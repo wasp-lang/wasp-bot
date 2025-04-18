@@ -146,22 +146,28 @@ function calcCohortRetentionTableRow(cohort: number[]): string[] {
   ];
 }
 
+type CohortRetentionHeatMapPoint = MatrixDataPoint & {
+  value: number;
+  percentage: number;
+};
+
 async function createCohortRetentionHeatMap(
   cohorts: number[][],
   periods: Period[],
   periodName: PeriodName,
 ): Promise<Buffer> {
+  // chartArea is undefined before the chart is laid out
+  // so we can't calculate matrix cell size during initial data calculation
   const cellSizePlugin: Plugin<"matrix"> = {
     id: "matrix-cell-size",
     afterLayout: (chart) => {
       const dataset = chart.data.datasets[0];
       const chartArea = chart.chartArea;
 
-      if (!chartArea) return;
-
       const cellWidth = chartArea.width / periods.length;
       const cellHeight = chartArea.height / cohorts.length;
 
+      // -1 stops overlaps
       dataset.width = () => cellWidth - 1;
       dataset.height = () => cellHeight - 1;
     },
@@ -173,7 +179,7 @@ async function createCohortRetentionHeatMap(
       const ctx = chart.ctx;
       const dataset = chart.data.datasets[0] as ChartDataset<
         "matrix",
-        (MatrixDataPoint & { value: number })[]
+        CohortRetentionHeatMapPoint[]
       >;
       const meta = chart.getDatasetMeta(0);
 
@@ -219,7 +225,10 @@ async function createCohortRetentionHeatMap(
     "#FFA071",
     "#FFEE8C",
   ]);
-  const chartConfiguration: ChartConfiguration = {
+  const chartConfiguration: ChartConfiguration<
+    "matrix",
+    CohortRetentionHeatMapPoint[]
+  > = {
     type: "matrix",
     data: {
       datasets: [
