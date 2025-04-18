@@ -1,9 +1,19 @@
 node_modules/
-wasp-analytics-cached-events.json
 dist/
 .DS_STORE
 
+# Posthog events cache, ignore because sensitive data
+wasp-analytics-cached-events.json
+
+# Ignores all .env files by default
 .env*
+
+# Dont ignore example .env files
+!.env*.example
+
+# Don't ignore dotenv .env files
 !.env.project
 !.env.vault
+
+# These one is here because dotenv keeps adding it if it doesn't find it
 .flaskenv*
