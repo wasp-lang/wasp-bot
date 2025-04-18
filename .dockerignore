@@ -6,7 +6,7 @@
 .husky
 .github
 
-# Ignore deployment file
+# Ignore deployment files
 fly.toml
 
 # Ignores all .env files by default
