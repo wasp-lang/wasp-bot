@@ -3,7 +3,6 @@ import { ChartConfiguration, ChartDataset, Plugin } from "chart.js";
 import { MatrixDataPoint } from "chartjs-chart-matrix";
 import { Moment } from "moment";
 import { renderChart } from "../../canvas";
-import { createColorInterpolator } from "../../color";
 import { PosthogEvent } from "../../events";
 import { groupEventsByExecutionEnv } from "../../executionEnvs";
 import { createCrossTable } from "../../table";
@@ -216,16 +215,13 @@ async function createCohortRetentionHeatMap(
     },
   };
 
+  const maximumValue = Math.max(...cohorts.map((cohort) => cohort[0]));
   const maximumPercentageAfterInitialCohortSize: number = Math.max(
     ...cohorts.flatMap((cohort) =>
       cohort.map((value) => value / cohort[0]).slice(1),
     ),
   );
-  const colorInterpolator = createColorInterpolator([
-    "#f04a63",
-    "#FFA071",
-    "#FFEE8C",
-  ]);
+
   const chartConfiguration: ChartConfiguration<
     "matrix",
     CohortRetentionHeatMapPoint[]
@@ -247,12 +243,13 @@ async function createCohortRetentionHeatMap(
             const data = context.dataset.data[context.dataIndex];
 
             if (data.x === 0) {
-              return "#93e693";
+              const alpha = data.value / maximumValue;
+              return `rgba(147, 230, 147, ${alpha})`;
+            } else {
+              const alpha =
+                data.percentage / maximumPercentageAfterInitialCohortSize;
+              return `rgba(147, 176, 230, ${alpha})`;
             }
-
-            const interpolation =
-              data.percentage / maximumPercentageAfterInitialCohortSize;
-            return colorInterpolator(interpolation);
           },
           borderColor: "rgba(0, 0, 0, 0.1)",
           borderWidth: 1,
