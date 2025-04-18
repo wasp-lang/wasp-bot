@@ -1,9 +1,22 @@
 node_modules/
-wasp-analytics-cached-events.json
 dist/
 .DS_STORE
+wasp-analytics-cached-events.json
 
-.env*
+# Ignore all dotenv files by default to prevent accidentally committing any secrets.
+# To include specific dotenv files, use the `!` operator or adjust these rules.
+.env
+.env.*
+
+# Don't ignore example dotenv files.
+!.env.example
+!.env.*.example
+
+# These are config files for dotenv-vault, so we don't want to ignore them.
 !.env.project
 !.env.vault
+
+# These two we added only because dotenv-vault keeps adding them if it doesn't find them,
+# even though we don't need them. Remove them once dotenv-vault stops doing that.
+.env*
 .flaskenv*
