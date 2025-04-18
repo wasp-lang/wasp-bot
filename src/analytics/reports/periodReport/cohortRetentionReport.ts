@@ -1,4 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { Chart, ChartConfiguration, ChartDataset, Plugin } from "chart.js";
+import { MatrixDataPoint } from "chartjs-chart-matrix";
 import { Moment } from "moment";
+import { renderChart } from "../../../charts/canvas";
+import {
+  createColorInterpolator,
+  getFontColorForBackgroundColor,
+  SEQUENTIAL_BLUE_PALETTE,
+  SEQUENTIAL_GREEN_PALETTE,
+} from "../../../charts/color";
+import { matrixAutoScaleCellSize } from "../../../charts/plugins/matrix";
 import { PosthogEvent } from "../../events";
 import { groupEventsByExecutionEnv } from "../../executionEnvs";
 import { createCrossTable } from "../../table";
@@ -22,23 +33,6 @@ export async function generateCohortRetentionReport(
   const periods = calcLastNPeriods(numPeriods, periodName);
 
   const cohorts = createUserActivityCohorts(events, periods);
-
-  /**
-   * @param {[number]} cohort [num_users_at_start, num_users_after_1_period, ...]
-   * @returns {[string]} [num_users_at_start, num_and_perc_users_after_1_period, ...]
-   *   Examples of returned value:
-   *    - `["10", "6 (60%)", "3 (30%)", "0 (0%)"]`
-   *    - `["0", "N/A", "N/A"]`
-   */
-  function calcCohortRetentionTableRow(cohort: number[]): string[] {
-    const [numUsersAtStart, ...numUsersThroughPeriods] = cohort;
-    const retentionPercentages = numUsersThroughPeriods.map((n) =>
-      numUsersAtStart === 0
-        ? "N/A"
-        : `${n} (${Math.round((n / numUsersAtStart) * 100)}%)`,
-    );
-    return [numUsersAtStart.toString(), ...retentionPercentages];
-  }
 
   const periodNameShort = periodName[0];
   const table = createCrossTable({
@@ -64,6 +58,11 @@ export async function generateCohortRetentionReport(
         lastPeriod[0],
       )} - ${fmt(lastPeriod[1])}`,
     ],
+    localChart: await createCohortRetentionHeatMap(
+      cohorts,
+      periods,
+      periodName,
+    ),
   };
   return report;
 }
@@ -131,3 +130,204 @@ function createUniqueUsersCohort(
     }),
   ];
 }
+
+/**
+ * @param cohort [num_users_at_start, num_users_after_1_period, ...]
+ * @returns [num_users_at_start, num_and_perc_users_after_1_period, ...]
+ *
+ * Examples of returned value:
+ *    - `["10", "6 (60%)", "3 (30%)", "0 (0%)"]`
+ *    - `["0", "N/A", "N/A"]`
+ */
+function calcCohortRetentionTableRow(cohort: number[]): string[] {
+  const [numUsersAtStart, ...numUsersThroughPeriods] = cohort;
+  const numUsersWithRetentionPercentagesThroughPeriods =
+    numUsersThroughPeriods.map((n) =>
+      numUsersAtStart === 0
+        ? "N/A"
+        : `${n} (${Math.round((n / numUsersAtStart) * 100)}%)`,
+    );
+  return [
+    numUsersAtStart.toString(),
+    ...numUsersWithRetentionPercentagesThroughPeriods,
+  ];
+}
+
+type CohortRetentionHeatMapPoint = MatrixDataPoint & {
+  size: number;
+  retentionPercentage: number;
+};
+
+async function createCohortRetentionHeatMap(
+  cohorts: number[][],
+  periods: Period[],
+  periodName: PeriodName,
+): Promise<Buffer> {
+  const initialPeriodColorInterpolator = createColorInterpolator(
+    SEQUENTIAL_GREEN_PALETTE,
+  );
+  const afterInitialPeriodColorInterpolator = createColorInterpolator(
+    SEQUENTIAL_BLUE_PALETTE,
+  );
+
+  const maxSize = Math.max(...cohorts.map((cohort) => cohort[0]));
+  const maxCohortRetentionPercentageAfterInitialPeriod: number = Math.max(
+    ...cohorts.flatMap((cohort) =>
+      cohort.map((value) => value / cohort[0]).slice(1),
+    ),
+  );
+
+  const chartData: CohortRetentionHeatMapPoint[] = cohorts.flatMap(
+    (cohort, cohortIndex) => {
+      return cohort.map((size, periodIndex) => ({
+        x: periodIndex,
+        y: cohortIndex,
+        size: size,
+        retentionPercentage: size / cohort[0],
+      }));
+    },
+  );
+
+  const chartDataset: ChartDataset<"matrix", CohortRetentionHeatMapPoint[]> = {
+    data: chartData,
+    label: "Cohort Retention",
+    backgroundColor: (context: {
+      dataset: ChartDataset<"matrix", CohortRetentionHeatMapPoint[]>;
+      dataIndex: number;
+    }) => {
+      const point = context.dataset.data[context.dataIndex];
+
+      if (point.x === 0) {
+        const ratio = point.size / maxSize;
+        return initialPeriodColorInterpolator(ratio);
+      } else {
+        const ratio =
+          point.retentionPercentage /
+          maxCohortRetentionPercentageAfterInitialPeriod;
+        return afterInitialPeriodColorInterpolator(ratio);
+      }
+    },
+    borderColor: "rgba(0, 0, 0, 0.1)",
+    borderWidth: 1,
+  };
+
+  const chartConfiguration: ChartConfiguration<
+    "matrix",
+    CohortRetentionHeatMapPoint[]
+  > = {
+    type: "matrix",
+    data: {
+      datasets: [chartDataset],
+    },
+    options: {
+      aspectRatio: 1,
+      scales: {
+        x: {
+          type: "linear",
+          min: 0,
+          max: periods.length - 1,
+          ticks: {
+            stepSize: 1,
+            callback: (value) => `+${value}`,
+            font: { size: 12 },
+          },
+          offset: true,
+          title: {
+            display: true,
+            text: `Cohort Progression (per ${periodName})`,
+            font: {
+              size: 14,
+              weight: "bold",
+            },
+          },
+        },
+        y: {
+          type: "linear",
+          min: 0,
+          max: cohorts.length - 1,
+          ticks: {
+            stepSize: 1,
+            callback: (value) => `#${value}`,
+            font: { size: 12 },
+          },
+          offset: true,
+          title: {
+            display: true,
+            text: "Cohort Start",
+            font: {
+              size: 14,
+              weight: "bold",
+            },
+          },
+        },
+      },
+      plugins: {
+        legend: {
+          display: false,
+        },
+        title: {
+          display: true,
+          text: `Cohort retention chart (per ${periodName})`,
+          align: "center",
+          font: {
+            size: 20,
+            weight: "bold",
+          },
+          padding: {
+            top: 10,
+            bottom: 10,
+          },
+        },
+      },
+    },
+    plugins: [matrixAutoScaleCellSize, cohortRetentionChartLabels],
+  };
+  return renderChart(chartConfiguration);
+}
+
+const cohortRetentionChartLabels: Plugin<"matrix"> = {
+  id: "matrix-cell-labels",
+  afterDatasetsDraw: (chart) => {
+    const canvasContext = chart.ctx;
+    const cohortRetentionChart = chart as Chart<
+      "matrix",
+      CohortRetentionHeatMapPoint[]
+    >;
+
+    cohortRetentionChart.data.datasets.forEach((dataset, index) => {
+      const meta = cohortRetentionChart.getDatasetMeta(index);
+
+      dataset.data.forEach((dataPoint, index) => {
+        const rect = meta.data[index];
+        if (!rect) return;
+
+        const { x, y, width, height } = rect.getProps(
+          ["x", "y", "width", "height"],
+          true,
+        );
+
+        let label: string;
+        if (dataPoint.x === 0) {
+          label = dataPoint.size.toString();
+        } else {
+          label = `${Math.round(dataPoint.retentionPercentage * 100)}%`;
+        }
+
+        // Get the background color of the cell
+        const backgroundColor = (dataset.backgroundColor as any)({
+          dataset,
+          dataIndex: index,
+        });
+
+        canvasContext.save();
+        canvasContext.fillStyle =
+          getFontColorForBackgroundColor(backgroundColor);
+        canvasContext.font = "12px sans-serif";
+        canvasContext.textAlign = "center";
+        canvasContext.textBaseline = "middle";
+        canvasContext.fillText(label, x + width / 2, y + height / 2);
+        canvasContext.restore();
+      });
+    });
+  },
+};
