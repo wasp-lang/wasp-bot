@@ -8,12 +8,10 @@
 
 # Ignore deployment files
 fly.toml
+Dockerfile
 
 # Ignores all .env files by default
 .env*
-
-# Dont ignore example .env files
-!.env*.example
 
 # Don't ignore dotenv .env files
 !.env.project
