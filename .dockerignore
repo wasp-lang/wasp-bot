@@ -1,8 +1,10 @@
 **/node_modules
 **/wasp-analytics-cached-events.json
 **/dist
-.husky/**/*
-.github/**/*
+
+# Ignore project files
+.husky
+.github
 
 # Ignore deployment file
 fly.toml
