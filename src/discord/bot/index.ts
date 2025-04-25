@@ -19,7 +19,6 @@ const TIME_ZONE = "Europe/Zagreb";
 
 export function start(): void {
   const discordClient = new Discord.Client({});
-  discordClient.login(BOT_TOKEN);
 
   const readyHandler = _.partial(handleReady, discordClient);
   discordClient.on("ready", readyHandler);
@@ -29,6 +28,8 @@ export function start(): void {
 
   const messageUpdateHandler = _.partial(handleMessageUpdate, discordClient);
   discordClient.on("messageUpdate", messageUpdateHandler);
+
+  discordClient.login(BOT_TOKEN);
 }
 
 export async function handleReady(
