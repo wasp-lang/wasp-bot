@@ -1,4 +1,5 @@
 import Discord from "discord.js";
+
 import logger from "../../utils/logger";
 import { INTRODUCTIONS_CHANNEL_ID } from "../channel-ids";
 
