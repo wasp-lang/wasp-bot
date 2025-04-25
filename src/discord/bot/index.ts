@@ -10,7 +10,7 @@ import { initiateDailyStandup } from "./daily-standup";
 import {
   handleIntroductionMessage,
   isIntroductionMessage,
-} from "./introductions";
+} from "./introduction";
 
 dotenvConfig();
 
@@ -70,8 +70,8 @@ function isOurDiscordBotMessage(
   return message.author.id === discordClient.user?.id;
 }
 
-// TODO: actually handle partial messages
-// but for that we first need to enable them in Discord.Client
+// TODO: Actually handle partial messages.
+// For that we first need to enable them in Discord.Client.
 // https://github.com/zziger/discord.js-selfbot/blob/master/docs/topics/partials.md
 export async function handleMessageUpdate(
   discordClient: Discord.Client,
