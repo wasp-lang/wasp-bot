@@ -2,13 +2,13 @@
 **/wasp-analytics-cached-events.json
 **/dist
 
-# Ignore project files.
+# Don't copy secrets.
 .env
 .env.*
+
+# Ignore CICD files.
 .husky
 .github
-
-# Ignore deployment files.
 fly.toml
 Dockerfile
 
