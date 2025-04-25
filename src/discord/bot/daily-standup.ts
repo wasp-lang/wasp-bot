@@ -27,7 +27,7 @@ interface Quote {
 }
 
 function generateDailyQuote(): string {
-  const wisdomQuote = Quote.getQuote();
+  const wisdomQuote: Quote = Quote.getQuote();
   const waspQuote = _.sample(WASP_QUOTES)!;
   const quote = Math.random() < 0.1 ? waspQuote : wisdomQuote;
 
