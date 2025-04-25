@@ -1,3 +1,3 @@
-import * as discordBot from "./discord/discord-bot";
+import * as discordBot from "./discord/bot";
 
 discordBot.start();

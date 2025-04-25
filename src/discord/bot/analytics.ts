@@ -1,23 +1,9 @@
 import Discord from "discord.js";
-import { sendAnalyticsReport } from "../../reports";
-import { fetchTextChannelById } from "../../utils";
+import { REPORTS_CHANNEL_ID } from "../channel-ids";
+import { sendAnalyticsReport } from "../reports";
+import { fetchTextChannelById } from "../utils";
 
-const REPORTS_CHANNEL_ID = "835130205928030279";
-
-export function isReportsMessage(message: Discord.Message): boolean {
-  return message.channel.id.toString() === REPORTS_CHANNEL_ID;
-}
-
-export async function handleReportChannel(
-  discordClient: Discord.Client,
-  message: Discord.Message,
-): Promise<void> {
-  if (isAnalyticsMessage(message)) {
-    await handleAnalyticsMessage(discordClient, message);
-  }
-}
-
-function isAnalyticsMessage(message: Discord.Message): boolean {
+export function isAnalyticsMessage(message: Discord.Message): boolean {
   return message.content.startsWith("!analytics");
 }
 
@@ -25,6 +11,10 @@ export async function handleAnalyticsMessage(
   discordClient: Discord.Client,
   message: Discord.Message,
 ): Promise<void> {
+  if (!isReportsChannel(message.channel)) {
+    return;
+  }
+
   if (message.content.includes("weekly")) {
     await sendAnalyticsReport(
       discordClient,
@@ -51,6 +41,10 @@ export async function handleAnalyticsMessage(
   } else {
     await sendAnalyticsHelp(discordClient);
   }
+}
+
+function isReportsChannel(channel: Discord.Channel): boolean {
+  return channel.id.toString() === REPORTS_CHANNEL_ID;
 }
 
 function getNumPeriodsFromAnalyticsCommand(cmd: string): number | undefined {

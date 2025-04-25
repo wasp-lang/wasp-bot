@@ -1,8 +1,7 @@
 import Discord from "discord.js";
-import { generateDailyQuote } from "../../quote";
-import { fetchTextChannelById } from "../../utils";
-
-const DAILY_STANDUP_CHANNEL_ID = "842082539720146975";
+import { DAILY_STANDUP_CHANNEL_ID } from "../channel-ids";
+import { generateDailyQuote } from "../quote";
+import { fetchTextChannelById } from "../utils";
 
 export async function initiateDailyStandup(
   discordClient: Discord.Client,

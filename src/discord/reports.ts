@@ -2,15 +2,14 @@ import Discord from "discord.js";
 import { PosthogEvent } from "../analytics/events";
 import * as reports from "../analytics/reports";
 import { ChartReport, TextReport } from "../analytics/reports/reports";
+import { REPORTS_CHANNEL_ID } from "./channel-ids";
 import { fetchTextChannelById } from "./utils";
-
-const REPORTS_CHANNEL_ID = "835130205928030279";
 
 const DISCORD_MAX_MSG_SIZE = 2000;
 const DISCORD_MESSAGE_TOO_LONG_SUFFIX =
   "\n... ⚠️ MESSAGE CUT BECAUSE IT IS TOO LONG...";
 
-export function covertSimpleReportToDiscordMessage(
+export function convertSimpleReportToDiscordMessage(
   report: Partial<TextReport & ChartReport>,
 ): Discord.MessageOptions {
   const options: Discord.MessageOptions = {};
@@ -37,9 +36,11 @@ export function covertSimpleReportToDiscordMessage(
   return options;
 }
 
+type CliReportTypes = "daily" | "weekly" | "monthly" | "total";
+
 export async function sendAnalyticsReport(
   discordClient: Discord.Client,
-  reportType: "daily" | "weekly" | "monthly" | "total",
+  reportType: CliReportTypes,
   prefetchedEvents: PosthogEvent[] | undefined = undefined,
   numPeriods: number | undefined = undefined,
 ): Promise<void> {
@@ -59,7 +60,7 @@ export async function sendAnalyticsReport(
     `=============== ${reportType.toUpperCase()} ANALYTICS REPORT ===============`,
   );
   for (const simpleReport of Object.values(compositeReport)) {
-    waspReportsChannel.send(covertSimpleReportToDiscordMessage(simpleReport));
+    waspReportsChannel.send(convertSimpleReportToDiscordMessage(simpleReport));
   }
   waspReportsChannel.send(
     "=======================================================",
@@ -67,7 +68,7 @@ export async function sendAnalyticsReport(
 }
 
 function getAnalyticsReport(
-  reportType: "daily" | "weekly" | "monthly" | "total",
+  reportType: CliReportTypes,
   prefetchedEvents: PosthogEvent[] | undefined = undefined,
   numPeriods: number | undefined = undefined,
 ): Promise<{ [reportName: string]: Partial<TextReport & ChartReport> }> {
