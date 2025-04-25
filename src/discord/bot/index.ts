@@ -4,8 +4,11 @@ import _ from "lodash";
 import schedule from "node-schedule";
 
 import logger from "../../utils/logger";
-import { handleAnalyticsMessage, isAnalyticsMessage } from "./analytics";
-import { initiateAnalyticsReport } from "./analytics-report";
+import {
+  handleAnalyticsMessage,
+  initiateAnalyticsReport,
+  isAnalyticsMessage,
+} from "./analytics";
 import { initiateDailyStandup } from "./daily-standup";
 import {
   handleIntroductionMessage,
