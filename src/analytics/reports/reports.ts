@@ -13,7 +13,11 @@ export interface ChartReport {
   chart: ImageCharts;
 }
 
-export type CohortRetentionReport = TextReport;
+export interface LocalChartReport {
+  localChart: Buffer;
+}
+
+export type CohortRetentionReport = TextReport & LocalChartReport;
 export type ProjectsReport = TextReport & CsvReport;
 export type UserActivityReport = TextReport & CsvReport & ChartReport;
 export type TotalUniqueReport = TextReport;

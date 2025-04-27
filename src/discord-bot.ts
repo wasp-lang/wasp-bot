@@ -8,7 +8,11 @@ import { getAnalyticsErrorMessage } from "./analytics/errors";
 import { PosthogEvent } from "./analytics/events";
 import moment from "./analytics/moment";
 import * as reports from "./analytics/reports";
-import { ChartReport, TextReport } from "./analytics/reports/reports";
+import {
+  ChartReport,
+  LocalChartReport,
+  TextReport,
+} from "./analytics/reports/reports";
 import logger from "./utils/logger";
 
 dotenvConfig();
@@ -257,7 +261,7 @@ async function sendAnalyticsReport(
 }
 
 function covertSimpleReportToDiscordMessage(
-  report: Partial<TextReport & ChartReport>,
+  report: Partial<TextReport & ChartReport & LocalChartReport>,
 ): Discord.MessageOptions {
   const options: Discord.MessageOptions = {};
   if (report.text) {
@@ -278,6 +282,13 @@ function covertSimpleReportToDiscordMessage(
     embed.setImage(report.chart.toURL());
 
     options.embed = embed;
+  }
+
+  if (report.localChart) {
+    if (!options.files) {
+      options.files = [];
+    }
+    options.files.push(new Discord.MessageAttachment(report.localChart));
   }
 
   return options;
