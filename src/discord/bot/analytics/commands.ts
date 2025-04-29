@@ -72,9 +72,9 @@ async function sendAnalyticsHelp(discordClient: Discord.Client): Promise<void> {
   const channel = await fetchTextChannelById(discordClient, REPORTS_CHANNEL_ID);
   await channel.send(
     `Available commands:
-  !analytics daily [numPeriods=<int>]
-  !analytics weekly [numPeriods=<int>]
-  !analytics monthly [numPeriods=<int>]
+  !analytics daily <period_number>
+  !analytics weekly <period_number>
+  !analytics monthly <period_number>
   !analytics total
 
 If nothing is said, stats are being shown for "normal" usage -> meaning that Replit/Gitpod/CI
