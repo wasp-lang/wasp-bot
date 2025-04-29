@@ -29,8 +29,7 @@ export function start(): void {
     scheduleDailyAnalyticsReport(discordClient);
   });
 
-  discordClient.on("message", handleMessage);
-  async function handleMessage(message: Discord.Message): Promise<void> {
+  discordClient.on("message", async (message) => {
     if (isOurDiscordBotMessage(discordClient, message)) {
       return;
     }
@@ -40,18 +39,11 @@ export function start(): void {
     } else if (isAnalyticsCommand(message)) {
       await handleAnalyticsCommand(discordClient, message);
     }
-  }
-
-  discordClient.on("messageUpdate", async (_oldMessage, newMessage) => {
-    // TODO: Actually handle partial messages.
-    // For that we first need to enable them in Discord.Client.
-    // https://github.com/zziger/discord.js-selfbot/blob/master/docs/topics/partials.md
-    if (!(newMessage instanceof Discord.Message)) {
-      return;
-    }
-
-    await handleMessage(newMessage);
   });
+
+  // TODO: Actually handle partial messages.
+  // For that we first need to enable them in Discord.Client.
+  // https://github.com/zziger/discord.js-selfbot/blob/master/docs/topics/partials.md
 
   discordClient.login(BOT_TOKEN);
 }
