@@ -6,8 +6,8 @@ import schedule from "node-schedule";
 import logger from "../../utils/logger";
 import {
   handleAnalyticsMessage,
-  initiateAnalyticsReport,
   isAnalyticsMessage,
+  sendAnalyticsReportToReportsChannel,
 } from "./analytics";
 import { initiateDailyStandup } from "./daily-standup";
 import {
@@ -23,14 +23,12 @@ const TIME_ZONE = "Europe/Zagreb";
 export function start(): void {
   const discordClient = new Discord.Client({});
 
-  const readyHandler = _.partial(handleReady, discordClient);
-  discordClient.on("ready", readyHandler);
-
-  const messageHandler = _.partial(handleMessage, discordClient);
-  discordClient.on("message", messageHandler);
-
-  const messageUpdateHandler = _.partial(handleMessageUpdate, discordClient);
-  discordClient.on("messageUpdate", messageUpdateHandler);
+  discordClient.on("ready", _.partial(handleReady, discordClient));
+  discordClient.on("message", _.partial(handleMessage, discordClient));
+  discordClient.on(
+    "messageUpdate",
+    _.partial(handleMessageUpdate, discordClient),
+  );
 
   discordClient.login(BOT_TOKEN);
 }
@@ -48,7 +46,7 @@ export async function handleReady(
 
   // Send analytics reports every day at 7:00 am.
   schedule.scheduleJob({ hour: 7, minute: 0, tz: TIME_ZONE }, () =>
-    initiateAnalyticsReport(discordClient),
+    sendAnalyticsReportToReportsChannel(discordClient),
   );
 }
 
