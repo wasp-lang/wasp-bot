@@ -5,10 +5,10 @@ import schedule from "node-schedule";
 
 import logger from "../../utils/logger";
 import {
-  handleAnalyticsMessage,
-  isAnalyticsMessage,
-  sendAnalyticsReportToReportsChannel,
-} from "./analytics";
+  handleAnalyticsCommand,
+  isAnalyticsCommand,
+} from "./analytics/commands";
+import { sendDailyAnalyticsReport } from "./analytics/daily-report";
 import { initiateDailyStandup } from "./daily-standup";
 import {
   handleIntroductionMessage,
@@ -33,24 +33,22 @@ export function start(): void {
   discordClient.login(BOT_TOKEN);
 }
 
-export async function handleReady(
-  discordClient: Discord.Client,
-): Promise<void> {
+async function handleReady(discordClient: Discord.Client): Promise<void> {
   logger.info(`Logged in as: ${discordClient.user?.tag}.`);
 
-  // Initiate daily standup every work day at 8:00 am.
+  // Initiates daily standup every work day at 8:00 am.
   schedule.scheduleJob(
     { dayOfWeek: [1, 2, 3, 4, 5], hour: 8, minute: 0, tz: TIME_ZONE },
     () => initiateDailyStandup(discordClient),
   );
 
-  // Send analytics reports every day at 7:00 am.
+  // Sends daily analytics reports every day at 7:00 am.
   schedule.scheduleJob({ hour: 7, minute: 0, tz: TIME_ZONE }, () =>
-    sendAnalyticsReportToReportsChannel(discordClient),
+    sendDailyAnalyticsReport(discordClient),
   );
 }
 
-export async function handleMessage(
+async function handleMessage(
   discordClient: Discord.Client,
   message: Discord.Message,
 ): Promise<void> {
@@ -60,8 +58,8 @@ export async function handleMessage(
 
   if (isIntroductionMessage(message)) {
     await handleIntroductionMessage(message);
-  } else if (isAnalyticsMessage(message)) {
-    await handleAnalyticsMessage(discordClient, message);
+  } else if (isAnalyticsCommand(message)) {
+    await handleAnalyticsCommand(discordClient, message);
   }
 }
 
@@ -75,7 +73,7 @@ function isOurDiscordBotMessage(
 // TODO: Actually handle partial messages.
 // For that we first need to enable them in Discord.Client.
 // https://github.com/zziger/discord.js-selfbot/blob/master/docs/topics/partials.md
-export async function handleMessageUpdate(
+async function handleMessageUpdate(
   discordClient: Discord.Client,
   _oldMessage: Discord.Message | Discord.PartialMessage,
   newMessage: Discord.Message | Discord.PartialMessage,
