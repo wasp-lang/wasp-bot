@@ -1,10 +1,10 @@
 import Discord from "discord.js";
-
 import moment from "moment";
+
 import { getAnalyticsErrorMessage } from "../../../analytics/errors";
 import { fetchEventsForReportGenerator } from "../../../analytics/reports";
 import logger from "../../../utils/logger";
-import { REPORTS_CHANNEL_ID } from "../../channel-ids";
+import { REPORTS_CHANNEL_ID } from "../../server-ids";
 import { fetchTextChannelById } from "../../utils";
 import { sendAnalyticsReportToReportsChannel } from "./common";
 

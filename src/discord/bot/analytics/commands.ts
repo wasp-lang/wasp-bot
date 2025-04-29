@@ -1,6 +1,6 @@
 import Discord from "discord.js";
 
-import { REPORTS_CHANNEL_ID } from "../../channel-ids";
+import { REPORTS_CHANNEL_ID } from "../../server-ids";
 import { fetchTextChannelById } from "../../utils";
 import {
   AnalyticsReportType,

@@ -1,7 +1,6 @@
 import Discord from "discord.js";
 
-// GUILD = SERVER
-const GUILD_ID = "686873244791210014";
+import { GUILD_ID } from "./server-ids";
 
 export async function fetchTextChannelById(
   discordClient: Discord.Client,

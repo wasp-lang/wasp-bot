@@ -1,9 +1,7 @@
 import Discord from "discord.js";
 
 import logger from "../../utils/logger";
-import { INTRODUCTIONS_CHANNEL_ID } from "../channel-ids";
-
-const GUEST_ROLE_ID = "812299047175716934";
+import { GUEST_ROLE_ID, INTRODUCTIONS_CHANNEL_ID } from "../server-ids";
 
 export function isIntroductionMessage(message: Discord.Message) {
   return isIntroductionsChannel(message.channel) && isGuestUser(message);

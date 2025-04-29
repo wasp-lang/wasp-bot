@@ -2,7 +2,7 @@ import Discord from "discord.js";
 import Quote from "inspirational-quotes";
 import _ from "lodash";
 
-import { DAILY_STANDUP_CHANNEL_ID } from "../channel-ids";
+import { DAILY_STANDUP_CHANNEL_ID } from "../server-ids";
 import { fetchTextChannelById } from "../utils";
 
 export async function initiateDailyStandup(

@@ -3,7 +3,7 @@ import Discord from "discord.js";
 import { PosthogEvent } from "../../../analytics/events";
 import * as reports from "../../../analytics/reports";
 import { ChartReport, TextReport } from "../../../analytics/reports/reports";
-import { REPORTS_CHANNEL_ID } from "../../channel-ids";
+import { REPORTS_CHANNEL_ID } from "../../server-ids";
 import { fetchTextChannelById } from "../../utils";
 
 export type AnalyticsReportType = "daily" | "weekly" | "monthly" | "total";
