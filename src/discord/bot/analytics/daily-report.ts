@@ -22,7 +22,7 @@ export async function sendDailyAnalyticsReport(
   await reportsChannel.send("⏳ Fetching analytics events...");
 
   try {
-    // By prefetching events, we can reuse them for all reports
+    // By prefetching events, we can reuse them for all reports.
     const events = await fetchEventsForReportGenerator();
 
     await sendAnalyticsReportToReportsChannel(discordClient, "total", events);
