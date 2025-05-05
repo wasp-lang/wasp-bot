@@ -12,7 +12,7 @@ export function isAnalyticsCommand(message: Discord.Message): boolean {
 }
 
 function hasAnalyticsPrefix(message: Discord.Message): boolean {
-  return message.content.startsWith("!analytics");
+  return /^!analytics(\s|$)/.test(message.content);
 }
 
 function isReportsChannel(channel: Discord.Channel): boolean {
@@ -23,7 +23,8 @@ export async function handleAnalyticsCommand(
   discordClient: Discord.Client,
   message: Discord.Message,
 ): Promise<void> {
-  const analyticsCommand = parseAnalyticsCommand(message.content);
+  const commandArgs = extractCommandArgs(message.content);
+  const analyticsCommand = parseAnalyticsCommand(commandArgs);
   if (!analyticsCommand) {
     await sendAnalyticsHelp(discordClient);
     return;
@@ -42,20 +43,23 @@ export async function handleAnalyticsCommand(
   }
 }
 
+function extractCommandArgs(content: string): string {
+  return content.replace(/^!analytics\s*/, "").trim();
+}
+
 /**
- * Parses analytics command of the form: !analytics <period> [number]
- * Example: !analytics weekly 5
+ * Parses analytics command arguments of the form: <period> <num-of-periods>
+ * Example: weekly 5
  * Returns an object with period and optional numPeriods.
  */
 function parseAnalyticsCommand(
-  command: string,
-): { period: AnalyticsReportType; numPeriods?: number } | undefined {
-  const commandRegex =
-    /^!analytics\s+(weekly|monthly|daily|total)(?:\s+(\d+))?/i;
-  const match = command.match(commandRegex);
-  if (!match) return;
+  args: string,
+): { period: AnalyticsReportType; numPeriods?: number } | null {
+  const commandRegex = /^(weekly|monthly|daily|total)(?:\s+(\d+))?/;
+  const match = args.match(commandRegex);
+  if (!match) return null;
 
-  const period = match[1].toLowerCase() as AnalyticsReportType;
+  const period = match.at(1) as AnalyticsReportType;
   if (period === "total") {
     return { period };
   }
@@ -72,9 +76,9 @@ async function sendAnalyticsHelp(discordClient: Discord.Client): Promise<void> {
   const channel = await fetchTextChannelById(discordClient, REPORTS_CHANNEL_ID);
   await channel.send(
     `Available commands:
-  !analytics daily <num_of_periods>
-  !analytics weekly <num_of_periods>
-  !analytics monthly <num_of_periods>
+  !analytics daily <num-of-periods>
+  !analytics weekly <num-of-periods>
+  !analytics monthly <num-of-periods>
   !analytics total
 
 If nothing is said, stats are being shown for "normal" usage -> meaning that Replit/Gitpod/CI
