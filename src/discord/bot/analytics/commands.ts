@@ -7,12 +7,15 @@ import {
   sendAnalyticsReportToReportsChannel,
 } from "./common";
 
+
+const ANALYTICS_PREFIX_REGEX = /^!analytics(\s|$)/
+
 export function isAnalyticsCommand(message: Discord.Message): boolean {
   return hasAnalyticsPrefix(message) && isReportsChannel(message.channel);
 }
 
 function hasAnalyticsPrefix(message: Discord.Message): boolean {
-  return /^!analytics(\s|$)/.test(message.content);
+  return ANALYTICS_PREFIX_REGEX.test(message.content);
 }
 
 function isReportsChannel(channel: Discord.Channel): boolean {
@@ -44,7 +47,7 @@ export async function handleAnalyticsCommand(
 }
 
 function extractCommandArgs(content: string): string {
-  return content.replace(/^!analytics\s*/, "").trim();
+  return content.replace(ANALYTICS_PREFIX_REGEX, "").trim();
 }
 
 /**
