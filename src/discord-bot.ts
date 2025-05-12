@@ -10,7 +10,7 @@ import moment from "./analytics/moment";
 import * as reports from "./analytics/reports";
 import {
   ChartReport,
-  LocalChartReport,
+  ImageChartsReport,
   TextReport,
 } from "./analytics/reports/reports";
 import logger from "./utils/logger";
@@ -246,7 +246,7 @@ async function sendAnalyticsReport(
 
   const compositeReport: Record<
     string,
-    Partial<TextReport & ChartReport>
+    Partial<TextReport & ImageChartsReport>
   > = await reportPromise;
 
   waspReportsChannel.send(
@@ -261,7 +261,7 @@ async function sendAnalyticsReport(
 }
 
 function covertSimpleReportToDiscordMessage(
-  report: Partial<TextReport & ChartReport & LocalChartReport>,
+  report: Partial<TextReport & ImageChartsReport & ChartReport>,
 ): Discord.MessageOptions {
   const options: Discord.MessageOptions = {};
   if (report.text) {
@@ -277,18 +277,18 @@ function covertSimpleReportToDiscordMessage(
     options.content = content;
   }
 
-  if (report.chart) {
+  if (report.imageCharts) {
     const embed = new Discord.MessageEmbed();
-    embed.setImage(report.chart.toURL());
+    embed.setImage(report.imageCharts.toURL());
 
     options.embed = embed;
   }
 
-  if (report.localChart) {
+  if (report.chart) {
     if (!options.files) {
       options.files = [];
     }
-    options.files.push(new Discord.MessageAttachment(report.localChart));
+    options.files.push(new Discord.MessageAttachment(report.chart));
   }
 
   return options;

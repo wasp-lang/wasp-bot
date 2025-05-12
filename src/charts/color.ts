@@ -34,7 +34,7 @@ export function isDarkColor(color: string): boolean {
  * Calculates the luminance of an RGB color.
  * https://www.w3.org/TR/WCAG20/#relativeluminancedef
  */
-export function calculateLuminance(color: string): number {
+function calculateLuminance(color: string): number {
   const rgb = colorToRgb(color);
   const a = rgb.map((v) => {
     v /= 255;
@@ -46,7 +46,9 @@ export function calculateLuminance(color: string): number {
 /**
  * Creates a color interpolator function.
  * @param colors - Array of hex color codes to interpolate between
- * @returns A function that accepts a percentage (0-1) and returns the interpolated color.
+ * @returns A function that accepts a value from 0 to 1
+ * (where 0 is the start color and 1 is the end color)
+ * and returns the interpolated color.
  */
 export function createColorInterpolator(
   colors: string[],
@@ -84,7 +86,9 @@ export function createColorInterpolator(
  * Creates a color interpolator function between two colors.
  * @param color1 - Starting hex color code
  * @param color2 - Ending hex color code
- * @returns A function that accepts a percentage (0-1) and returns the interpolated color.
+ * @returns A function that accepts a value from 0 to 1
+ * (where 0 is the start color and 1 is the end color)
+ * and returns the interpolated color.
  */
 function createTwoColorInterpolator(
   color1: string,

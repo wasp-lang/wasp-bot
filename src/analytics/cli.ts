@@ -3,7 +3,7 @@ import { getAnalyticsErrorMessage } from "./errors";
 import * as reports from "./reports";
 import {
   AllTimePeriodReport,
-  ChartReport,
+  ImageChartsReport,
   TextReport,
 } from "./reports/reports";
 
@@ -51,7 +51,7 @@ function printAllTimeMonthlyReportCsvInCLI(
 }
 
 function printReportInCLI(
-  compositeReport: Record<string, Partial<TextReport & ChartReport>>,
+  compositeReport: Record<string, Partial<TextReport & ImageChartsReport>>,
 ): void {
   for (const simpleReport of Object.values(compositeReport)) {
     console.log();
@@ -60,8 +60,8 @@ function printReportInCLI(
         console.log(textLine);
       }
     }
-    if (simpleReport.chart) {
-      console.log("- Chart: ", simpleReport.chart.toURL());
+    if (simpleReport.imageCharts) {
+      console.log("- Chart: ", simpleReport.imageCharts.toURL());
     }
   }
 }
