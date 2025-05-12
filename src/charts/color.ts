@@ -32,7 +32,11 @@ export function isDarkColor(color: string): boolean {
 
 /**
  * Calculates the luminance of an RGB color.
- * https://www.w3.org/TR/WCAG20/#relativeluminancedef
+ *
+ * Luminance is a measure of the perceived brightness of a color.
+ *
+ * @returns Luminance value in range [0, 1]
+ * @see https://www.w3.org/TR/WCAG20/#relativeluminancedef
  */
 function calculateLuminance(color: string): number {
   const rgb = colorToRgb(color);
