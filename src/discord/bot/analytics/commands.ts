@@ -7,15 +7,14 @@ import {
   sendAnalyticsReportToReportsChannel,
 } from "./common";
 
-
-const ANALYTICS_PREFIX_REGEX = /^!analytics(\s|$)/
+const ANALYTICS_PREFIX = "!analytics";
 
 export function isAnalyticsCommand(message: Discord.Message): boolean {
   return hasAnalyticsPrefix(message) && isReportsChannel(message.channel);
 }
 
 function hasAnalyticsPrefix(message: Discord.Message): boolean {
-  return ANALYTICS_PREFIX_REGEX.test(message.content);
+  return new RegExp(`^${ANALYTICS_PREFIX}(\\s|$)`).test(message.content);
 }
 
 function isReportsChannel(channel: Discord.Channel): boolean {
@@ -47,7 +46,7 @@ export async function handleAnalyticsCommand(
 }
 
 function extractCommandArgs(content: string): string {
-  return content.replace(ANALYTICS_PREFIX_REGEX, "").trim();
+  return content.replace(new RegExp(`^${ANALYTICS_PREFIX}\\s*`), "").trim();
 }
 
 /**
@@ -79,10 +78,10 @@ async function sendAnalyticsHelp(discordClient: Discord.Client): Promise<void> {
   const channel = await fetchTextChannelById(discordClient, REPORTS_CHANNEL_ID);
   await channel.send(
     `Available commands:
-  !analytics daily <num-of-periods>
-  !analytics weekly <num-of-periods>
-  !analytics monthly <num-of-periods>
-  !analytics total
+  ${ANALYTICS_PREFIX} daily <num-of-periods>
+  ${ANALYTICS_PREFIX} weekly <num-of-periods>
+  ${ANALYTICS_PREFIX} monthly <num-of-periods>
+  ${ANALYTICS_PREFIX} total
 
 If nothing is said, stats are being shown for "normal" usage -> meaning that Replit/Gitpod/CI
 are not included in the stats. When they are, it is explicitly stated so.
