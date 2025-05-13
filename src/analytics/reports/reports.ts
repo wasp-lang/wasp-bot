@@ -10,11 +10,11 @@ export interface CsvReport {
 }
 
 export interface ImageChartsReport {
-  imageCharts: ImageCharts;
+  imageChartsChart: ImageCharts;
 }
 
 export interface ChartReport {
-  chart: Buffer;
+  bufferChart: Buffer;
 }
 
 export type CohortRetentionReport = TextReport & ChartReport;

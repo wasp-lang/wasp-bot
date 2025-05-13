@@ -45,7 +45,8 @@ export async function generateCohortRetentionReport(
   const fmt = (m: Moment) => m.format("DD-MM-YY");
   const firstPeriod = periods[0];
   const lastPeriod = periods.at(-1)!;
-  const report = {
+
+  return {
     text: [
       "==== Cohort Retention ====",
       "```",
@@ -58,13 +59,12 @@ export async function generateCohortRetentionReport(
         lastPeriod[0],
       )} - ${fmt(lastPeriod[1])}`,
     ],
-    localChart: await createCohortRetentionHeatMap(
+    bufferChart: await createCohortRetentionHeatMap(
       cohorts,
       periods,
       periodName,
     ),
   };
-  return report;
 }
 
 /**

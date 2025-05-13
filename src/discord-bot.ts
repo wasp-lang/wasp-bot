@@ -277,18 +277,17 @@ function covertSimpleReportToDiscordMessage(
     options.content = content;
   }
 
-  if (report.imageCharts) {
+  if (report.imageChartsChart) {
     const embed = new Discord.MessageEmbed();
-    embed.setImage(report.imageCharts.toURL());
-
+    embed.setImage(report.imageChartsChart.toURL());
     options.embed = embed;
   }
 
-  if (report.chart) {
+  if (report.bufferChart) {
     if (!options.files) {
       options.files = [];
     }
-    options.files.push(new Discord.MessageAttachment(report.chart));
+    options.files.push(new Discord.MessageAttachment(report.bufferChart));
   }
 
   return options;

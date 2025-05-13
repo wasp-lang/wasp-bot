@@ -84,7 +84,7 @@ export async function generatePeriodProjectsReport(
     ),
   });
 
-  const report = {
+  return {
     csv,
     text: [
       `==== Projects created/built per ${periodName} (cumm) ====`,
@@ -93,5 +93,4 @@ export async function generatePeriodProjectsReport(
       "```",
     ],
   };
-  return report;
 }

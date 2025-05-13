@@ -60,8 +60,8 @@ function printReportInCLI(
         console.log(textLine);
       }
     }
-    if (simpleReport.imageCharts) {
-      console.log("- Chart: ", simpleReport.imageCharts.toURL());
+    if (simpleReport.imageChartsChart) {
+      console.log("- Chart: ", simpleReport.imageChartsChart.toURL());
     }
   }
 }

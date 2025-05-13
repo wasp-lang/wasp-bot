@@ -83,7 +83,7 @@ export async function generateUserActivityReport(
     ),
   );
 
-  const report = {
+  return {
     text: [
       "==== Unique Active Users ====",
       `During last ${periodName}:`,
@@ -94,7 +94,7 @@ export async function generateUserActivityReport(
       tableOfActiveUsersPerPeriodByAge.toString(),
       "```",
     ],
-    chart: createUserActivityReportChart(
+    imageChartsChart: createUserActivityReportChart(
       uniqueLocalActiveUsersPerPeriodByAge,
       `Num unique active users (per ${periodName})`,
     ),
@@ -103,8 +103,6 @@ export async function generateUserActivityReport(
       ...activeUsersPerPeriodByAgeCsvData,
     ],
   };
-
-  return report;
 }
 
 function calcUniqueNonLocalEventsInPeriod(

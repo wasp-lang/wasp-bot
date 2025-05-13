@@ -36,7 +36,7 @@ export async function generateTotalReport(
     totalUniqueEventsByExecutionEnv,
   );
 
-  const report = {
+  return {
     totalUniqueReport: {
       text: [
         `Number of unique projects in total: ${numProjectsTotal}`,
@@ -46,8 +46,6 @@ export async function generateTotalReport(
       ],
     },
   };
-
-  return report;
 }
 
 function calcTotalUniqueEventsByExecutionEnv(
