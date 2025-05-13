@@ -2,7 +2,11 @@ import Discord from "discord.js";
 
 import { PosthogEvent } from "../../../analytics/events";
 import * as reports from "../../../analytics/reports";
-import { ChartReport, TextReport } from "../../../analytics/reports/reports";
+import {
+  ChartReport,
+  ImageChartsReport,
+  TextReport,
+} from "../../../analytics/reports/reports";
 import { REPORTS_CHANNEL_ID } from "../../server-ids";
 import { fetchTextChannelById } from "../../utils";
 
@@ -60,12 +64,12 @@ const DISCORD_MESSAGE_TOO_LONG_SUFFIX =
   "\n... ⚠️ MESSAGE CUT BECAUSE IT IS TOO LONG...";
 
 function convertSimpleReportToDiscordMessage(
-  report: Partial<TextReport & ChartReport>,
+  report: Partial<TextReport & ChartReport & ImageChartsReport>,
 ): Discord.MessageOptions {
   const options: Discord.MessageOptions = {};
+
   if (report.text) {
     let content: string = report.text.join("\n");
-
     if (content.length >= DISCORD_MAX_MSG_SIZE) {
       content =
         content.substring(
@@ -76,11 +80,17 @@ function convertSimpleReportToDiscordMessage(
     options.content = content;
   }
 
-  if (report.chart) {
+  if (report.imageChartsChart) {
     const embed = new Discord.MessageEmbed();
-    embed.setImage(report.chart.toURL());
-
+    embed.setImage(report.imageChartsChart.toURL());
     options.embed = embed;
+  }
+
+  if (report.bufferChart) {
+    if (!options.files) {
+      options.files = [];
+    }
+    options.files.push(new Discord.MessageAttachment(report.bufferChart));
   }
 
   return options;

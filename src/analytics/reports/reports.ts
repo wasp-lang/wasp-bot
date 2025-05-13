@@ -9,13 +9,17 @@ export interface CsvReport {
   csv: readonly CsvReportRow[];
 }
 
-export interface ChartReport {
-  chart: ImageCharts;
+export interface ImageChartsReport {
+  imageChartsChart: ImageCharts;
 }
 
-export type CohortRetentionReport = TextReport;
+export interface ChartReport {
+  bufferChart: Buffer;
+}
+
+export type CohortRetentionReport = TextReport & ChartReport;
 export type ProjectsReport = TextReport & CsvReport;
-export type UserActivityReport = TextReport & CsvReport & ChartReport;
+export type UserActivityReport = TextReport & CsvReport & ImageChartsReport;
 export type TotalUniqueReport = TextReport;
 
 export type AllTimePeriodReport = {
