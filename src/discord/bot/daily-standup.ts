@@ -1,5 +1,5 @@
 import Discord from "discord.js";
-import Quote from "inspirational-quotes";
+import InspirationalQuotes from "inspirational-quotes";
 import _ from "lodash";
 
 import { DAILY_STANDUP_CHANNEL_ID } from "../server-ids";
@@ -27,7 +27,7 @@ interface Quote {
 }
 
 function generateDailyQuote(): string {
-  const wisdomQuote: Quote = Quote.getQuote();
+  const wisdomQuote: Quote = InspirationalQuotes.getQuote();
   const waspQuote = _.sample(WASP_QUOTES)!;
   const quote = Math.random() < 0.1 ? waspQuote : wisdomQuote;
 
