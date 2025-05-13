@@ -1,6 +1,20 @@
 **/node_modules
-**/.env
 **/wasp-analytics-cached-events.json
 **/dist
-.husky/_/**/*
+
+# Don't copy secrets.
+.env
+.env.*
+
+# Ignore CICD files.
+.husky
+.github
 fly.toml
+Dockerfile
+
+# These are added only because dotenv-vault keeps adding them if it doesn't find them,
+# even though we don't need them. Remove them once dotenv-vault stops doing that.
+.env*
+!.env.project
+!.env.vault
+.flaskenv*
