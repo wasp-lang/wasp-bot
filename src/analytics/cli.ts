@@ -53,12 +53,9 @@ function printAllTimeMonthlyReportCsvInCLI(
   }
 }
 
-function printReportInCLI(
-  compositeReport: Record<
-    string,
-    Partial<TextReport & ImageChartsReport & ChartReport>
-  >,
-): void {
+function printReportInCLI(compositeReport: {
+  [reportName: string]: Partial<TextReport & ImageChartsReport & ChartReport>;
+}): void {
   for (const [name, simpleReport] of Object.entries(compositeReport)) {
     console.log();
     if (simpleReport.text) {

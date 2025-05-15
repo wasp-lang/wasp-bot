@@ -238,7 +238,7 @@ async function createCohortRetentionHeatMap(
             text: `Cohort Progression (per ${periodName})`,
             font: {
               size: 14,
-              weight: "bold",
+              weight: 700,
             },
           },
         },
@@ -257,7 +257,7 @@ async function createCohortRetentionHeatMap(
             text: "Cohort Start",
             font: {
               size: 14,
-              weight: "bold",
+              weight: 700,
             },
           },
         },
@@ -272,7 +272,7 @@ async function createCohortRetentionHeatMap(
           align: "center",
           font: {
             size: 20,
-            weight: "bold",
+            weight: 700,
           },
           padding: {
             top: 10,
