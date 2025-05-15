@@ -1,27 +1,31 @@
-import * as _ from "lodash";
+import _ from "lodash";
 
-import { newSimpleTable } from "../../table";
+import { ChartData, createUserActivityReportChart } from "../../charts";
+import { PosthogEvent } from "../../events";
 import {
+  EventsByExecutionEnvironment,
+  ExecutionEnvironment,
   executionEnvs,
   groupEventsByExecutionEnv,
   showPrettyMetrics,
 } from "../../executionEnvs";
-import { buildChartImageUrl } from "../../charts";
-
+import { createCrossTable } from "../../table";
 import { fetchEventsForReportGenerator } from "../events";
-import { groupEventsByUser, calcUserAgeInDays } from "../utils";
-
+import { UserActivityReport } from "../reports";
+import { calcUserAgeInDays, groupEventsByUser } from "../utils";
 import {
   calcLastNPeriods,
   getActiveUserIdsInPeriod,
   groupEventsByPeriods,
-} from "./common";
+  Period,
+  PeriodName,
+} from "./period";
 
 export async function generateUserActivityReport(
-  numPeriods,
-  periodName,
-  prefetchedEvents = undefined,
-) {
+  prefetchedEvents: PosthogEvent[] | undefined = undefined,
+  numPeriods: number,
+  periodName: PeriodName,
+): Promise<UserActivityReport> {
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
   const periods = calcLastNPeriods(numPeriods, periodName);
 
@@ -46,8 +50,8 @@ export async function generateUserActivityReport(
     Math.round(_.mean(uniqueLocalActiveUsersPerPeriodByAge.series[ageRange])),
   );
 
-  const tableOfActiveUsersPerPeriodByAgeCsv = [
-    ["", ...ageRanges, "ALL"],
+  const activeUsersperPeriodByAgeHeaders = ["", ...ageRanges, "ALL"];
+  const activeUsersPerPeriodByAgeCsvData = [
     ...uniqueLocalActiveUsersPerPeriodByAge.periodEnds.map((periodEnd, i) => {
       const numUsersPerAge = ageRanges.map(
         (ageRange) => uniqueLocalActiveUsersPerPeriodByAge.series[ageRange][i],
@@ -56,15 +60,20 @@ export async function generateUserActivityReport(
     }),
   ];
 
-  const tableOfActiveUsersPerPeriodByAge = newSimpleTable({
-    head: tableOfActiveUsersPerPeriodByAgeCsv[0],
+  const tableOfActiveUsersPerPeriodByAge = createCrossTable({
+    head: activeUsersperPeriodByAgeHeaders as ["", ...string[]],
     rows: [
-      ...tableOfActiveUsersPerPeriodByAgeCsv
-        .slice(1)
-        .map(([periodEnd, ...numUsersPerAgeAndSum]) => ({
-          [periodEnd]: numUsersPerAgeAndSum,
-        })),
-      ["AVG", ...ageRangesAverages, _.sum(ageRangesAverages)],
+      ...activeUsersPerPeriodByAgeCsvData.map(
+        ([periodEnd, ...numUsersPerAgeAndSum]) => ({
+          [periodEnd]: numUsersPerAgeAndSum.map((num) => num.toString()),
+        }),
+      ),
+      {
+        AVG: [
+          ...ageRangesAverages.map((num) => num.toString()),
+          _.sum(ageRangesAverages).toString(),
+        ],
+      },
     ],
   });
 
@@ -74,47 +83,58 @@ export async function generateUserActivityReport(
     ),
   );
 
-  const report = [
-    {
-      text: [
-        "==== Unique Active Users ====",
-        `During last ${periodName}:`,
-        `- Local: ${totalNumOfLocalUsersInLastPeriod}`,
-        `- Cloud: ${prettyNonLocalMetrics}`,
-        `Table "Num unique active users per ${periodName} by age":`,
-        "```",
-        tableOfActiveUsersPerPeriodByAge.toString(),
-        "```",
-      ],
-      chart: buildChartImageUrl(
-        uniqueLocalActiveUsersPerPeriodByAge,
-        `Num unique active users (per ${periodName})`,
-        "bars",
-      ),
-      csv: tableOfActiveUsersPerPeriodByAgeCsv,
-    },
-  ];
-
-  return report;
+  return {
+    text: [
+      "==== Unique Active Users ====",
+      `During last ${periodName}:`,
+      `- Local: ${totalNumOfLocalUsersInLastPeriod}`,
+      `- Cloud: ${prettyNonLocalMetrics}`,
+      `Table "Num unique active users per ${periodName} by age":`,
+      "```",
+      tableOfActiveUsersPerPeriodByAge.toString(),
+      "```",
+    ],
+    imageChartsChart: createUserActivityReportChart(
+      uniqueLocalActiveUsersPerPeriodByAge,
+      `Num unique active users (per ${periodName})`,
+    ),
+    csv: [
+      activeUsersperPeriodByAgeHeaders,
+      ...activeUsersPerPeriodByAgeCsvData,
+    ],
+  };
 }
 
-function calcUniqueNonLocalEventsInPeriod(periods, eventsByEnv) {
-  const uniqueNonLocalEventsInPeriod = {};
-  for (let envKey of Object.keys(executionEnvs)) {
-    const events = eventsByEnv[envKey] ?? [];
+function calcUniqueNonLocalEventsInPeriod(
+  periods: Period[],
+  eventsByExecutionEnv: EventsByExecutionEnvironment,
+): Record<ExecutionEnvironment, number> {
+  const uniqueNonLocalEventsInPeriod: Record<string, number> = {};
+
+  for (const envKey of Object.keys(executionEnvs) as ExecutionEnvironment[]) {
+    const events = eventsByExecutionEnv[envKey] ?? [];
     uniqueNonLocalEventsInPeriod[envKey] = getActiveUserIdsInPeriod(
       events,
-      _.last(periods),
-    ).length;
+      periods.at(-1)!,
+    ).size;
   }
-  return uniqueNonLocalEventsInPeriod;
+
+  return uniqueNonLocalEventsInPeriod as Record<ExecutionEnvironment, number>;
 }
 
-// The main metric we are calculating -> for each period, number of unique users, grouped by age (of usage).
-// We return it ready for displaying via chart or table.
-// Takes list of all events, ends of all periods, and period duration.
-function calcNumActiveUsersPerPeriodByAge(userEvents, periods) {
-  const numUniqueActiveUsersPerPeriodByAge = {
+/**
+ * The main metric we are calculating -> for each period, number of unique users, grouped by age (of usage).
+ * We return it ready for displaying via chart or table.
+ *
+ * @param userEvents - Events data from users to analyze
+ * @param periods - Time periods for which to calculate user activity
+ * @returns An object containing series data for different age ranges and corresponding period end dates
+ */
+function calcNumActiveUsersPerPeriodByAge(
+  userEvents: PosthogEvent[],
+  periods: Period[],
+): ChartData {
+  const numUniqueActiveUsersPerPeriodByAge: ChartData = {
     // All series have the same length, which is the length of .periodEnds.
     series: {
       ">30d": [], // [number]
@@ -135,9 +155,8 @@ function calcNumActiveUsersPerPeriodByAge(userEvents, periods) {
     const ages = Object.entries(eventsInThisPeriodByUsers).map(
       ([userId, eventsInThisPeriodByThisUser]) => {
         const oldestEventEverByThisUser = eventsByUsers[userId][0];
-        const newestEventInThisPeriodByThisUser = _.last(
-          eventsInThisPeriodByThisUser,
-        );
+        const newestEventInThisPeriodByThisUser =
+          eventsInThisPeriodByThisUser.at(-1)!;
         return calcUserAgeInDays(
           newestEventInThisPeriodByThisUser,
           oldestEventEverByThisUser,

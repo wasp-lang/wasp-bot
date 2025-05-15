@@ -1,14 +1,15 @@
 {
   "compilerOptions": {
     /* Visit https://aka.ms/tsconfig to read more about this file */
-    "target": "es2020",
+    "target": "esnext",
     "module": "commonjs" /* Specify what module code is generated. */,
     "outDir": "./dist" /* Specify an output folder for all emitted files. */,
     "rootDir": "./src",
     "allowJs": true,
-    "skipLibCheck": true /* Skip type checking all .d.ts files. */
-    // "esModuleInterop": true,
-    // "forceConsistentCasingInFileNames": true,            /* Ensure that casing is correct in imports. */
-    // "strict": true,                                      /* Enable all strict type-checking options. */
+    "skipLibCheck": true /* Skip type checking all .d.ts files. */,
+    "esModuleInterop": true,
+    "noImplicitAny": true,
+    "lib": ["esnext"],
+    "strict": true
   }
 }

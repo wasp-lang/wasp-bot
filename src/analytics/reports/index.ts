@@ -1,38 +1,37 @@
+import { PosthogEvent } from "../events";
 import moment from "../moment";
+import {
+  generateAllTimePeriodReport,
+  generatePeriodReport,
+} from "./periodReport";
+import { AllTimePeriodReport, PeriodReport } from "./reports";
 export { fetchEventsForReportGenerator } from "./events";
 export { generateTotalReport } from "./totalReport";
-import { generatePeriodReport } from "./periodReport";
 
-export async function generateDailyReport(
-  prefetchedEvents = undefined,
-  numPeriods = undefined,
-) {
-  return generatePeriodReport(numPeriods ?? 14, "day", prefetchedEvents, false);
+export function generateDailyReport(
+  prefetchedEvents: PosthogEvent[] | undefined = undefined,
+  numPeriods: number = 14,
+): Promise<PeriodReport> {
+  return generatePeriodReport(prefetchedEvents, numPeriods, "day");
 }
 
-export async function generateWeeklyReport(
-  prefetchedEvents = undefined,
-  numPeriods = undefined,
-) {
-  return generatePeriodReport(numPeriods ?? 12, "week", prefetchedEvents);
+export function generateWeeklyReport(
+  prefetchedEvents: PosthogEvent[] | undefined = undefined,
+  numPeriods: number = 12,
+): Promise<PeriodReport> {
+  return generatePeriodReport(prefetchedEvents, numPeriods, "week");
 }
 
-export async function generateMonthlyReport(
-  prefetchedEvents = undefined,
-  numPeriods = undefined,
-  genCohortRetentionReport = true,
-) {
-  return generatePeriodReport(
-    numPeriods ?? 12,
-    "month",
-    prefetchedEvents,
-    genCohortRetentionReport,
-  );
+export function generateMonthlyReport(
+  prefetchedEvents: PosthogEvent[] | undefined = undefined,
+  numPeriods: number = 12,
+): Promise<PeriodReport> {
+  return generatePeriodReport(prefetchedEvents, numPeriods, "month");
 }
 
-export async function generateAllTimeMonthlyReport(
-  prefetchedEvents = undefined,
-) {
+export function generateAllTimeMonthlyReport(
+  prefetchedEvents: PosthogEvent[] | undefined = undefined,
+): Promise<AllTimePeriodReport> {
   const numMonths = moment().diff(moment("2021-01-01"), "months") + 1;
-  return generateMonthlyReport(prefetchedEvents, numMonths, false);
+  return generateAllTimePeriodReport(prefetchedEvents, numMonths, "month");
 }

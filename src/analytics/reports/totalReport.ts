@@ -1,15 +1,21 @@
+import { PosthogEvent } from "../events";
 import {
+  EventsByExecutionEnvironment,
+  ExecutionEnvironment,
   executionEnvs,
   groupEventsByExecutionEnv,
   showPrettyMetrics,
 } from "../executionEnvs";
 import { fetchEventsForReportGenerator } from "./events";
-
+import { TotalReport } from "./reports";
 import { groupEventsByProject } from "./utils";
 
-// Generates report for some general statistics that cover the whole (total) time (all of the events).
-export async function generateTotalReport(prefetchedEvents = undefined) {
-  // All events, sort by time (starting with oldest), with events caused by Wasp team members filtered out.
+/**
+ * Generates report for some general statistics that cover the whole (total) time (all of the events).
+ */
+export async function generateTotalReport(
+  prefetchedEvents: PosthogEvent[] | undefined = undefined,
+): Promise<TotalReport> {
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
 
   const { localEvents, groupedNonLocalEvents } =
@@ -18,7 +24,7 @@ export async function generateTotalReport(prefetchedEvents = undefined) {
   const localEventsByProject = groupEventsByProject(localEvents);
   const numProjectsTotal = Object.keys(localEventsByProject).length;
   const numProjectsBuiltTotal = Object.values(localEventsByProject).filter(
-    (events) => events.some((e) => e.properties.is_build),
+    (events) => events.some((e) => e.properties?.is_build),
   ).length;
   const numUniqueUsersTotal = new Set(localEvents.map((e) => e.distinct_id))
     .size;
@@ -30,8 +36,8 @@ export async function generateTotalReport(prefetchedEvents = undefined) {
     totalUniqueEventsByExecutionEnv,
   );
 
-  const report = [
-    {
+  return {
+    totalUniqueReport: {
       text: [
         `Number of unique projects in total: ${numProjectsTotal}`,
         `Number of unique projects built in total: ${numProjectsBuiltTotal}`,
@@ -39,18 +45,21 @@ export async function generateTotalReport(prefetchedEvents = undefined) {
         ` - ${prettyNonLocalMetrics}`,
       ],
     },
-  ];
-
-  return report;
+  };
 }
 
-function calcTotalUniqueEventsByExecutionEnv(eventsByEnv) {
-  const totalUniqueEventsByExecutionEnv = {};
-  for (let envKey of Object.keys(executionEnvs)) {
+function calcTotalUniqueEventsByExecutionEnv(
+  eventsByEnv: EventsByExecutionEnvironment,
+): Record<ExecutionEnvironment, number> {
+  const totalUniqueEventsByExecutionEnv: Record<string, number> = {};
+  for (const envKey of Object.keys(executionEnvs) as ExecutionEnvironment[]) {
     const events = eventsByEnv[envKey] ?? [];
     totalUniqueEventsByExecutionEnv[envKey] = new Set(
-      events.map((e) => e.distinct_id),
+      events.map((event) => event.distinct_id),
     ).size;
   }
-  return totalUniqueEventsByExecutionEnv;
+  return totalUniqueEventsByExecutionEnv as Record<
+    ExecutionEnvironment,
+    number
+  >;
 }
