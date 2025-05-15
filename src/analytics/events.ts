@@ -2,6 +2,7 @@ import retry from "async-retry";
 import axios from "axios";
 import { config as dotenvConfig } from "dotenv";
 import { promises as fs } from "fs";
+import logger from "../utils/logger";
 import moment from "./moment";
 
 dotenvConfig();
@@ -43,7 +44,7 @@ export async function tryToFetchAllCliEvents(): Promise<PosthogEvent[]> {
       minTimeout: 5 * 1000,
       maxTimeout: 120 * 1000,
       onRetry: (e: Error) => {
-        console.error(
+        logger.error(
           "Error happened while fetching events for report generator, trying again:",
           e.message ?? e,
         );
@@ -53,10 +54,10 @@ export async function tryToFetchAllCliEvents(): Promise<PosthogEvent[]> {
 }
 
 async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
-  console.log("Fetching all CLI events...");
+  logger.info("Fetching all CLI events...");
 
   const cachedEvents = await loadCachedEvents();
-  console.log("Number of already locally cached events: ", cachedEvents.length);
+  logger.info("Number of already locally cached events: ", cachedEvents.length);
 
   let events = cachedEvents;
 
@@ -64,7 +65,7 @@ async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
   // If we have no events already, we just start from the newest ones.
   // They are fetched starting with the newest ones and going backwards.
   // We keep fetching them and adding them to the cache as we go, until there are none left.
-  console.log("Fetching events older than the cache...");
+  logger.info("Fetching events older than the cache...");
   let allOldEventsFetched = false;
   while (!allOldEventsFetched) {
     const { isThereMore, events: fetchedEvents } = await fetchEvents({
@@ -79,7 +80,7 @@ async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
   // We fetch any events newer than the currently newest event we already have.
   // They are fetched starting with the newest ones and going backwards.
   // Only once we fetch all of them, we add them to the cache. This is done to guarantee continuity of cached events.
-  console.log("Fetching events newer than the cache...");
+  logger.info("Fetching events newer than the cache...");
   let newEvents: PosthogEvent[] = [];
   let allNewEventsFetched = false;
   while (!allNewEventsFetched) {
@@ -109,7 +110,7 @@ async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
     );
   }
 
-  console.log("All events fetched!");
+  logger.info("All events fetched!");
   return events;
 }
 
@@ -149,7 +150,7 @@ async function fetchEvents({
     params,
   ).toString()}`;
 
-  console.log(`Fetching: ${url}`);
+  logger.info(`Fetching: ${url}`);
   const response = await axios.get(url, {
     headers: {
       Authorization: `Bearer ${POSTHOG_KEY}`,
