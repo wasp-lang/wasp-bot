@@ -1,8 +1,11 @@
+import fs from "fs";
+import os from "os";
 import logger from "../utils/logger";
 import { getAnalyticsErrorMessage } from "./errors";
 import * as reports from "./reports";
 import {
   AllTimePeriodReport,
+  ChartReport,
   ImageChartsReport,
   TextReport,
 } from "./reports/reports";
@@ -51,9 +54,12 @@ function printAllTimeMonthlyReportCsvInCLI(
 }
 
 function printReportInCLI(
-  compositeReport: Record<string, Partial<TextReport & ImageChartsReport>>,
+  compositeReport: Record<
+    string,
+    Partial<TextReport & ImageChartsReport & ChartReport>
+  >,
 ): void {
-  for (const simpleReport of Object.values(compositeReport)) {
+  for (const [name, simpleReport] of Object.entries(compositeReport)) {
     console.log();
     if (simpleReport.text) {
       for (const textLine of simpleReport.text) {
@@ -61,7 +67,19 @@ function printReportInCLI(
       }
     }
     if (simpleReport.imageChartsChart) {
-      console.log("- Chart: ", simpleReport.imageChartsChart.toURL());
+      console.log(
+        "- ImagesCharts Chart: ",
+        simpleReport.imageChartsChart.toURL(),
+      );
+    }
+    if (simpleReport.bufferChart) {
+      const tempDir = os.tmpdir();
+      const fileName = `${name}-${Date.now()}.png`;
+      const filePath = `${tempDir}/${fileName}`;
+
+      fs.writeFileSync(filePath, simpleReport.bufferChart);
+
+      console.log("- Chart: ", filePath);
     }
   }
 }

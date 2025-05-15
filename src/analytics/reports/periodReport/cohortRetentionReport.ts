@@ -208,6 +208,8 @@ async function createCohortRetentionHeatMap(
     },
     borderColor: "rgba(0, 0, 0, 0.1)",
     borderWidth: 1,
+    anchorY: "top",
+    anchorX: "left",
   };
 
   const chartConfiguration: ChartConfiguration<
@@ -224,13 +226,13 @@ async function createCohortRetentionHeatMap(
         x: {
           type: "linear",
           min: 0,
-          max: periods.length - 1,
+          max: periods.length,
           ticks: {
             stepSize: 1,
             callback: (value) => `+${value}`,
             font: { size: 12 },
           },
-          offset: true,
+          offset: false,
           title: {
             display: true,
             text: `Cohort Progression (per ${periodName})`,
@@ -243,13 +245,13 @@ async function createCohortRetentionHeatMap(
         y: {
           type: "linear",
           min: 0,
-          max: cohorts.length - 1,
+          max: cohorts.length,
           ticks: {
             stepSize: 1,
             callback: (value) => `#${value}`,
             font: { size: 12 },
           },
-          offset: true,
+          offset: false,
           title: {
             display: true,
             text: "Cohort Start",
@@ -325,7 +327,7 @@ const cohortRetentionChartCellLabels: Plugin<"matrix"> = {
         canvasContext.save();
         canvasContext.fillStyle =
           getFontColorForBackgroundColor(backgroundColor);
-        canvasContext.font = "12px sans-serif";
+        canvasContext.font = "12px";
         canvasContext.textAlign = "center";
         canvasContext.textBaseline = "middle";
         canvasContext.fillText(label, x + width / 2, y + height / 2);

@@ -1,6 +1,10 @@
 import { Chart, ChartConfiguration } from "chart.js";
 import { MatrixController, MatrixElement } from "chartjs-chart-matrix";
-import { ChartJSNodeCanvas, MimeType } from "chartjs-node-canvas";
+import {
+  ChartJSNodeCanvas,
+  ChartJSNodeCanvasOptions,
+  MimeType,
+} from "chartjs-node-canvas";
 
 // Chart.js initialization.
 Chart.register(MatrixController, MatrixElement);
@@ -9,11 +13,11 @@ Chart.register(MatrixController, MatrixElement);
 // We reuse the same canvas instance for memory efficiency.
 // If different chart sizes are needed, create multiple canvas instances.
 
-const canvasConfiguration = {
+const canvasConfiguration: ChartJSNodeCanvasOptions = {
   width: 800,
   height: 600,
   backgroundColour: "white",
-} as const;
+};
 
 const canvas = new ChartJSNodeCanvas(canvasConfiguration);
 
