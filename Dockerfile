@@ -2,6 +2,9 @@ FROM node:22-slim AS builder
 
 WORKDIR /app
 
+RUN apt-get update -qq && \
+  apt-get install --no-install-recommends -y build-essential node-gyp pkg-config python-is-python3 libcairo2-dev libpango1.0-dev
+
 # Copy package files
 COPY package*.json ./
 
