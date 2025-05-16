@@ -28,41 +28,49 @@ function parseFontFileName(fileName: string): {
   weight?: string;
   style?: string;
 } {
-  const [family, other] = fileName.split("-");
-  let weight;
-  let style;
+  const stem = fileName.split(".")[0];
+  const [familyName, styleName] = stem.split("-");
 
-  if (other.includes("Italic")) {
-    style = "italic";
-  } else {
-    style = "normal";
+  if (!isStyleName(styleName)) {
+    throw new Error(
+      `Font style name "${styleName}" is not recognized. Supported styles are: ${Object.keys(
+        fontStyleNameMap,
+      ).join(", ")}`,
+    );
   }
 
-  if (other.includes("Thin")) {
-    weight = "100";
-  } else if (other.includes("ExtraLight")) {
-    weight = "200";
-  } else if (other.includes("Light")) {
-    weight = "light";
-  } else if (other.includes("Medium")) {
-    weight = "500";
-  } else if (other.includes("Regular")) {
-    weight = "normal";
-  } else if (other.includes("SemiBold")) {
-    weight = "600";
-  } else if (other.includes("Bold")) {
-    weight = "bold";
-  } else if (other.includes("ExtraBold")) {
-    weight = "800";
-  } else if (other.includes("Black")) {
-    weight = "900";
-  } else {
-    weight = "normal";
-  }
+  const { weight, style } = fontStyleNameMap[styleName];
 
   return {
-    family,
+    family: familyName,
     weight,
     style,
   };
 }
+
+function isStyleName(
+  styleName: string,
+): styleName is keyof typeof fontStyleNameMap {
+  return Object.keys(fontStyleNameMap).includes(styleName);
+}
+
+const fontStyleNameMap = {
+  Thin: { weight: "100", style: "normal" },
+  ThinItalic: { weight: "100", style: "italic" },
+  ExtraLight: { weight: "200", style: "normal" },
+  ExtraLightItalic: { weight: "200", style: "italic" },
+  Light: { weight: "300", style: "normal" },
+  LightItalic: { weight: "300", style: "italic" },
+  Regular: { weight: "normal", style: "normal" },
+  Italic: { weight: "normal", style: "italic" },
+  Medium: { weight: "500", style: "normal" },
+  MediumItalic: { weight: "500", style: "italic" },
+  SemiBold: { weight: "600", style: "normal" },
+  SemiBoldItalic: { weight: "600", style: "italic" },
+  Bold: { weight: "bold", style: "normal" },
+  BoldItalic: { weight: "bold", style: "italic" },
+  ExtraBold: { weight: "800", style: "normal" },
+  ExtraBoldItalic: { weight: "800", style: "italic" },
+  Black: { weight: "900", style: "normal" },
+  BlackItalic: { weight: "900", style: "italic" },
+} as const;
