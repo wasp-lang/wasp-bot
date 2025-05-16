@@ -9,15 +9,17 @@ export function registerFonts(): void {
   registerFontsFromDir(fontDir);
 }
 
-function registerFontsFromDir(dir: string): void {
-  const fontFiles = fs.readdirSync(dir).filter((file) => file.endsWith(".ttf"));
+function registerFontsFromDir(absDirPath: string): void {
+  const fontFiles = fs
+    .readdirSync(absDirPath)
+    .filter((file) => file.endsWith(".ttf"));
   for (const fontFile of fontFiles) {
-    registerStaticFont(fontFile, dir);
+    registerStaticFont(fontFile, absDirPath);
   }
 }
 
-function registerStaticFont(fileName: string, dir: string): void {
-  const fontPath = path.join(dir, fileName);
+function registerStaticFont(fileName: string, absDirPath: string): void {
+  const fontPath = path.join(absDirPath, fileName);
   const fontFace = parseFontFileName(fileName);
 
   registerFont(fontPath, fontFace);

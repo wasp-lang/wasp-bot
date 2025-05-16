@@ -52,13 +52,13 @@ function printReportInCLI(compositeReport: {
       );
     }
     if (simpleReport.bufferChart) {
-      const filePath = createTempImageFile(name, simpleReport.bufferChart);
+      const filePath = createTmpImageFile(name, simpleReport.bufferChart);
       console.log("- Buffer Chart: ", filePath);
     }
   }
 }
 
-function createTempImageFile(name: string, buffer: Buffer): string {
+function createTmpImageFile(name: string, buffer: Buffer): string {
   const tempDir = os.tmpdir();
   const fileName = `${name}-${Date.now()}.png`;
   const filePath = `${tempDir}/${fileName}`;
