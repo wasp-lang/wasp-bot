@@ -1,8 +1,11 @@
+import fs from "fs";
+import os from "os";
 import logger from "../utils/logger";
 import { getAnalyticsErrorMessage } from "./errors";
 import * as reports from "./reports";
 import {
   AllTimePeriodReport,
+  ChartReport,
   ImageChartsReport,
   TextReport,
 } from "./reports/reports";
@@ -28,6 +31,43 @@ async function cliReport(): Promise<void> {
   );
 }
 
+function printReportTitle(text: string): void {
+  console.log(`\x1b[33m \n\n${text} \x1b[0m`);
+}
+
+function printReportInCLI(compositeReport: {
+  [reportName: string]: Partial<TextReport & ImageChartsReport & ChartReport>;
+}): void {
+  for (const [name, simpleReport] of Object.entries(compositeReport)) {
+    console.log();
+    if (simpleReport.text) {
+      for (const textLine of simpleReport.text) {
+        console.log(textLine);
+      }
+    }
+    if (simpleReport.imageChartsChart) {
+      console.log(
+        "- ImagesCharts Chart: ",
+        simpleReport.imageChartsChart.toURL(),
+      );
+    }
+    if (simpleReport.bufferChart) {
+      const filePath = createTmpImageFile(name, simpleReport.bufferChart);
+      console.log("- Buffer Chart: ", filePath);
+    }
+  }
+}
+
+function createTmpImageFile(name: string, buffer: Buffer): string {
+  const tempDir = os.tmpdir();
+  const fileName = `${name}-${Date.now()}.png`;
+  const filePath = `${tempDir}/${fileName}`;
+
+  fs.writeFileSync(filePath, buffer);
+
+  return filePath;
+}
+
 /**
  * Outputs CSV of total metrics since the start of tracking them,
  * while skipping cohort analytis because that would be too complex.
@@ -48,26 +88,6 @@ function printAllTimeMonthlyReportCsvInCLI(
   for (const row of projectsReport.csv) {
     console.log(row.join(","));
   }
-}
-
-function printReportInCLI(
-  compositeReport: Record<string, Partial<TextReport & ImageChartsReport>>,
-): void {
-  for (const simpleReport of Object.values(compositeReport)) {
-    console.log();
-    if (simpleReport.text) {
-      for (const textLine of simpleReport.text) {
-        console.log(textLine);
-      }
-    }
-    if (simpleReport.imageChartsChart) {
-      console.log("- Chart: ", simpleReport.imageChartsChart.toURL());
-    }
-  }
-}
-
-function printReportTitle(text: string): void {
-  console.log(`\x1b[33m \n\n${text} \x1b[0m`);
 }
 
 cliReport().catch((e) => {
