@@ -25,8 +25,8 @@ function registerStaticFont(fileName: string, dir: string): void {
 
 function parseFontFileName(fileName: string): {
   family: string;
-  weight?: string;
-  style?: string;
+  weight: string;
+  style: string;
 } {
   const stem = fileName.split(".")[0];
   const [familyName, styleName] = stem.split("-");
