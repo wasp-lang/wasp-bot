@@ -230,7 +230,7 @@ async function createCohortRetentionHeatMap(
           ticks: {
             stepSize: 1,
             callback: (value) => `+${value}`,
-            font: { size: 12 },
+            font: { size: 12, weight: 500 },
           },
           offset: false,
           title: {
@@ -249,7 +249,7 @@ async function createCohortRetentionHeatMap(
           ticks: {
             stepSize: 1,
             callback: (value) => `#${value}`,
-            font: { size: 12 },
+            font: { size: 12, weight: 500 },
           },
           offset: false,
           title: {

@@ -1,4 +1,3 @@
-import { registerFont } from "canvas";
 import { Chart, ChartConfiguration } from "chart.js";
 import { MatrixController, MatrixElement } from "chartjs-chart-matrix";
 import {
@@ -6,30 +5,17 @@ import {
   ChartJSNodeCanvasOptions,
   MimeType,
 } from "chartjs-node-canvas";
-import * as fs from "fs";
-import * as path from "path";
+import { defaultFont, registerFonts } from "./fonts";
 
-// Font registration.
-// NOTE: Font family name is derived from the font file name
-// by removing the ".ttf" extension and replacing underscores with spaces.
-const fontDir = path.resolve(__dirname, "../../fonts");
-const fontFiles = fs
-  .readdirSync(fontDir)
-  .filter((file) => file.endsWith(".ttf"));
-for (const fontFile of fontFiles) {
-  const fontPath = path.join(fontDir, fontFile);
-  registerFont(fontPath, {
-    family: fontPath.replace(/\.ttf$/, "").replace(/_/g, " "),
-  });
-}
+// `node-canvas` init.
+registerFonts();
 
-// Chart.js initialization.
+// `chart.js` init.
 Chart.register(MatrixController, MatrixElement);
 
 // NOTE:
 // We reuse the same canvas instance for memory efficiency.
 // If different chart sizes are needed, create multiple canvas instances.
-
 const canvasConfiguration: ChartJSNodeCanvasOptions = {
   width: 800,
   height: 600,
@@ -47,7 +33,7 @@ export function renderChart(
   }
 
   configuration.options.font = {
-    family: "IBM Plex",
+    family: defaultFont,
     ...(configuration.options.font || {}),
   };
 

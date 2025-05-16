@@ -174,16 +174,12 @@ async function fetchEvents({
  *   - There might be missing events before or after the cached range
  */
 async function loadCachedEvents(): Promise<PosthogEvent[]> {
-  let cacheFileContent = "";
   try {
-    cacheFileContent = await fs.readFile(CACHE_FILE_PATH, "utf-8");
-  } catch (e) {
-    logger.error(`Error reading cache file: ${e}`);
-  }
-
-  if (cacheFileContent !== "") {
+    const cacheFileContent =
+      (await fs.readFile(CACHE_FILE_PATH, "utf-8")) || "[]";
     return JSON.parse(cacheFileContent);
-  } else {
+  } catch (e: unknown) {
+    logger.error(`Error reading cache file: ${e}`);
     return [];
   }
 }
