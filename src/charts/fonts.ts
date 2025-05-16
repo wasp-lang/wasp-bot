@@ -29,30 +29,35 @@ function parseFontFileName(fileName: string): {
   style?: string;
 } {
   const [family, other] = fileName.split("-");
-  let weight = "normal";
-  let style = "normal";
+  let weight;
+  let style;
 
   if (other.includes("Italic")) {
     style = "italic";
+  } else {
+    style = "normal";
   }
 
   if (other.includes("Thin")) {
     weight = "100";
-  }
-  if (other.includes("ExtraLight")) {
+  } else if (other.includes("ExtraLight")) {
     weight = "200";
-  }
-  if (other.includes("Light")) {
+  } else if (other.includes("Light")) {
     weight = "light";
-  }
-  if (other.includes("Medium")) {
+  } else if (other.includes("Medium")) {
     weight = "500";
-  }
-  if (other.includes("SemiBold")) {
+  } else if (other.includes("Regular")) {
+    weight = "normal";
+  } else if (other.includes("SemiBold")) {
     weight = "600";
-  }
-  if (other.includes("Bold")) {
+  } else if (other.includes("Bold")) {
     weight = "bold";
+  } else if (other.includes("ExtraBold")) {
+    weight = "800";
+  } else if (other.includes("Black")) {
+    weight = "900";
+  } else {
+    weight = "normal";
   }
 
   return {
