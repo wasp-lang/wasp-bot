@@ -4,6 +4,11 @@ import * as path from "path";
 
 export const defaultFont = "IBMPlexSans";
 
+/**
+ * Registers non-system fonts for `node-canvas`.
+ *
+ * Uses non-system fonts to ensure that charts are rendered correctly in any environment.
+ */
 export function registerFonts(): void {
   const fontDir = path.resolve(__dirname, "../../fonts");
   registerFontsFromDir(fontDir);
@@ -18,6 +23,11 @@ function registerFontsFromDir(absDirPath: string): void {
   }
 }
 
+/**
+ * Registers a static font to `node-canvas`.
+ *
+ * We use static fonts because variable fonts are not supported by `node-canvas`.
+ */
 function registerStaticFont(fileName: string, absDirPath: string): void {
   const fontPath = path.join(absDirPath, fileName);
   const fontFace = parseFontFileName(fileName);
