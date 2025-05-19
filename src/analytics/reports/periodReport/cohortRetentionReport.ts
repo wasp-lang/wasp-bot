@@ -208,6 +208,8 @@ async function createCohortRetentionHeatMap(
     },
     borderColor: "rgba(0, 0, 0, 0.1)",
     borderWidth: 1,
+    anchorY: "top",
+    anchorX: "left",
   };
 
   const chartConfiguration: ChartConfiguration<
@@ -224,38 +226,38 @@ async function createCohortRetentionHeatMap(
         x: {
           type: "linear",
           min: 0,
-          max: periods.length - 1,
+          max: periods.length,
           ticks: {
             stepSize: 1,
             callback: (value) => `+${value}`,
-            font: { size: 12 },
+            font: { size: 12, weight: 500 },
           },
-          offset: true,
+          offset: false,
           title: {
             display: true,
             text: `Cohort Progression (per ${periodName})`,
             font: {
               size: 14,
-              weight: "bold",
+              weight: 700,
             },
           },
         },
         y: {
           type: "linear",
           min: 0,
-          max: cohorts.length - 1,
+          max: cohorts.length,
           ticks: {
             stepSize: 1,
             callback: (value) => `#${value}`,
-            font: { size: 12 },
+            font: { size: 12, weight: 500 },
           },
-          offset: true,
+          offset: false,
           title: {
             display: true,
             text: "Cohort Start",
             font: {
               size: 14,
-              weight: "bold",
+              weight: 700,
             },
           },
         },
@@ -270,7 +272,7 @@ async function createCohortRetentionHeatMap(
           align: "center",
           font: {
             size: 20,
-            weight: "bold",
+            weight: 700,
           },
           padding: {
             top: 10,
@@ -325,7 +327,7 @@ const cohortRetentionChartCellLabels: Plugin<"matrix"> = {
         canvasContext.save();
         canvasContext.fillStyle =
           getFontColorForBackgroundColor(backgroundColor);
-        canvasContext.font = "12px sans-serif";
+        canvasContext.font = "12px";
         canvasContext.textAlign = "center";
         canvasContext.textBaseline = "middle";
         canvasContext.fillText(label, x + width / 2, y + height / 2);

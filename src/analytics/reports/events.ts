@@ -1,5 +1,6 @@
 import _ from "lodash";
 
+import logger from "../../utils/logger";
 import { addEventContextValueIfMissing } from "../eventContext";
 import { type PosthogEvent, tryToFetchAllCliEvents } from "../events";
 import { executionEnvs } from "../executionEnvs";
@@ -12,7 +13,7 @@ import moment from "../moment";
 export async function fetchEventsForReportGenerator(): Promise<PosthogEvent[]> {
   const allEvents = await tryToFetchAllCliEvents();
 
-  console.log("\nNumber of CLI events fetched:", allEvents.length);
+  logger.info("\nNumber of CLI events fetched:", allEvents.length);
 
   const waspTeamFilters = [isNotWaspTeamEvent, isNotMihoPrivateCIServerEvent];
   const nonWaspTeamEvents = waspTeamFilters.reduce(
