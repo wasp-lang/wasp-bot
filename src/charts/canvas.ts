@@ -5,6 +5,7 @@ import {
   ChartJSNodeCanvasOptions,
   MimeType,
 } from "chartjs-node-canvas";
+import _ from "lodash";
 import { defaultFont, registerFonts } from "./fonts";
 
 // `node-canvas` init.
@@ -28,14 +29,11 @@ export function renderChart(
   configuration: ChartConfiguration,
   mimeType?: MimeType,
 ): Promise<Buffer> {
-  if (!configuration.options) {
-    configuration.options = {};
-  }
-
-  configuration.options.font = {
-    family: defaultFont,
-    ...(configuration.options.font || {}),
-  };
+  _.set(
+    configuration,
+    "options.font.family",
+    _.get(configuration, "options.font.family") ?? defaultFont,
+  );
 
   return canvas.renderToBuffer(configuration, mimeType);
 }
