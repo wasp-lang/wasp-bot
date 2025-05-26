@@ -19,7 +19,6 @@ const fontFileExtensions = [".ttf", ".otf", ".woff", ".woff2"];
  */
 export function registerEmbeddedFonts(): void {
   const fontsDir = path.resolve(__dirname, "../../../fonts");
-  console.info(`Registering embedded fonts from "${fontsDir}" directory`);
   registerFontsFromDir(fontsDir);
 }
 
@@ -32,10 +31,6 @@ export function registerEmbeddedFonts(): void {
  */
 function registerFontsFromDir(absDirPath: string): void {
   const fontFiles = collectFontFilesRecursively(absDirPath);
-
-  console.info(
-    `Registering ${fontFiles.length} font files from "${absDirPath}" directory: ${fontFiles.join(", ")}`,
-  );
   for (const fontFile of fontFiles) {
     const fileName = path.basename(fontFile);
     const fontFace = parseFontFileName(fileName);
