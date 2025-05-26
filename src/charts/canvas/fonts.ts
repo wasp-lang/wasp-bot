@@ -29,20 +29,20 @@ export function registerEmbeddedFonts(): void {
  * are not usable with `node-canvas` and will be ignored or may cause unexpected behavior.
  */
 function registerFontsFromDir(absDirPath: string): void {
-  const fontFiles = collectFontFilesRecursively(absDirPath);
-  for (const fontFile of fontFiles) {
-    const fileName = path.basename(fontFile);
+  const absFontPaths = collectFontsAbsPathRecursively(absDirPath);
+  for (const absFontPath of absFontPaths) {
+    const fileName = path.basename(absFontPath);
     const fontFace = parseFontFileName(fileName);
 
-    registerFont(fontFile, fontFace);
+    registerFont(absFontPath, fontFace);
   }
 }
 
 /**
- * Recursively collects all font absolute paths from a directory.
+ * Recursively collects absolute path of all font files from a directory.
  */
-function collectFontFilesRecursively(absDirPath: string): string[] {
-  let fontFileNames: string[] = [];
+function collectFontsAbsPathRecursively(absDirPath: string): string[] {
+  let fontsAbsPath: string[] = [];
 
   const fileNames = fs.readdirSync(absDirPath);
   for (const fileName of fileNames) {
@@ -50,15 +50,15 @@ function collectFontFilesRecursively(absDirPath: string): string[] {
     const stat = fs.statSync(absFilePath);
 
     if (stat.isDirectory()) {
-      fontFileNames = fontFileNames.concat(
-        collectFontFilesRecursively(absFilePath),
+      fontsAbsPath = fontsAbsPath.concat(
+        collectFontsAbsPathRecursively(absFilePath),
       );
     } else if (fontFileExtensions.some((ext) => absFilePath.endsWith(ext))) {
-      fontFileNames.push(absFilePath);
+      fontsAbsPath.push(absFilePath);
     }
   }
 
-  return fontFileNames;
+  return fontsAbsPath;
 }
 
 interface FontFace {
