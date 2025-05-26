@@ -12,9 +12,8 @@ const fontFileExtensions = [".ttf", ".otf", ".woff", ".woff2"];
  * across all environments (e.g., Docker, CI, Linux, macOS, Windows).
  *
  * Benefits of using embedded fonts:
- * - Ensures charts and text render the same regardless of OS or available system fonts
+ * - Ensures charts and text render the same regardless of OS or available system fonts. No issues due to missing or substituted fonts.
  * - Avoids reliance on external font packages in Docker or CI environments
- * - Prevents rendering issues due to missing or substituted fonts
  * - Allows use of fonts specifically chosen for charts and data visualization
  */
 export function registerEmbeddedFonts(): void {
