@@ -27,8 +27,7 @@ export function registerEmbeddedFonts(): void {
  * are not usable with `node-canvas` and will be ignored or may cause unexpected behavior.
  */
 function registerFontsFromDir(absDirPath: string): void {
-  const absFontPaths = collectAbsFontPathsRecursively(absDirPath);
-  for (const absFontPath of absFontPaths) {
+  for (const absFontPath of collectAbsFontPathsRecursively(absDirPath)) {
     const fileName = path.basename(absFontPath);
     const fontFace = parseFontFileName(fileName);
 
@@ -40,23 +39,15 @@ function registerFontsFromDir(absDirPath: string): void {
  * Recursively collects absolute path of all font files from a directory.
  */
 function collectAbsFontPathsRecursively(absDirPath: string): string[] {
-  let absFontPaths: string[] = [];
-
-  const fileNames = fs.readdirSync(absDirPath);
-  for (const fileName of fileNames) {
-    const absFontPath = path.join(absDirPath, fileName);
-    const stat = fs.statSync(absFontPath);
-
-    if (stat.isDirectory()) {
-      absFontPaths = absFontPaths.concat(
-        collectAbsFontPathsRecursively(absFontPath),
-      );
-    } else if (fontFileExtensions.some((ext) => absFontPath.endsWith(ext))) {
-      absFontPaths.push(absFontPath);
-    }
-  }
-
-  return absFontPaths;
+  return fs
+    .readdirSync(absDirPath, {
+      recursive: true,
+      encoding: "utf8",
+    })
+    .map((fileName) => path.join(absDirPath, fileName))
+    .filter((fileName) =>
+      fontFileExtensions.some((ext) => fileName.endsWith(ext)),
+    );
 }
 
 interface FontFace {
