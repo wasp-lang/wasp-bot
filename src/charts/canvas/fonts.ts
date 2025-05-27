@@ -8,13 +8,11 @@ const fontFileExtensions = [".ttf", ".otf", ".woff", ".woff2"];
 /**
  * Registers embedded fonts for use with `node-canvas`.
  *
- * Uses embedded fonts instead of system fonts to ensure consistent, predictable rendering
- * across all environments (e.g., Docker, CI, Linux, macOS, Windows).
+ * Embedded fonts are fonts that we bundle together with the application.
+ * They can be found in the [`/fonts` directory](../../../fonts).
  *
- * Benefits of using embedded fonts:
- * - Ensures charts and text render the same regardless of OS or available system fonts. No issues due to missing or substituted fonts.
- * - Avoids reliance on external font packages in Docker or CI environments
- * - Allows use of fonts specifically chosen for charts and data visualization
+ * We use embedded fonts instead of system fonts to ensure consistent, predictable rendering
+ * across all environments (e.g., Docker, CI, Linux, macOS, Windows).
  */
 export function registerEmbeddedFonts(): void {
   const fontsDir = path.resolve(__dirname, "../../../fonts");
@@ -101,14 +99,13 @@ function parseFontStyle(fontStyle: string): Omit<FontFace, "family"> {
       ).join(", ")}`,
     );
   }
-
   return fontStyleToFontAttributes[fontStyle];
 }
 
 function isValidFontStyle(
-  styleName: string,
-): styleName is keyof typeof fontStyleToFontAttributes {
-  return Object.keys(fontStyleToFontAttributes).includes(styleName);
+  fontStyle: string,
+): fontStyle is keyof typeof fontStyleToFontAttributes {
+  return Object.keys(fontStyleToFontAttributes).includes(fontStyle);
 }
 
 const fontStyleToFontAttributes = {
