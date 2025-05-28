@@ -5,7 +5,7 @@ WORKDIR /app
 RUN apt-get update -qq && \
   # Install dependencies for building native node modules (added by fly.io by default).
   apt-get install --no-install-recommends -y build-essential node-gyp pkg-config python-is-python3 \
-  # Install dependencies for node-canvas (used by chartjs-node-canvas)
+  # Install dependencies for node-canvas (used by chartjs-node-canvas).
   libcairo2-dev libpango1.0-dev
 
 # Copy package files
