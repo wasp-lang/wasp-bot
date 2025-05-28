@@ -11,6 +11,7 @@ const fontFileExtensions = [".ttf", ".otf", ".woff", ".woff2"];
  * Embedded fonts are fonts that we bundle together with the application.
  * They can be found in the [`/fonts` directory](../../../fonts).
  *
+ * These fonts are available in addition to the system fonts.
  * We use embedded fonts instead of system fonts to ensure consistent, predictable rendering
  * across all environments (e.g., Docker, CI, Linux, macOS, Windows).
  */
