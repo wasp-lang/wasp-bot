@@ -74,7 +74,15 @@ interface FontFace {
 function parseFontFileName(fileName: string): FontFace {
   const stem = fileName.split(".")[0];
   const [family, style] = stem.split("-");
-  const fontAttributes = parseFontStyle(style);
+
+  const fontAttributes = fontStyleToFontAttributes[style];
+  if (!fontAttributes) {
+    throw new Error(
+      `Font style "${style}" is not recognized. Supported font styles are: ${Object.keys(
+        fontStyleToFontAttributes,
+      ).join(", ")}`,
+    );
+  }
 
   return {
     family,
@@ -82,24 +90,9 @@ function parseFontFileName(fileName: string): FontFace {
   };
 }
 
-function parseFontStyle(fontStyle: string): Omit<FontFace, "family"> {
-  if (!isValidFontStyle(fontStyle)) {
-    throw new Error(
-      `Font style "${fontStyle}" is not recognized. Supported font styles are: ${Object.keys(
-        fontStyleToFontAttributes,
-      ).join(", ")}`,
-    );
-  }
-  return fontStyleToFontAttributes[fontStyle];
-}
-
-function isValidFontStyle(
-  fontStyle: string,
-): fontStyle is keyof typeof fontStyleToFontAttributes {
-  return Object.keys(fontStyleToFontAttributes).includes(fontStyle);
-}
-
-const fontStyleToFontAttributes = {
+const fontStyleToFontAttributes: {
+  [fontStyle: string]: Omit<FontFace, "family">;
+} = {
   Thin: { weight: "100", style: "normal" },
   ThinItalic: { weight: "100", style: "italic" },
   ExtraLight: { weight: "200", style: "normal" },
@@ -118,4 +111,4 @@ const fontStyleToFontAttributes = {
   ExtraBoldItalic: { weight: "800", style: "italic" },
   Black: { weight: "900", style: "normal" },
   BlackItalic: { weight: "900", style: "italic" },
-} as const;
+};
