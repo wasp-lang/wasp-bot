@@ -12,7 +12,6 @@ import {
 import { matrixAutoScaleCellSize } from "../../../charts/plugins/matrix";
 import { PosthogEvent } from "../../events";
 import { groupEventsByExecutionEnv } from "../../executionEnvs";
-import { createCrossTable } from "../../table";
 import { fetchEventsForReportGenerator } from "../events";
 import { CohortRetentionReport } from "../reports";
 import { getUniqueUserIds, groupEventsByUser } from "../utils";
@@ -32,35 +31,23 @@ export async function generateCohortRetentionReport(
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
   const periods = calcLastNPeriods(numPeriods, periodName);
 
-  const cohorts = createUserActivityCohorts(events, periods);
-
   const periodNameShort = periodName[0];
-  const table = createCrossTable({
-    head: ["", ...periods.map((_, i) => `+${i}${periodNameShort}`)],
-    rows: cohorts.map((cohort, i) => ({
-      [`${periodNameShort} #${i}`]: calcCohortRetentionTableRow(cohort),
-    })),
-  });
-
-  const fmt = (m: Moment) => m.format("DD-MM-YY");
   const firstPeriod = periods[0];
   const lastPeriod = periods.at(-1)!;
+
+  const formatPeriod = (period: Period) => {
+    const formatMoment = (m: Moment) => m.format("DD-MM-YY");
+    return `${formatMoment(period[0])} - ${formatMoment(period[1])}`;
+  };
 
   return {
     text: [
       "==== Cohort Retention ====",
-      "```",
-      table.toString(),
-      "```",
-      `Period of ${periodNameShort}  #0: ${fmt(firstPeriod[0])} - ${fmt(
-        firstPeriod[1],
-      )}`,
-      `Period of ${periodNameShort} #${periods.length - 1}: ${fmt(
-        lastPeriod[0],
-      )} - ${fmt(lastPeriod[1])}`,
+      `Period of ${periodNameShort} #${String(0).padStart(2)}: ${formatPeriod(firstPeriod)}`,
+      `Period of ${periodNameShort} #${String(periods.length - 1).padStart(2)}: ${formatPeriod(lastPeriod)}`,
     ],
     bufferChart: await createCohortRetentionHeatMap(
-      cohorts,
+      createUserActivityCohorts(events, periods),
       periods,
       periodName,
     ),
@@ -128,28 +115,6 @@ function createUniqueUsersCohort(
         cohortUniqueUsers.intersection(periodUniqueUsers);
       return cohortUniqueUsersInPeriod.size;
     }),
-  ];
-}
-
-/**
- * @param cohort [num_users_at_start, num_users_after_1_period, ...]
- * @returns [num_users_at_start, num_and_perc_users_after_1_period, ...]
- *
- * Examples of returned value:
- *    - `["10", "6 (60%)", "3 (30%)", "0 (0%)"]`
- *    - `["0", "N/A", "N/A"]`
- */
-function calcCohortRetentionTableRow(cohort: number[]): string[] {
-  const [numUsersAtStart, ...numUsersThroughPeriods] = cohort;
-  const numUsersWithRetentionPercentagesThroughPeriods =
-    numUsersThroughPeriods.map((n) =>
-      numUsersAtStart === 0
-        ? "N/A"
-        : `${n} (${Math.round((n / numUsersAtStart) * 100)}%)`,
-    );
-  return [
-    numUsersAtStart.toString(),
-    ...numUsersWithRetentionPercentagesThroughPeriods,
   ];
 }
 
