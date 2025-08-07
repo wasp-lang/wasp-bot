@@ -43,8 +43,8 @@ export async function generateCohortRetentionReport(
   return {
     text: [
       "==== Cohort Retention ====",
-      `Period of ${periodNameShort} ${`#${0}`.padStart(2)}: ${formatPeriod(firstPeriod)}`,
-      `Period of ${periodNameShort} ${`#${periods.length - 1}`.padStart(2)}: ${formatPeriod(lastPeriod)}`,
+      `Period of ${periodNameShort} ${`#${0}`.padStart(3)}: ${formatPeriod(firstPeriod)}`,
+      `Period of ${periodNameShort} ${`#${periods.length - 1}`.padStart(3)}: ${formatPeriod(lastPeriod)}`,
     ],
     bufferChart: await createCohortRetentionHeatMap(
       createUserActivityCohorts(events, periods),
