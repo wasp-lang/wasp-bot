@@ -5,13 +5,13 @@ import { getAnalyticsErrorMessage } from "../../../analytics/errors";
 import { fetchEventsForReportGenerator } from "../../../analytics/reports";
 import logger from "../../../utils/logger";
 import { REPORTS_CHANNEL_ID } from "../../server-ids";
-import { fetchTextChannelById } from "../../utils";
+import { resolveTextChannelById } from "../../utils";
 import { sendAnalyticsReportToReportsChannel } from "./common";
 
 export async function sendDailyAnalyticsReport(
   discordClient: Discord.Client,
 ): Promise<void> {
-  const reportsChannel = await fetchTextChannelById(
+  const reportsChannel = resolveTextChannelById(
     discordClient,
     REPORTS_CHANNEL_ID,
   );
@@ -27,6 +27,7 @@ export async function sendDailyAnalyticsReport(
 
     await sendAnalyticsReportToReportsChannel(discordClient, "total", events);
     await sendAnalyticsReportToReportsChannel(discordClient, "daily", events);
+
     if (isFirstDayOfWeek()) {
       await sendAnalyticsReportToReportsChannel(
         discordClient,

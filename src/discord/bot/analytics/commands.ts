@@ -1,7 +1,7 @@
 import Discord from "discord.js";
 
 import { REPORTS_CHANNEL_ID } from "../../server-ids";
-import { fetchTextChannelById } from "../../utils";
+import { resolveTextChannelById } from "../../utils";
 import {
   AnalyticsReportType,
   sendAnalyticsReportToReportsChannel,
@@ -9,11 +9,11 @@ import {
 
 const ANALYTICS_PREFIX = "!analytics";
 
-export function isAnalyticsCommand(message: Discord.Message): boolean {
+export function isAnalyticsCommand(message: Discord.Message<true>): boolean {
   return hasAnalyticsPrefix(message) && isReportsChannel(message.channel);
 }
 
-function hasAnalyticsPrefix(message: Discord.Message): boolean {
+function hasAnalyticsPrefix(message: Discord.Message<true>): boolean {
   return new RegExp(`^${ANALYTICS_PREFIX}(\\s|$)`).test(message.content);
 }
 
@@ -22,22 +22,21 @@ function isReportsChannel(channel: Discord.Channel): boolean {
 }
 
 export async function handleAnalyticsCommand(
-  discordClient: Discord.Client,
-  message: Discord.Message,
+  message: Discord.Message<true>,
 ): Promise<void> {
   const commandArgs = extractCommandArgs(message.content);
   const analyticsCommand = parseAnalyticsCommand(commandArgs);
   if (!analyticsCommand) {
-    await sendAnalyticsHelp(discordClient);
+    await sendAnalyticsHelp(message.client);
     return;
   }
 
   const { period, numPeriods } = analyticsCommand;
   if (period === "total") {
-    await sendAnalyticsReportToReportsChannel(discordClient, "total");
+    await sendAnalyticsReportToReportsChannel(message.client, "total");
   } else {
     await sendAnalyticsReportToReportsChannel(
-      discordClient,
+      message.client,
       period,
       undefined,
       numPeriods,
@@ -75,7 +74,7 @@ function parseAnalyticsCommand(
 }
 
 async function sendAnalyticsHelp(discordClient: Discord.Client): Promise<void> {
-  const channel = await fetchTextChannelById(discordClient, REPORTS_CHANNEL_ID);
+  const channel = resolveTextChannelById(discordClient, REPORTS_CHANNEL_ID);
   await channel.send(
     `Available commands:
   ${ANALYTICS_PREFIX} daily <num-of-periods>

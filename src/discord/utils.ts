@@ -2,15 +2,23 @@ import Discord from "discord.js";
 
 import { GUILD_ID } from "./server-ids";
 
-export async function fetchTextChannelById(
+export function resolveTextChannelById(
   discordClient: Discord.Client,
   channelId: Discord.Snowflake,
-): Promise<Discord.TextChannel> {
-  const guild = await discordClient.guilds.fetch(GUILD_ID);
+): Discord.TextChannel {
+  const guild = discordClient.guilds.resolve(GUILD_ID);
+
+  if (!guild) {
+    throw new Error(`Bot is not part of Guild [${GUILD_ID}]`);
+  }
+
   const channel = guild.channels.resolve(channelId);
 
-  if (!channel || !(channel instanceof Discord.TextChannel)) {
-    throw new Error(`Channel ${channelId} is not a text channel`);
+  if (!channel) {
+    throw new Error(`Channel [${channelId}] not found in guild [${GUILD_ID}]`);
+  }
+  if (channel.type !== Discord.ChannelType.GuildText) {
+    throw new Error(`Channel [${channelId}] is not a text channel`);
   }
 
   return channel;

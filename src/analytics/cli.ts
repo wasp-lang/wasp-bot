@@ -1,7 +1,6 @@
 import fs from "fs";
 import os from "os";
 import logger from "../utils/logger";
-import { getAnalyticsErrorMessage } from "./errors";
 import * as reports from "./reports";
 import {
   AllTimePeriodReport,
@@ -91,6 +90,5 @@ function printAllTimeMonthlyReportCsvInCLI(
 }
 
 cliReport().catch((e) => {
-  const message = getAnalyticsErrorMessage(e);
-  logger.error(message);
+  logger.error(e);
 });

@@ -8,7 +8,7 @@ import {
   TextReport,
 } from "../../../analytics/reports/reports";
 import { REPORTS_CHANNEL_ID } from "../../server-ids";
-import { fetchTextChannelById } from "../../utils";
+import { resolveTextChannelById } from "../../utils";
 
 export type AnalyticsReportType = "daily" | "weekly" | "monthly" | "total";
 
@@ -18,7 +18,7 @@ export async function sendAnalyticsReportToReportsChannel(
   prefetchedEvents: PosthogEvent[] | undefined = undefined,
   numPeriods: number | undefined = undefined,
 ): Promise<void> {
-  const waspReportsChannel = await fetchTextChannelById(
+  const waspReportsChannel = resolveTextChannelById(
     discordClient,
     REPORTS_CHANNEL_ID,
   );
@@ -65,8 +65,8 @@ const DISCORD_MESSAGE_TOO_LONG_SUFFIX =
 
 function convertSimpleReportToDiscordMessage(
   report: Partial<TextReport & ChartReport & ImageChartsReport>,
-): Discord.MessageOptions {
-  const options: Discord.MessageOptions = {};
+): Discord.MessageCreateOptions {
+  const options: Discord.MessageCreateOptions = {};
 
   if (report.text) {
     let content: string = report.text.join("\n");
@@ -81,16 +81,13 @@ function convertSimpleReportToDiscordMessage(
   }
 
   if (report.imageChartsChart) {
-    const embed = new Discord.MessageEmbed();
+    const embed = new Discord.EmbedBuilder();
     embed.setImage(report.imageChartsChart.toURL());
-    options.embed = embed;
+    options.embeds = [embed];
   }
 
   if (report.bufferChart) {
-    if (!options.files) {
-      options.files = [];
-    }
-    options.files.push(new Discord.MessageAttachment(report.bufferChart));
+    options.files = [new Discord.AttachmentBuilder(report.bufferChart)];
   }
 
   return options;
