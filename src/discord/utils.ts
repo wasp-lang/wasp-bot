@@ -6,13 +6,7 @@ export function resolveTextChannelById(
   discordClient: Discord.Client,
   channelId: Discord.Snowflake,
 ): Discord.TextChannel {
-  const guild = discordClient.guilds.resolve(GUILD_ID);
-
-  if (!guild) {
-    throw new Error(`Bot is not part of Guild [${GUILD_ID}]`);
-  }
-
-  const channel = guild.channels.resolve(channelId);
+  const channel = discordClient.channels.resolve(channelId);
 
   if (!channel) {
     throw new Error(`Channel [${channelId}] not found in guild [${GUILD_ID}]`);
