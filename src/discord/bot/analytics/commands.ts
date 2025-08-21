@@ -9,11 +9,11 @@ import {
 
 const ANALYTICS_PREFIX = "!analytics";
 
-export function isAnalyticsCommand(message: Discord.Message<true>): boolean {
+export function isAnalyticsCommand(message: Discord.GuildMessage): boolean {
   return hasAnalyticsPrefix(message) && isReportsChannel(message.channel);
 }
 
-function hasAnalyticsPrefix(message: Discord.Message<true>): boolean {
+function hasAnalyticsPrefix(message: Discord.GuildMessage): boolean {
   return new RegExp(`^${ANALYTICS_PREFIX}(\\s|$)`).test(message.content);
 }
 
@@ -22,7 +22,7 @@ function isReportsChannel(channel: Discord.Channel): boolean {
 }
 
 export async function handleAnalyticsCommand(
-  message: Discord.Message<true>,
+  message: Discord.GuildMessage,
 ): Promise<void> {
   const commandArgs = extractCommandArgs(message.content);
   const analyticsCommand = parseAnalyticsCommand(commandArgs);

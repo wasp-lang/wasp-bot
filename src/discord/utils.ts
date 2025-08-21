@@ -9,7 +9,9 @@ export function resolveTextChannelById(
   const channel = discordClient.channels.resolve(channelId);
 
   if (!channel) {
-    throw new Error(`Channel [${channelId}] not found in guild [${GUILD_ID}]`);
+    throw new Error(
+      `Bot is not in Channel [${channelId}] of guild [${GUILD_ID}]`,
+    );
   }
   if (channel.type !== Discord.ChannelType.GuildText) {
     throw new Error(`Channel [${channelId}] is not a text channel`);

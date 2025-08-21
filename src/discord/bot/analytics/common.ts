@@ -7,6 +7,7 @@ import {
   ImageChartsReport,
   TextReport,
 } from "../../../analytics/reports/reports";
+import { Mutable } from "../../../types/helpers";
 import { REPORTS_CHANNEL_ID } from "../../server-ids";
 import { resolveTextChannelById } from "../../utils";
 
@@ -67,6 +68,8 @@ function convertSimpleReportToDiscordMessage(
   report: Partial<TextReport & ChartReport & ImageChartsReport>,
 ): Discord.MessageCreateOptions {
   const options: Discord.MessageCreateOptions = {};
+  const embeds: Mutable<Discord.MessageCreateOptions["embeds"]> = [];
+  const files: Mutable<Discord.MessageCreateOptions["files"]> = [];
 
   if (report.text) {
     let content: string = report.text.join("\n");
@@ -81,15 +84,16 @@ function convertSimpleReportToDiscordMessage(
   }
 
   if (report.imageChartsChart) {
-    const embed = new Discord.EmbedBuilder().setImage(
-      report.imageChartsChart.toURL(),
+    embeds.push(
+      new Discord.EmbedBuilder().setImage(report.imageChartsChart.toURL()),
     );
-    options.embeds = [embed];
   }
 
   if (report.bufferChart) {
-    options.files = [report.bufferChart];
+    files.push(report.bufferChart);
   }
 
+  options.embeds = embeds;
+  options.files = files;
   return options;
 }

@@ -4,7 +4,7 @@ import logger from "../../utils/logger";
 import { GUEST_ROLE_ID, INTRODUCTIONS_CHANNEL_ID } from "../server-ids";
 
 export async function isIntroductionMessage(
-  message: Discord.Message<true>,
+  message: Discord.GuildMessage,
 ): Promise<boolean> {
   return (
     isIntroductionsChannel(message.channel) && (await isGuestUser(message))
@@ -15,13 +15,13 @@ function isIntroductionsChannel(channel: Discord.Channel): boolean {
   return channel.id.toString() === INTRODUCTIONS_CHANNEL_ID;
 }
 
-async function isGuestUser(message: Discord.Message<true>): Promise<boolean> {
+async function isGuestUser(message: Discord.GuildMessage): Promise<boolean> {
   const member = await message.guild.members.fetch(message.author.id);
-  return !!member.roles.resolve(GUEST_ROLE_ID);
+  return Boolean(member.roles.resolve(GUEST_ROLE_ID));
 }
 
 export async function handleIntroductionMessage(
-  message: Discord.Message<true>,
+  message: Discord.GuildMessage,
 ): Promise<void> {
   const trimmedMessageLength = message.content.trim().length;
   if (trimmedMessageLength < 20) {
@@ -39,6 +39,6 @@ export async function handleIntroductionMessage(
     );
   } catch (error) {
     logger.error(error);
-    await message.reply(`${error}`);
+    await message.reply(`Error: ${error}`);
   }
 }

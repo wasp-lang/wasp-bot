@@ -29,11 +29,11 @@ export async function start(): Promise<void> {
     ],
   });
 
-  discordClient.on(Discord.Events.ClientReady, (discordClient) => {
-    logger.info(`Logged in as: ${discordClient.user.tag}.`);
+  discordClient.on(Discord.Events.ClientReady, (readyDiscordClient) => {
+    logger.info(`Logged in as: ${readyDiscordClient.user.tag}.`);
 
-    scheduleDailyStandup(discordClient);
-    scheduleDailyAnalyticsReport(discordClient);
+    scheduleDailyStandup(readyDiscordClient);
+    scheduleDailyAnalyticsReport(readyDiscordClient);
   });
   discordClient.on(Discord.Events.MessageCreate, handleGuildMessage);
   discordClient.on(Discord.Events.MessageUpdate, (_oldMessage, newMessage) =>
