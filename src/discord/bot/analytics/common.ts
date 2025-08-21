@@ -7,9 +7,9 @@ import {
   ImageChartsReport,
   TextReport,
 } from "../../../analytics/reports/reports";
-import { Mutable } from "../../../types/helpers";
+import { Writable } from "../../../types/helpers";
 import { REPORTS_CHANNEL_ID } from "../../server-ids";
-import { resolveTextChannelById } from "../../utils";
+import { fetchTextChannelById } from "../../utils";
 
 export type AnalyticsReportType = "daily" | "weekly" | "monthly" | "total";
 
@@ -19,7 +19,7 @@ export async function sendAnalyticsReportToReportsChannel(
   prefetchedEvents: PosthogEvent[] | undefined = undefined,
   numPeriods: number | undefined = undefined,
 ): Promise<void> {
-  const waspReportsChannel = resolveTextChannelById(
+  const waspReportsChannel = await fetchTextChannelById(
     discordClient,
     REPORTS_CHANNEL_ID,
   );
@@ -68,8 +68,8 @@ function convertSimpleReportToDiscordMessage(
   report: Partial<TextReport & ChartReport & ImageChartsReport>,
 ): Discord.MessageCreateOptions {
   const options: Discord.MessageCreateOptions = {};
-  const embeds: Mutable<Discord.MessageCreateOptions["embeds"]> = [];
-  const files: Mutable<Discord.MessageCreateOptions["files"]> = [];
+  const embeds: Writable<Discord.MessageCreateOptions["embeds"]> = [];
+  const files: Writable<Discord.MessageCreateOptions["files"]> = [];
 
   if (report.text) {
     let content: string = report.text.join("\n");

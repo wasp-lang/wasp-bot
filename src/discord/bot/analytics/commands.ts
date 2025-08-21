@@ -1,7 +1,7 @@
 import Discord from "discord.js";
 
 import { REPORTS_CHANNEL_ID } from "../../server-ids";
-import { resolveTextChannelById } from "../../utils";
+import { fetchTextChannelById } from "../../utils";
 import {
   AnalyticsReportType,
   sendAnalyticsReportToReportsChannel,
@@ -74,7 +74,7 @@ function parseAnalyticsCommand(
 }
 
 async function sendAnalyticsHelp(discordClient: Discord.Client): Promise<void> {
-  const channel = resolveTextChannelById(discordClient, REPORTS_CHANNEL_ID);
+  const channel = await fetchTextChannelById(discordClient, REPORTS_CHANNEL_ID);
   await channel.send(
     `Available commands:
   ${ANALYTICS_PREFIX} daily <num-of-periods>

@@ -1,7 +1,7 @@
-export type Mutable<T> = {
-  -readonly [P in keyof T]: T[P];
+export type Writable<T> = {
+  -readonly [K in keyof T]: T[K];
 };
 
-export type DeepMutable<T> = {
-  -readonly [P in keyof T]: DeepMutable<T[P]>;
+export type DeepWritable<T> = {
+  -readonly [K in keyof T]: DeepWritable<T[K]>;
 };

@@ -3,12 +3,12 @@ import InspirationalQuotes from "inspirational-quotes";
 import _ from "lodash";
 
 import { DAILY_STANDUP_CHANNEL_ID } from "../server-ids";
-import { resolveTextChannelById } from "../utils";
+import { fetchTextChannelById } from "../utils";
 
 export async function initiateDailyStandup(
   discordClient: Discord.Client,
 ): Promise<void> {
-  const dailyStandupChannel = resolveTextChannelById(
+  const dailyStandupChannel = await fetchTextChannelById(
     discordClient,
     DAILY_STANDUP_CHANNEL_ID,
   );
