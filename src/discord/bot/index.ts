@@ -48,7 +48,7 @@ async function handleGuildMessage(message: Discord.Message): Promise<void> {
     return;
   }
 
-  // Message sent inside of the server channel, i.e. not a DM, group chat, etc.
+  // Messages sent in DM channels
   if (!message.inGuild()) {
     return;
   }
