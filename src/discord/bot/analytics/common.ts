@@ -81,13 +81,14 @@ function convertSimpleReportToDiscordMessage(
   }
 
   if (report.imageChartsChart) {
-    const embed = new Discord.EmbedBuilder();
-    embed.setImage(report.imageChartsChart.toURL());
+    const embed = new Discord.EmbedBuilder().setImage(
+      report.imageChartsChart.toURL(),
+    );
     options.embeds = [embed];
   }
 
   if (report.bufferChart) {
-    options.files = [new Discord.AttachmentBuilder(report.bufferChart)];
+    options.files = [report.bufferChart];
   }
 
   return options;
