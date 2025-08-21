@@ -89,6 +89,6 @@ function printAllTimeMonthlyReportCsvInCLI(
   }
 }
 
-cliReport().catch((e) => {
-  logger.error(e);
+cliReport().catch((error) => {
+  logger.error(error);
 });
