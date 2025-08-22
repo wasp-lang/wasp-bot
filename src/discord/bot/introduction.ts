@@ -2,9 +2,10 @@ import Discord from "discord.js";
 
 import logger from "../../utils/logger";
 import { GUEST_ROLE_ID, INTRODUCTIONS_CHANNEL_ID } from "../server-ids";
+import { GuildMessage } from "../types";
 
 export async function isIntroductionMessage(
-  message: Discord.GuildMessage,
+  message: GuildMessage,
 ): Promise<boolean> {
   return (
     isIntroductionsChannel(message.channel) && (await isGuestUser(message))
@@ -15,13 +16,13 @@ function isIntroductionsChannel(channel: Discord.Channel): boolean {
   return channel.id.toString() === INTRODUCTIONS_CHANNEL_ID;
 }
 
-async function isGuestUser(message: Discord.GuildMessage): Promise<boolean> {
+async function isGuestUser(message: GuildMessage): Promise<boolean> {
   const member = await message.guild.members.fetch(message.author.id);
   return Boolean(member.roles.resolve(GUEST_ROLE_ID));
 }
 
 export async function handleIntroductionMessage(
-  message: Discord.GuildMessage,
+  message: GuildMessage,
 ): Promise<void> {
   const trimmedMessageLength = message.content.trim().length;
   if (trimmedMessageLength < 20) {
