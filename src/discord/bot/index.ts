@@ -19,6 +19,12 @@ dotenvConfig();
 const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const TIME_ZONE = "Europe/Zagreb";
 
+/**
+ * NOTE:
+ * To what Discord refers to as "Server" in the application
+ * is referred to as "Guild" in the Discord API.
+ */
+
 export async function start(): Promise<void> {
   const discordClient = new Discord.Client({
     intents: [
