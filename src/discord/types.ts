@@ -1,3 +1,3 @@
-import ExternalDiscord from "discord.js";
+import Discord from "discord.js";
 
-export type GuildMessage = ExternalDiscord.Message<true>;
+export type GuildMessage = Discord.Message<true>;
