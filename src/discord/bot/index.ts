@@ -27,6 +27,10 @@ const TIME_ZONE = "Europe/Zagreb";
 
 export async function start(): Promise<void> {
   const discordClient = new Discord.Client({
+    // NOTE:
+    // We also need to enable Privileged Gateway Intents in the Discord Developer Portal.
+    // As of now those are: `Server Members Intent` and `Message Content Intent`
+    // See: https://discordjs.guide/popular-topics/intents.html#gateway-intents
     intents: [
       Discord.GatewayIntentBits.Guilds,
       Discord.GatewayIntentBits.GuildMessages,
@@ -35,11 +39,11 @@ export async function start(): Promise<void> {
     ],
   });
 
-  discordClient.on(Discord.Events.ClientReady, (readyDiscordClient) => {
-    logger.info(`Logged in as: ${readyDiscordClient.user.tag}.`);
+  discordClient.on(Discord.Events.ClientReady, (startedDiscordClient) => {
+    logger.info(`Logged in as: ${startedDiscordClient.user.tag}.`);
 
-    scheduleDailyStandup(readyDiscordClient);
-    scheduleDailyAnalyticsReport(readyDiscordClient);
+    scheduleDailyStandup(startedDiscordClient);
+    scheduleDailyAnalyticsReport(startedDiscordClient);
   });
   discordClient.on(Discord.Events.MessageCreate, handleGuildMessage);
   discordClient.on(Discord.Events.MessageUpdate, (_oldMessage, newMessage) =>
@@ -54,7 +58,7 @@ async function handleGuildMessage(message: Discord.Message): Promise<void> {
     return;
   }
 
-  // Messages sent in DM channels
+  // Skip messages sent in the DM channels
   if (!message.inGuild()) {
     return;
   }

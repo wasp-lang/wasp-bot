@@ -18,7 +18,7 @@ function isIntroductionsChannel(channel: Discord.Channel): boolean {
 
 async function isGuestUser(message: GuildMessage): Promise<boolean> {
   const member = await message.guild.members.fetch(message.author.id);
-  return Boolean(member.roles.resolve(GUEST_ROLE_ID));
+  return member.roles.resolve(GUEST_ROLE_ID) !== null;
 }
 
 export async function handleIntroductionMessage(
