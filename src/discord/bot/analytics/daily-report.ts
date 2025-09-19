@@ -1,7 +1,6 @@
 import Discord from "discord.js";
 import moment from "moment";
 
-import { getAnalyticsErrorMessage } from "../../../analytics/errors";
 import { fetchEventsForReportGenerator } from "../../../analytics/reports";
 import logger from "../../../utils/logger";
 import { REPORTS_CHANNEL_ID } from "../../server-ids";
@@ -27,6 +26,7 @@ export async function sendDailyAnalyticsReport(
 
     await sendAnalyticsReportToReportsChannel(discordClient, "total", events);
     await sendAnalyticsReportToReportsChannel(discordClient, "daily", events);
+
     if (isFirstDayOfWeek()) {
       await sendAnalyticsReportToReportsChannel(
         discordClient,
@@ -41,11 +41,13 @@ export async function sendDailyAnalyticsReport(
         events,
       );
     }
-  } catch (e) {
-    logger.error(e);
-    const message = getAnalyticsErrorMessage(e);
+  } catch (error) {
+    logger.error(error);
     await reportsChannel.send(
-      `Failed to send daily analytics report: ${message}`,
+      `Failed to send daily analytics report: "${error}"
+
+      Check the logs for more details:
+      https://fly-metrics.net/d/fly-logs/fly-logs?orgId=273532&var-app=wasp-bot`,
     );
   }
 }

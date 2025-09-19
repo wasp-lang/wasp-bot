@@ -1,6 +1,7 @@
 import Discord from "discord.js";
 
 import { REPORTS_CHANNEL_ID } from "../../server-ids";
+import { GuildMessage } from "../../types";
 import { fetchTextChannelById } from "../../utils";
 import {
   AnalyticsReportType,
@@ -9,11 +10,11 @@ import {
 
 const ANALYTICS_PREFIX = "!analytics";
 
-export function isAnalyticsCommand(message: Discord.Message): boolean {
+export function isAnalyticsCommand(message: GuildMessage): boolean {
   return hasAnalyticsPrefix(message) && isReportsChannel(message.channel);
 }
 
-function hasAnalyticsPrefix(message: Discord.Message): boolean {
+function hasAnalyticsPrefix(message: GuildMessage): boolean {
   return new RegExp(`^${ANALYTICS_PREFIX}(\\s|$)`).test(message.content);
 }
 
@@ -22,22 +23,21 @@ function isReportsChannel(channel: Discord.Channel): boolean {
 }
 
 export async function handleAnalyticsCommand(
-  discordClient: Discord.Client,
-  message: Discord.Message,
+  message: GuildMessage,
 ): Promise<void> {
   const commandArgs = extractCommandArgs(message.content);
   const analyticsCommand = parseAnalyticsCommand(commandArgs);
   if (!analyticsCommand) {
-    await sendAnalyticsHelp(discordClient);
+    await sendAnalyticsHelp(message.client);
     return;
   }
 
   const { period, numPeriods } = analyticsCommand;
   if (period === "total") {
-    await sendAnalyticsReportToReportsChannel(discordClient, "total");
+    await sendAnalyticsReportToReportsChannel(message.client, "total");
   } else {
     await sendAnalyticsReportToReportsChannel(
-      discordClient,
+      message.client,
       period,
       undefined,
       numPeriods,
