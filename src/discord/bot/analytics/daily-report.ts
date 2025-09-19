@@ -44,7 +44,9 @@ export async function sendDailyAnalyticsReport(
   } catch (error) {
     logger.error(error);
     await reportsChannel.send(
-      `Failed to send daily analytics report. Check the logs for more details.
+      `Failed to send daily analytics report: "${error}"
+
+      Check the logs for more details:
       https://fly-metrics.net/d/fly-logs/fly-logs?orgId=273532&var-app=wasp-bot`,
     );
   }
