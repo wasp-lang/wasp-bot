@@ -7,6 +7,7 @@ import {
   ImageChartsReport,
   TextReport,
 } from "../../../analytics/reports/reports";
+import { Writable } from "../../../types/helpers";
 import { REPORTS_CHANNEL_ID } from "../../server-ids";
 import { fetchTextChannelById } from "../../utils";
 
@@ -65,8 +66,10 @@ const DISCORD_MESSAGE_TOO_LONG_SUFFIX =
 
 function convertSimpleReportToDiscordMessage(
   report: Partial<TextReport & ChartReport & ImageChartsReport>,
-): Discord.MessageOptions {
-  const options: Discord.MessageOptions = {};
+): Discord.MessageCreateOptions {
+  const options: Discord.MessageCreateOptions = {};
+  const embeds: Writable<Discord.MessageCreateOptions["embeds"]> = [];
+  const files: Writable<Discord.MessageCreateOptions["files"]> = [];
 
   if (report.text) {
     let content: string = report.text.join("\n");
@@ -81,17 +84,16 @@ function convertSimpleReportToDiscordMessage(
   }
 
   if (report.imageChartsChart) {
-    const embed = new Discord.MessageEmbed();
-    embed.setImage(report.imageChartsChart.toURL());
-    options.embed = embed;
+    embeds.push(
+      new Discord.EmbedBuilder().setImage(report.imageChartsChart.toURL()),
+    );
   }
 
   if (report.bufferChart) {
-    if (!options.files) {
-      options.files = [];
-    }
-    options.files.push(new Discord.MessageAttachment(report.bufferChart));
+    files.push(report.bufferChart);
   }
 
+  options.embeds = embeds;
+  options.files = files;
   return options;
 }
