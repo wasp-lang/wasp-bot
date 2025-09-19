@@ -28,7 +28,7 @@ const TIME_ZONE = "Europe/Zagreb";
 export async function start(): Promise<void> {
   const discordClient = new Discord.Client({
     // NOTE:
-    // If Privileged Gateway Intents are not enable in the Discord Developer Portal,
+    // If Privileged Gateway Intents are not enabled in the Discord Developer Portal,
     // the bot will throw an error on startup.
     // As of now those are: `Server Members Intent` and `Message Content Intent`
     // See: https://discordjs.guide/popular-topics/intents.html#gateway-intents
