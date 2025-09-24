@@ -11,7 +11,6 @@ import moment from "../moment";
  * filtered out.
  */
 export async function fetchEventsForReportGenerator(): Promise<PosthogEvent[]> {
-  logger.info("Fetching all CLI events...");
   const allEvents = await tryToFetchAllCliEvents();
   logger.info("\nNumber of CLI events fetched:", allEvents.length);
 
