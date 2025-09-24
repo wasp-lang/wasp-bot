@@ -8,6 +8,7 @@ import {
   TextReport,
 } from "../../../analytics/reports/reports";
 import { Writable } from "../../../types/helpers";
+import logger from "../../../utils/logger";
 import { REPORTS_CHANNEL_ID } from "../../server-ids";
 import { fetchTextChannelById } from "../../utils";
 
@@ -19,6 +20,10 @@ export async function sendAnalyticsReportToReportsChannel(
   prefetchedEvents: PosthogEvent[] | undefined = undefined,
   numPeriods: number | undefined = undefined,
 ): Promise<void> {
+  logger.info(`Sending analytics report to the reports channel...`);
+  logger.debug(
+    `Analytics report details: type=${reportType}, numPeriods=${numPeriods}, prefetchedEvents=${!!prefetchedEvents}`,
+  );
   const waspReportsChannel = await fetchTextChannelById(
     discordClient,
     REPORTS_CHANNEL_ID,
@@ -67,11 +72,13 @@ const DISCORD_MESSAGE_TOO_LONG_SUFFIX =
 function convertSimpleReportToDiscordMessage(
   report: Partial<TextReport & ChartReport & ImageChartsReport>,
 ): Discord.MessageCreateOptions {
+  logger.info("Converting report to a Discord message");
   const options: Discord.MessageCreateOptions = {};
   const embeds: Writable<Discord.MessageCreateOptions["embeds"]> = [];
   const files: Writable<Discord.MessageCreateOptions["files"]> = [];
 
   if (report.text) {
+    logger.debug("Report has a `text` field");
     let content: string = report.text.join("\n");
     if (content.length >= DISCORD_MAX_MSG_SIZE) {
       content =
@@ -84,12 +91,16 @@ function convertSimpleReportToDiscordMessage(
   }
 
   if (report.imageChartsChart) {
+    logger.debug(
+      `Report has a \`imageChartsChart\` field (URL=${report.imageChartsChart.toURL()})`,
+    );
     embeds.push(
       new Discord.EmbedBuilder().setImage(report.imageChartsChart.toURL()),
     );
   }
 
   if (report.bufferChart) {
+    logger.debug("Report has a `bufferChart` field");
     files.push(report.bufferChart);
   }
 
