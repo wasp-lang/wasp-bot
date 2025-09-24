@@ -2,12 +2,14 @@ import Discord from "discord.js";
 import InspirationalQuotes from "inspirational-quotes";
 import _ from "lodash";
 
+import logger from "../../utils/logger";
 import { DAILY_STANDUP_CHANNEL_ID } from "../server-ids";
 import { fetchTextChannelById } from "../utils";
 
 export async function initiateDailyStandup(
   discordClient: Discord.Client,
 ): Promise<void> {
+  logger.info(`Initiating daily standup...`);
   const dailyStandupChannel = await fetchTextChannelById(
     discordClient,
     DAILY_STANDUP_CHANNEL_ID,
