@@ -1,3 +1,4 @@
+import logger from "../../../utils/logger";
 import { PosthogEvent } from "../../events";
 import { fetchEventsForReportGenerator } from "../events";
 import { AllTimePeriodReport, PeriodReport } from "../reports";
@@ -14,6 +15,11 @@ export async function generatePeriodReport(
   numPeriods: number,
   periodName: PeriodName,
 ): Promise<PeriodReport> {
+  logger.info("Generating a period report...");
+  logger.debug(
+    `Period report details: numPeriods=${numPeriods}, periodName=${periodName}, prefetchedEvents=${!!prefetchedEvents}`,
+  );
+
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
 
   const userActivityReport = await generateUserActivityReport(
@@ -48,6 +54,11 @@ export async function generateAllTimePeriodReport(
   numPeriods: number,
   periodName: PeriodName,
 ): Promise<AllTimePeriodReport> {
+  logger.info("Generating an all-time period report...");
+  logger.debug(
+    `All-time period report details: numPeriods=${numPeriods}, periodName=${periodName}, prefetchedEvents=${!!prefetchedEvents}`,
+  );
+
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
 
   const userActivityReport = await generateUserActivityReport(

@@ -1,5 +1,6 @@
 import Discord from "discord.js";
 
+import logger from "../../../utils/logger";
 import { REPORTS_CHANNEL_ID } from "../../server-ids";
 import { GuildMessage } from "../../types";
 import { fetchTextChannelById } from "../../utils";
@@ -25,6 +26,8 @@ function isReportsChannel(channel: Discord.Channel): boolean {
 export async function handleAnalyticsCommand(
   message: GuildMessage,
 ): Promise<void> {
+  logger.info(`Handling analytics command: ${message.content}...`);
+
   const commandArgs = extractCommandArgs(message.content);
   const analyticsCommand = parseAnalyticsCommand(commandArgs);
   if (!analyticsCommand) {

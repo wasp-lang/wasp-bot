@@ -1,3 +1,4 @@
+import logger from "../../utils/logger";
 import { PosthogEvent } from "../events";
 import {
   EventsByExecutionEnvironment,
@@ -16,6 +17,9 @@ import { groupEventsByProject } from "./utils";
 export async function generateTotalReport(
   prefetchedEvents: PosthogEvent[] | undefined = undefined,
 ): Promise<TotalReport> {
+  logger.info("Generating a total report...");
+  logger.debug(`Total report details: prefetchedEvents=${!!prefetchedEvents}`);
+
   const events = prefetchedEvents ?? (await fetchEventsForReportGenerator());
 
   const { localEvents, groupedNonLocalEvents } =

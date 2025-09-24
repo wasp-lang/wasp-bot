@@ -24,8 +24,11 @@ async function isGuestUser(message: GuildMessage): Promise<boolean> {
 export async function handleIntroductionMessage(
   message: GuildMessage,
 ): Promise<void> {
+  logger.info(`Handling introduction message [${message.id}]...`);
+
   const trimmedMessageLength = message.content.trim().length;
   if (trimmedMessageLength < 20) {
+    logger.debug(`Introduction message [${message.id}] is too short`);
     await message.reply(
       "👋 Great to have you here! Please introduce yourself with a message that's at least 2️⃣0️⃣ characters long and I will give you full access to the server.",
     );
@@ -33,6 +36,9 @@ export async function handleIntroductionMessage(
   }
 
   try {
+    logger.debug(
+      `Introduction message [${message.id}] is valid. Removing the guest role...`,
+    );
     const member = await message.guild.members.fetch(message.author.id);
     await member.roles.remove(GUEST_ROLE_ID);
     await message.reply(

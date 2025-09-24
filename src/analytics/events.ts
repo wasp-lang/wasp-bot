@@ -43,10 +43,10 @@ export async function tryToFetchAllCliEvents(): Promise<PosthogEvent[]> {
       retries: 10,
       minTimeout: 5 * 1000,
       maxTimeout: 120 * 1000,
-      onRetry: (e: Error) => {
+      onRetry: (error: Error) => {
+        logger.error(error);
         logger.error(
-          "Error happened while fetching events for report generator, trying again:",
-          e.message ?? e,
+          "Error happened while fetching events for report generator, trying again...",
         );
       },
     },
