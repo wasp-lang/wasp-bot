@@ -1,4 +1,7 @@
 import { config as dotenvConfig } from "dotenv";
+import Discord from "discord.js";
+import { fetchTextChannelById } from "./discord/utils";
+import { DAILY_STANDUP_CHANNEL_ID } from "./discord/server-ids";
 
 import {
   BlockObjectResponse,
@@ -21,7 +24,39 @@ const notion = new Client({
   auth: process.env.NOTION_API_KEY,
 });
 
-(async () => {
+export async function start(): Promise<void> {
+  const discordClient = new Discord.Client({
+    // NOTE:
+    // If Privileged Gateway Intents are not enabled in the Discord Developer Portal,
+    // the bot will throw an error on startup.
+    // As of now those are: `Server Members Intent` and `Message Content Intent`
+    // See: https://discordjs.guide/popular-topics/intents.html#gateway-intents
+    intents: [
+      Discord.GatewayIntentBits.Guilds,
+      Discord.GatewayIntentBits.GuildMessages,
+      Discord.GatewayIntentBits.GuildMembers,
+      Discord.GatewayIntentBits.MessageContent,
+    ],
+  });
+
+  discordClient.on(Discord.Events.ClientReady, async (startedDiscordClient) => {
+    logger.info(`Logged in as: ${startedDiscordClient.user.tag}.`);
+
+    const qGoals = await fetchQGoals();
+
+    console.log(qGoals);
+    const dailyStandupChannel = await fetchTextChannelById(
+      discordClient,
+      DAILY_STANDUP_CHANNEL_ID,
+    );
+
+    dailyStandupChannel.send(qGoals);
+  });
+
+  await discordClient.login(process.env.DISCORD_BOT_TOKEN);
+}
+
+const fetchQGoals = async () => {
   const response = await notion.dataSources.query({
     data_source_id: NOTION_Q_GOALS_DATABASE_ID,
     sorts: [
@@ -54,7 +89,8 @@ const notion = new Client({
   }
 
   const codeBlock = firstBlock as CodeBlockObjectResponse;
-  console.log(codeBlock.code.rich_text[0].plain_text);
-})();
 
-// Print it here.
+  return codeBlock.code.rich_text[0].plain_text;
+};
+
+start();
