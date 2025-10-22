@@ -6,9 +6,11 @@
   "scripts": {
     "buildAndStartBot": "npm run build && npm run startBot",
     "buildAndCalcAnalytics": "npm run build && npm run calcAnalytics",
+    "buildAndStartDailyStandup": "npm run build && npm run startDailyStandup",
     "start": "npm run startBot",
     "startBot": "node ./dist/start-discord-bot.js",
     "calcAnalytics": "node ./dist/analytics/cli.js",
+    "startDailyStandup": "node ./dist/start-daily-standup.js",
     "build": "tsc",
     "prepare": "husky",
     "format": "prettier . --write",
