@@ -177,8 +177,9 @@ async function loadCachedEvents(): Promise<PosthogEvent[]> {
   try {
     const cacheFileContent = await fs.readFile(CACHE_FILE_PATH, "utf-8");
     return JSON.parse(cacheFileContent);
-  } catch (e: unknown) {
-    logger.warning(`Failed to read cache file: ${e}`);
+  } catch (error: unknown) {
+    logger.warn(error);
+    logger.warn("Failed to read the cache file.");
     return [];
   }
 }
