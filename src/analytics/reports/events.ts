@@ -12,7 +12,7 @@ import moment from "../moment";
  */
 export async function fetchEventsForReportGenerator(): Promise<PosthogEvent[]> {
   const allEvents = await tryToFetchAllCliEvents();
-  logger.info("\nNumber of CLI events fetched:", allEvents.length);
+  logger.info(`Number of CLI events fetched: ${allEvents.length}`);
 
   const waspTeamFilters = [isNotWaspTeamEvent, isNotMihoPrivateCIServerEvent];
   const nonWaspTeamEvents = waspTeamFilters.reduce(
@@ -20,8 +20,7 @@ export async function fetchEventsForReportGenerator(): Promise<PosthogEvent[]> {
     allEvents,
   );
   logger.debug(
-    "\nNumber of non-Wasp-team CLI events:",
-    nonWaspTeamEvents.length,
+    `Number of non-Wasp-team CLI events: ${nonWaspTeamEvents.length}`,
   );
 
   const sortedNonWaspTeamEvents = _.sortBy(nonWaspTeamEvents, "timestamp");
@@ -29,7 +28,7 @@ export async function fetchEventsForReportGenerator(): Promise<PosthogEvent[]> {
   const sortedValidEvents = markAsCiEventBurstsFromDifferentUsersFromSameIp(
     sortedNonWaspTeamEvents,
   );
-  logger.debug("\nNumber of valid CLI events:", sortedValidEvents.length);
+  logger.debug(`Number of valid CLI events: ${sortedValidEvents.length}`);
 
   return sortedValidEvents;
 }
