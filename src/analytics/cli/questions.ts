@@ -4,6 +4,7 @@ import { config as dotenvConfig } from "dotenv";
 import _ from "lodash";
 import moment from "moment";
 import logger from "../../utils/logger";
+import fs from "fs";
 import { QUESTIONS_FORUM_CHANNEL_ID } from "../../discord/server-ids";
 
 dotenvConfig();
@@ -37,8 +38,12 @@ async function analyzeQuestionThreads(): Promise<void> {
     const maxThreadAge = moment().subtract(1, "year");
     const recentThreads = await fetchRecentThreads(channel, maxThreadAge);
     const authorStats = await buildAuthorStats(discordClient, recentThreads);
-    printResults(authorStats, maxThreadAge);
-    // TODO: List all the users that created at least 2 threads but the last one was 3 or more months ago.
+    console.log(
+      `\n=== All authors (since ${maxThreadAge.format("YYYY-MM-DD")}) ===`,
+    );
+    printAuthorStats(authorStats);
+    console.log("\n=== Authors gone for more than three months ===");
+    printGoneAuthorStats(authorStats);
   } finally {
     await discordClient.destroy();
     logger.info("Discord client disconnected");
@@ -58,7 +63,8 @@ async function fetchRecentThreads(
       ...(await fetchRecentActiveThreads(channel, maxThreadAge)),
       ...(await fetchRecentArchivedThreads(channel, maxThreadAge)),
     ],
-    ["createdAt", "desc"],
+    ["createdAt"],
+    ["desc"],
   );
   logger.info(`Total recent threads: ${recentThreads.length}`);
   return recentThreads;
@@ -80,11 +86,14 @@ async function buildAuthorStats(
   recentThreads: Discord.ThreadChannel[],
 ): Promise<ThreadAuthorStats[]> {
   const threadsByAuthor = _.groupBy(recentThreads, (thread) => thread.ownerId);
+  const userIdsWithMoreThanOneThread = Object.entries(threadsByAuthor)
+    .filter(([, threads]) => threads.length > 1)
+    .map(([userId]) => userId);
+  const usernamesById = await obtainUsernames(
+    discordClient,
+    userIdsWithMoreThanOneThread,
+  );
 
-  // TODO: Implement catching of discord usernames, because obtaining them one by one is quite slow.
-  //   That is why I put >5 below for threadCount, so I get them only for top users.
-  //   And they don't change often. We could just write them to local file and use that.
-  //   And when we want to refresh the cache, we delete the file.
   logger.info(
     `Building the author stats. Can take a bit as fetching Discord usernames is slow.`,
   );
@@ -92,8 +101,7 @@ async function buildAuthorStats(
     Object.entries(threadsByAuthor).map(async ([userId, threads]) => {
       const stats = {
         userId,
-        username:
-          threads.length > 5 ? await fetchUsername(discordClient, userId) : "?",
+        username: usernamesById[userId] ?? "?",
         threadCount: threads.length,
         firstThreadCreatedAt: _.minBy(threads, "createdAt")!.createdAt!,
         lastThreadCreatedAt: _.maxBy(threads, "createdAt")!.createdAt!,
@@ -170,6 +178,23 @@ function wasThreadCreatedBefore(
   );
 }
 
+async function obtainUsernames(
+  discordClient: Discord.Client,
+  userIds: string[],
+): Promise<Record<string, string>> {
+  const cacheFile = "wasp-analytics-discord-usernames-cache.json";
+  const usernamesCache: Record<string, string> = fs.existsSync(cacheFile)
+    ? JSON.parse(fs.readFileSync(cacheFile, "utf8"))
+    : {};
+  for (const userId of userIds) {
+    if (!(userId in usernamesCache)) {
+      usernamesCache[userId] = await fetchUsername(discordClient, userId);
+    }
+  }
+  fs.writeFileSync(cacheFile, JSON.stringify(usernamesCache, null, 2));
+  return usernamesCache;
+}
+
 /**
  * Fetches username for a given user ID, returning "Unknown User" if fetch fails.
  */
@@ -187,25 +212,17 @@ async function fetchUsername(
   }
 }
 
-function printResults(
-  authorStats: ThreadAuthorStats[],
-  maxThreadAge: moment.Moment,
-): void {
-  console.log(
-    `\x1b[33m=== Questions Forum Thread Authors (since ${maxThreadAge.format("YYYY-MM-DD")}) ===\x1b[0m`,
-  );
-
+function printAuthorStats(authorStats: ThreadAuthorStats[]): void {
   const table = new Table({
-    head: ["Username", "User ID", "#Threads", "First thread", "Last thread"],
-    colWidths: [32, 22, 10, 20, 20],
+    head: ["Username", "User ID", "#Threads", "Δt since last"],
+    colWidths: [32, 22, 10, 20],
   });
   for (const stats of authorStats.filter((st) => st.threadCount > 1)) {
     table.push([
       stats.username,
       stats.userId,
       String(stats.threadCount),
-      stats.firstThreadCreatedAt.toDateString(),
-      stats.lastThreadCreatedAt.toDateString(),
+      moment(stats.lastThreadCreatedAt).fromNow(),
     ]);
   }
   console.log(table.toString());
@@ -214,6 +231,19 @@ function printResults(
     `Num authors with just 1 thread: ${authorStats.filter((st) => st.threadCount == 1).length}`,
   );
   console.log(`Total authors: ${authorStats.length}`);
+}
+
+function printGoneAuthorStats(authorStats: ThreadAuthorStats[]) {
+  const threeMonthsAgo = moment().subtract(3, "months");
+  printAuthorStats(
+    _.orderBy(
+      authorStats.filter((as) =>
+        moment(as.lastThreadCreatedAt).isBefore(threeMonthsAgo),
+      ),
+      ["lastThreadCreatedAt", "threadCount"],
+      ["desc", "desc"],
+    ),
+  );
 }
 
 analyzeQuestionThreads().catch((error) => {
