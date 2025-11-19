@@ -14,6 +14,8 @@ interface ThreadAuthorStats {
   userId: string;
   username: string;
   threadCount: number;
+  firstThreadCreatedAt: Date;
+  lastThreadCreatedAt: Date;
 }
 
 async function analyzeQuestionThreads(): Promise<void> {
@@ -43,14 +45,21 @@ async function analyzeQuestionThreads(): Promise<void> {
   }
 }
 
+/*
+ * Returns the threads, both active and archived, that are (by creation) not older than
+ * maxThreadAge, sorted descending (most recent thread is first, the oldest one is last).
+ */
 async function fetchRecentThreads(
   channel: Discord.ForumChannel,
   maxThreadAge: moment.Moment,
 ) {
-  const recentThreads = [
-    ...(await fetchRecentActiveThreads(channel, maxThreadAge)),
-    ...(await fetchRecentArchivedThreads(channel, maxThreadAge)),
-  ];
+  const recentThreads = _.orderBy(
+    [
+      ...(await fetchRecentActiveThreads(channel, maxThreadAge)),
+      ...(await fetchRecentArchivedThreads(channel, maxThreadAge)),
+    ],
+    ["createdAt", "desc"],
+  );
   logger.info(`Total recent threads: ${recentThreads.length}`);
   return recentThreads;
 }
@@ -70,20 +79,27 @@ async function buildAuthorStats(
   discordClient: Discord.Client,
   recentThreads: Discord.ThreadChannel[],
 ): Promise<ThreadAuthorStats[]> {
-  const threadsByAuthor = _.countBy(recentThreads, (thread) => thread.ownerId);
+  const threadsByAuthor = _.groupBy(recentThreads, (thread) => thread.ownerId);
 
   // TODO: Implement catching of discord usernames, because obtaining them one by one is quite slow.
   //   That is why I put >5 below for threadCount, so I get them only for top users.
   //   And they don't change often. We could just write them to local file and use that.
   //   And when we want to refresh the cache, we delete the file.
-  logger.info(`Fetching Discord usernames, can take a bit.`);
+  logger.info(
+    `Building the author stats. Can take a bit as fetching Discord usernames is slow.`,
+  );
   const authorStats = await Promise.all(
-    Object.entries(threadsByAuthor).map(async ([userId, threadCount]) => ({
-      userId,
-      username:
-        threadCount > 5 ? await fetchUsername(discordClient, userId) : "?",
-      threadCount,
-    })),
+    Object.entries(threadsByAuthor).map(async ([userId, threads]) => {
+      const stats = {
+        userId,
+        username:
+          threads.length > 5 ? await fetchUsername(discordClient, userId) : "?",
+        threadCount: threads.length,
+        firstThreadCreatedAt: _.minBy(threads, "createdAt")!.createdAt!,
+        lastThreadCreatedAt: _.maxBy(threads, "createdAt")!.createdAt!,
+      };
+      return stats;
+    }),
   );
 
   authorStats.sort((a, b) => b.threadCount - a.threadCount);
@@ -162,7 +178,9 @@ async function fetchUsername(
   userId: string,
 ): Promise<string> {
   try {
-    return (await discordClient.users.fetch(userId)).username;
+    const username = (await discordClient.users.fetch(userId)).username;
+    logger.info(`Fetched username for ${userId}: ${username}`);
+    return username;
   } catch (error) {
     logger.warn(`Could not fetch user ${userId}: ${error}`);
     return "Unknown User";
@@ -173,26 +191,29 @@ function printResults(
   authorStats: ThreadAuthorStats[],
   maxThreadAge: moment.Moment,
 ): void {
-  console.log("\n");
   console.log(
     `\x1b[33m=== Questions Forum Thread Authors (since ${maxThreadAge.format("YYYY-MM-DD")}) ===\x1b[0m`,
   );
-  console.log("\n");
 
   const table = new Table({
-    head: ["Username", "User ID", "Thread Count"],
-    colWidths: [32, 22, 14],
+    head: ["Username", "User ID", "#Threads", "First thread", "Last thread"],
+    colWidths: [32, 22, 10, 20, 20],
   });
-
-  for (const stats of authorStats) {
-    table.push([stats.username, stats.userId, String(stats.threadCount)]);
+  for (const stats of authorStats.filter((st) => st.threadCount > 1)) {
+    table.push([
+      stats.username,
+      stats.userId,
+      String(stats.threadCount),
+      stats.firstThreadCreatedAt.toDateString(),
+      stats.lastThreadCreatedAt.toDateString(),
+    ]);
   }
-
   console.log(table.toString());
 
-  console.log("\n");
+  console.log(
+    `Num authors with just 1 thread: ${authorStats.filter((st) => st.threadCount == 1).length}`,
+  );
   console.log(`Total authors: ${authorStats.length}`);
-  console.log("\n");
 }
 
 analyzeQuestionThreads().catch((error) => {
