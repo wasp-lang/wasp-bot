@@ -36,6 +36,7 @@ async function analyzeQuestionThreads(): Promise<void> {
     const recentThreads = await fetchRecentThreads(channel, maxThreadAge);
     const authorStats = await buildAuthorStats(discordClient, recentThreads);
     printResults(authorStats, maxThreadAge);
+    // TODO: List all the users that created at least 2 threads but the last one was 3 or more months ago.
   } finally {
     await discordClient.destroy();
     logger.info("Discord client disconnected");
@@ -71,6 +72,10 @@ async function buildAuthorStats(
 ): Promise<ThreadAuthorStats[]> {
   const threadsByAuthor = _.countBy(recentThreads, (thread) => thread.ownerId);
 
+  // TODO: Implement catching of discord usernames, because obtaining them one by one is quite slow.
+  //   That is why I put >5 below for threadCount, so I get them only for top users.
+  //   And they don't change often. We could just write them to local file and use that.
+  //   And when we want to refresh the cache, we delete the file.
   logger.info(`Fetching Discord usernames, can take a bit.`);
   const authorStats = await Promise.all(
     Object.entries(threadsByAuthor).map(async ([userId, threadCount]) => ({
