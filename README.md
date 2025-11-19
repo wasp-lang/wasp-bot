@@ -23,7 +23,12 @@ Also, run `npm run prepare` to set up pre-commit hooks (for stuff like code form
 
 When developing, run the bot server locally with `npm run buildAndStartBot`. This will actually connect it to the Discord server, so you will have two bots running at the same time -> production one, and your development one. So test quickly what you need and then shut it down.
 
-Run `npm run buildAndCalcAnalytics` to run analytics manually and get the report in the CLI.
+#### Local Analytics Scripts
+
+Run analytics scripts locally to generate reports in the CLI:
+
+- `npm run buildAndRunGeneralAnalytics` (or `npm run generalAnalytics` if already built) - Runs general Wasp analytics reports (daily, weekly, monthly, all-time). These are the same analytics as exposed by the bot to the Discord server, but useful because you can easily tweak the script temporarily for more specific results.
+- `npm run buildAndRunQuestionsAnalytics` (or `npm run questionsAnalytics` if already built) - Analyzes Questions forum threads. E.g. it prints thread authors grouped by number of threads created in the last year.
 
 ### Deployment
 
