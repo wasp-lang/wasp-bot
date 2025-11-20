@@ -4,13 +4,13 @@ import moment from "moment";
 import { fetchEventsForReportGenerator } from "../../../analytics/reports";
 import logger from "../../../utils/logger";
 import { REPORTS_CHANNEL_ID } from "../../server-ids";
-import { fetchTextChannelById } from "../../utils";
+import { fetchTextChannel } from "../../utils";
 import { sendAnalyticsReportToReportsChannel } from "./common";
 
 export async function sendDailyAnalyticsReport(
   discordClient: Discord.Client,
 ): Promise<void> {
-  const reportsChannel = await fetchTextChannelById(
+  const reportsChannel = await fetchTextChannel(
     discordClient,
     REPORTS_CHANNEL_ID,
   );

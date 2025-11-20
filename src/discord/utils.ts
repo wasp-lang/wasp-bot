@@ -1,6 +1,6 @@
 import Discord from "discord.js";
 
-export async function fetchTextChannelById(
+export async function fetchTextChannel(
   discordClient: Discord.Client,
   channelId: Discord.Snowflake,
 ): Promise<Discord.TextChannel> {

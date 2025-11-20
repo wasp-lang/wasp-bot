@@ -9,8 +9,6 @@ import { QUESTIONS_FORUM_CHANNEL_ID } from "../../discord/server-ids";
 
 dotenvConfig();
 
-const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
-
 interface ThreadAuthorStats {
   userId: string;
   username: string;
@@ -19,24 +17,18 @@ interface ThreadAuthorStats {
   lastThreadCreatedAt: Date;
 }
 
-async function analyzeQuestionThreads(): Promise<void> {
-  const discordClient = new Discord.Client({
-    intents: [
-      Discord.GatewayIntentBits.Guilds,
-      Discord.GatewayIntentBits.GuildMessages,
-      Discord.GatewayIntentBits.GuildMembers,
-    ],
-  });
-  await discordClient.login(BOT_TOKEN);
-  logger.info("Discord client logged in successfully.");
-
+async function analyzeDiscordQuestions(): Promise<void> {
+  const discordClient = await createAndLoginDiscordClient();
   try {
-    const channel = await fetchForumChannel(
+    const questionsChannel = await fetchForumChannel(
       discordClient,
       QUESTIONS_FORUM_CHANNEL_ID,
     );
     const maxThreadAge = moment().subtract(1, "year");
-    const recentThreads = await fetchRecentThreads(channel, maxThreadAge);
+    const recentThreads = await fetchRecentThreads(
+      questionsChannel,
+      maxThreadAge,
+    );
     const authorStats = await buildAuthorStats(discordClient, recentThreads);
     console.log(
       `\n=== All authors (since ${maxThreadAge.format("YYYY-MM-DD")}) ===`,
@@ -50,6 +42,33 @@ async function analyzeQuestionThreads(): Promise<void> {
   }
 }
 
+async function createAndLoginDiscordClient(): Promise<Discord.Client> {
+  const discordClient = new Discord.Client({
+    intents: [
+      Discord.GatewayIntentBits.Guilds,
+      Discord.GatewayIntentBits.GuildMessages,
+      Discord.GatewayIntentBits.GuildMembers,
+    ],
+  });
+  await discordClient.login(process.env.DISCORD_BOT_TOKEN);
+  logger.info("Discord client logged in successfully.");
+  return discordClient;
+}
+
+async function fetchForumChannel(
+  discordClient: Discord.Client,
+  channelId: string,
+): Promise<Discord.ForumChannel> {
+  const channel = await discordClient.channels.fetch(channelId);
+  if (!channel) {
+    throw new Error(`Channel [${channelId}] not found`);
+  }
+  if (channel.type !== Discord.ChannelType.GuildForum) {
+    throw new Error(`Channel [${channelId}] is not a forum channel`);
+  }
+  return channel;
+}
+
 /*
  * Returns the threads, both active and archived, that are (by creation) not older than
  * maxThreadAge, sorted descending (most recent thread is first, the oldest one is last).
@@ -57,7 +76,7 @@ async function analyzeQuestionThreads(): Promise<void> {
 async function fetchRecentThreads(
   channel: Discord.ForumChannel,
   maxThreadAge: moment.Moment,
-) {
+): Promise<Discord.ThreadChannel[]> {
   const recentThreads = _.orderBy(
     [
       ...(await fetchRecentActiveThreads(channel, maxThreadAge)),
@@ -68,51 +87,6 @@ async function fetchRecentThreads(
   );
   logger.info(`Total recent threads: ${recentThreads.length}`);
   return recentThreads;
-}
-
-async function fetchForumChannel(
-  discordClient: Discord.Client,
-  channelId: string,
-): Promise<Discord.ForumChannel> {
-  const channel = await discordClient.channels.fetch(channelId);
-  if (!channel || channel.type !== Discord.ChannelType.GuildForum) {
-    throw new Error("Channel doesn't exist or is not a forum channel");
-  }
-  return channel;
-}
-
-async function buildAuthorStats(
-  discordClient: Discord.Client,
-  recentThreads: Discord.ThreadChannel[],
-): Promise<ThreadAuthorStats[]> {
-  const threadsByAuthor = _.groupBy(recentThreads, (thread) => thread.ownerId);
-  const userIdsWithMoreThanOneThread = Object.entries(threadsByAuthor)
-    .filter(([, threads]) => threads.length > 1)
-    .map(([userId]) => userId);
-  const usernamesById = await obtainUsernames(
-    discordClient,
-    userIdsWithMoreThanOneThread,
-  );
-
-  logger.info(
-    `Building the author stats. Can take a bit as fetching Discord usernames is slow.`,
-  );
-  const authorStats = await Promise.all(
-    Object.entries(threadsByAuthor).map(async ([userId, threads]) => {
-      const stats = {
-        userId,
-        username: usernamesById[userId] ?? "?",
-        threadCount: threads.length,
-        firstThreadCreatedAt: _.minBy(threads, "createdAt")!.createdAt!,
-        lastThreadCreatedAt: _.maxBy(threads, "createdAt")!.createdAt!,
-      };
-      return stats;
-    }),
-  );
-
-  authorStats.sort((a, b) => b.threadCount - a.threadCount);
-
-  return authorStats;
 }
 
 async function fetchRecentActiveThreads(
@@ -156,7 +130,7 @@ async function fetchRecentArchivedThreads(
   );
 
   const theRestOfRecentArchivedThreads =
-    _.last(fetchedArchivedThreads)!.archivedAt! >= maxThreadAge.toDate() &&
+    fetchedArchivedThreads.at(-1)!.archivedAt! >= maxThreadAge.toDate() &&
     fetchedArchivedThreadsPaginated.hasMore
       ? await fetchRecentArchivedThreads(
           channel,
@@ -176,6 +150,37 @@ function wasThreadCreatedBefore(
     !!thread.createdTimestamp &&
     thread.createdTimestamp >= maxThreadAge.valueOf()
   );
+}
+
+async function buildAuthorStats(
+  discordClient: Discord.Client,
+  recentThreads: Discord.ThreadChannel[],
+): Promise<ThreadAuthorStats[]> {
+  const threadsByAuthor = _.groupBy(recentThreads, (thread) => thread.ownerId);
+  const userIdsWithMoreThanOneThread = Object.entries(threadsByAuthor)
+    .filter(([, threads]) => threads.length > 1)
+    .map(([userId]) => userId);
+  const usernamesById = await obtainUsernames(
+    discordClient,
+    userIdsWithMoreThanOneThread,
+  );
+
+  const authorStats = Object.entries(threadsByAuthor).map(
+    ([userId, threads]) => {
+      const stats = {
+        userId,
+        username: usernamesById[userId] ?? "?",
+        threadCount: threads.length,
+        firstThreadCreatedAt: _.minBy(threads, "createdAt")!.createdAt!,
+        lastThreadCreatedAt: _.maxBy(threads, "createdAt")!.createdAt!,
+      };
+      return stats;
+    },
+  );
+
+  authorStats.sort((a, b) => b.threadCount - a.threadCount);
+
+  return authorStats;
 }
 
 async function obtainUsernames(
@@ -240,13 +245,13 @@ function printGoneAuthorStats(authorStats: ThreadAuthorStats[]) {
       authorStats.filter((as) =>
         moment(as.lastThreadCreatedAt).isBefore(threeMonthsAgo),
       ),
-      ["lastThreadCreatedAt", "threadCount"],
-      ["desc", "desc"],
+      ["lastThreadCreatedAt"],
+      ["desc"],
     ),
   );
 }
 
-analyzeQuestionThreads().catch((error) => {
+analyzeDiscordQuestions().catch((error) => {
   logger.error(error);
   process.exit(1);
 });

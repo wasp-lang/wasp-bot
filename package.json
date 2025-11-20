@@ -10,7 +10,7 @@
     "start": "npm run startBot",
     "startBot": "node ./dist/start-discord-bot.js",
     "generalAnalytics": "node ./dist/analytics/cli/general.js",
-    "questionsAnalytics": "node ./dist/analytics/cli/questions.js",
+    "questionsAnalytics": "node ./dist/analytics/cli/discord-questions.js",
     "build": "tsc",
     "prepare": "husky",
     "format": "prettier . --write",
