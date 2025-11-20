@@ -16,7 +16,6 @@ import {
 
 dotenvConfig();
 
-const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const TIME_ZONE = "Europe/Zagreb";
 
 /**
@@ -51,7 +50,7 @@ export async function start(): Promise<void> {
     handleGuildMessage(newMessage),
   );
 
-  await discordClient.login(BOT_TOKEN);
+  await discordClient.login(process.env.DISCORD_BOT_TOKEN);
 }
 
 async function handleGuildMessage(message: Discord.Message): Promise<void> {

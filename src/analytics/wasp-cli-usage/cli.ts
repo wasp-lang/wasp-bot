@@ -1,6 +1,6 @@
 import fs from "fs";
 import os from "os";
-import logger from "../utils/logger";
+import logger from "../../utils/logger";
 import * as reports from "./reports";
 import {
   AllTimePeriodReport,

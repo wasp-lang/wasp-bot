@@ -1,6 +1,6 @@
 import { PosthogEvent } from "../../events";
 import { groupEventsByExecutionEnv } from "../../executionEnvs";
-import moment from "../../moment";
+import moment from "../../../moment";
 import { createCrossTable } from "../../table";
 import { fetchEventsForReportGenerator } from "../events";
 import { ProjectsReport } from "../reports";

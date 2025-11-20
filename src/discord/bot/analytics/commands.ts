@@ -3,7 +3,7 @@ import Discord from "discord.js";
 import logger from "../../../utils/logger";
 import { REPORTS_CHANNEL_ID } from "../../server-ids";
 import { GuildMessage } from "../../types";
-import { fetchTextChannelById } from "../../utils";
+import { fetchTextChannel } from "../../utils";
 import {
   AnalyticsReportType,
   sendAnalyticsReportToReportsChannel,
@@ -78,7 +78,7 @@ function parseAnalyticsCommand(
 }
 
 async function sendAnalyticsHelp(discordClient: Discord.Client): Promise<void> {
-  const channel = await fetchTextChannelById(discordClient, REPORTS_CHANNEL_ID);
+  const channel = await fetchTextChannel(discordClient, REPORTS_CHANNEL_ID);
   await channel.send(
     `Available commands:
   ${ANALYTICS_PREFIX} daily <num-of-periods>

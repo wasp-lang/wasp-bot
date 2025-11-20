@@ -1,16 +1,16 @@
 import Discord from "discord.js";
 
-import { PosthogEvent } from "../../../analytics/events";
-import * as reports from "../../../analytics/reports";
+import { PosthogEvent } from "../../../analytics/wasp-cli-usage/events";
+import * as reports from "../../../analytics/wasp-cli-usage/reports";
 import {
   ChartReport,
   ImageChartsReport,
   TextReport,
-} from "../../../analytics/reports/reports";
+} from "../../../analytics/wasp-cli-usage/reports/reports";
 import { Writable } from "../../../types/helpers";
 import logger from "../../../utils/logger";
 import { REPORTS_CHANNEL_ID } from "../../server-ids";
-import { fetchTextChannelById } from "../../utils";
+import { fetchTextChannel } from "../../utils";
 
 export type AnalyticsReportType = "daily" | "weekly" | "monthly" | "total";
 
@@ -24,7 +24,7 @@ export async function sendAnalyticsReportToReportsChannel(
   logger.debug(
     `Analytics report details: type=${reportType}, numPeriods=${numPeriods}, prefetchedEvents=${!!prefetchedEvents}`,
   );
-  const waspReportsChannel = await fetchTextChannelById(
+  const waspReportsChannel = await fetchTextChannel(
     discordClient,
     REPORTS_CHANNEL_ID,
   );

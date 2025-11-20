@@ -2,14 +2,14 @@
 import { Chart, ChartConfiguration, ChartDataset, Plugin } from "chart.js";
 import { MatrixDataPoint } from "chartjs-chart-matrix";
 import { Moment } from "moment";
-import { renderChart } from "../../../charts/canvas";
+import { renderChart } from "../../../../charts/canvas";
 import {
   createColorInterpolator,
   getFontColorForBackgroundColor,
   SEQUENTIAL_BLUE_PALETTE,
   SEQUENTIAL_GREEN_PALETTE,
-} from "../../../charts/color";
-import { matrixAutoScaleCellSize } from "../../../charts/plugins/matrix";
+} from "../../../../charts/color";
+import { matrixAutoScaleCellSize } from "../../../../charts/plugins/matrix";
 import { PosthogEvent } from "../../events";
 import { groupEventsByExecutionEnv } from "../../executionEnvs";
 import { fetchEventsForReportGenerator } from "../events";
