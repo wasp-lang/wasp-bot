@@ -3,7 +3,6 @@ import _ from "lodash";
 import moment from "moment";
 import logger from "../../utils/logger";
 import fs from "fs";
-import { fetchUsername } from "../../discord/utils";
 
 export interface ThreadAuthorStats {
   userId: string;
@@ -38,9 +37,10 @@ async function fetchRecentActiveThreads(
   maxThreadAge: moment.Moment,
 ): Promise<Discord.ThreadChannel[]> {
   const activeThreads = await channel.threads.fetchActive();
-  const recentActiveThreads = Array.from(activeThreads.threads.values()).filter(
-    (t) => wasThreadCreatedBefore(t, maxThreadAge),
-  );
+  const recentActiveThreads = activeThreads.threads
+    .values()
+    .filter((t) => wasThreadCreatedBefore(t, maxThreadAge))
+    .toArray();
   logger.info(
     `Fetched ${activeThreads.threads.size} active threads (${recentActiveThreads.length} recent)`,
   );
@@ -132,15 +132,19 @@ async function obtainUsernames(
   userIds: string[],
 ): Promise<Record<string, string>> {
   const cacheFile = "wasp-analytics-discord-usernames-cache.json";
+
   const usernamesCache: Record<string, string> = fs.existsSync(cacheFile)
     ? JSON.parse(fs.readFileSync(cacheFile, "utf8"))
     : {};
   for (const userId of userIds) {
     if (!(userId in usernamesCache)) {
-      usernamesCache[userId] = await fetchUsername(discordClient, userId);
+      usernamesCache[userId] = (
+        await discordClient.users.fetch(userId)
+      ).username;
       logger.info(`Fetched username for ${userId}: ${usernamesCache[userId]}`);
     }
   }
+
   fs.writeFileSync(cacheFile, JSON.stringify(usernamesCache, null, 2));
   return usernamesCache;
 }

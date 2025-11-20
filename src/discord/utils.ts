@@ -31,10 +31,3 @@ export async function fetchForumChannel(
 
   return channel;
 }
-
-export async function fetchUsername(
-  discordClient: Discord.Client,
-  userId: Discord.Snowflake,
-): Promise<string> {
-  return (await discordClient.users.fetch(userId)).username;
-}

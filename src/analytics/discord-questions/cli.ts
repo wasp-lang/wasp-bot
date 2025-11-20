@@ -14,6 +14,11 @@ import { fetchForumChannel } from "../../discord/utils";
 
 dotenvConfig();
 
+analyzeDiscordQuestions().catch((error) => {
+  logger.error(error);
+  process.exit(1);
+});
+
 async function analyzeDiscordQuestions(): Promise<void> {
   const discordClient = await createAndLoginDiscordClient();
   try {
@@ -21,16 +26,20 @@ async function analyzeDiscordQuestions(): Promise<void> {
       discordClient,
       QUESTIONS_FORUM_CHANNEL_ID,
     );
+
     const maxThreadAge = moment().subtract(1, "year");
     const recentThreads = await fetchRecentThreads(
       questionsChannel,
       maxThreadAge,
     );
+
     const authorStats = await buildAuthorStats(discordClient, recentThreads);
+
     console.log(
       `\n=== All authors (since ${maxThreadAge.format("YYYY-MM-DD")}) ===`,
     );
     printAuthorStats(authorStats);
+
     console.log("\n=== Authors gone for more than three months ===");
     printGoneAuthorStats(authorStats);
   } finally {
@@ -47,8 +56,10 @@ async function createAndLoginDiscordClient(): Promise<Discord.Client> {
       Discord.GatewayIntentBits.GuildMembers,
     ],
   });
+
   await discordClient.login(process.env.DISCORD_BOT_TOKEN);
   logger.info("Discord client logged in successfully.");
+
   return discordClient;
 }
 
@@ -57,14 +68,16 @@ function printAuthorStats(authorStats: ThreadAuthorStats[]): void {
     head: ["Username", "User ID", "#Threads", "Δt since last"],
     colWidths: [32, 22, 10, 20],
   });
-  for (const stats of authorStats.filter((st) => st.threadCount > 1)) {
-    table.push([
-      stats.username,
-      stats.userId,
-      String(stats.threadCount),
-      moment(stats.lastThreadCreatedAt).fromNow(),
-    ]);
-  }
+  table.push(
+    ...authorStats
+      .filter((stats) => stats.threadCount > 1)
+      .map((stats) => [
+        stats.username,
+        stats.userId,
+        String(stats.threadCount),
+        moment(stats.lastThreadCreatedAt).fromNow(),
+      ]),
+  );
   console.log(table.toString());
 
   console.log(
@@ -85,8 +98,3 @@ function printGoneAuthorStats(authorStats: ThreadAuthorStats[]) {
     ),
   );
 }
-
-analyzeDiscordQuestions().catch((error) => {
-  logger.error(error);
-  process.exit(1);
-});
