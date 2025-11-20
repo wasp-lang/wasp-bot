@@ -1,12 +1,12 @@
 import Discord from "discord.js";
 
-import { PosthogEvent } from "../../../analytics/events";
-import * as reports from "../../../analytics/reports";
+import { PosthogEvent } from "../../../analytics/wasp-cli-usage/events";
+import * as reports from "../../../analytics/wasp-cli-usage/reports";
 import {
   ChartReport,
   ImageChartsReport,
   TextReport,
-} from "../../../analytics/reports/reports";
+} from "../../../analytics/wasp-cli-usage/reports/reports";
 import { Writable } from "../../../types/helpers";
 import logger from "../../../utils/logger";
 import { REPORTS_CHANNEL_ID } from "../../server-ids";

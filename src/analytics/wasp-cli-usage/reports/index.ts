@@ -1,5 +1,5 @@
 import { PosthogEvent } from "../events";
-import moment from "../moment";
+import moment from "../../moment";
 import {
   generateAllTimePeriodReport,
   generatePeriodReport,

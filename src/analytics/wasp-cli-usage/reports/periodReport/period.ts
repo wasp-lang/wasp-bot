@@ -1,7 +1,7 @@
 import { Moment } from "moment";
 
 import { PosthogEvent } from "../../events";
-import moment from "../../moment";
+import moment from "../../../moment";
 import { getUniqueUserIds } from "../utils";
 
 export type Period = [Moment, Moment];

@@ -27,8 +27,8 @@ When developing, run the bot server locally with `npm run buildAndStartBot`. Thi
 
 Run analytics scripts locally to generate reports in the CLI:
 
-- `npm run buildAndRunGeneralAnalytics` (or `npm run generalAnalytics` if already built) - Runs general Wasp analytics reports (daily, weekly, monthly, all-time). These are the same analytics as exposed by the bot to the Discord server, but useful because you can easily tweak the script temporarily for more specific results.
-- `npm run buildAndRunQuestionsAnalytics` (or `npm run questionsAnalytics` if already built) - Analyzes Questions forum threads. E.g. it prints thread authors grouped by number of threads created in the last year.
+- `npm run buildAndRunCliUsageAnalytics` (or `npm run cliUsageAnalytics` if already built) - Runs Wasp CLI usage analytics reports (daily, weekly, monthly, all-time). These are the same analytics as exposed by the bot to the Discord server, but useful because you can easily tweak the script temporarily for more specific results.
+- `npm run buildAndRunDiscordQuestionsAnalytics` (or `npm run discordQuestionsAnalytics` if already built) - Analyzes Questions forum threads. E.g. it prints thread authors grouped by number of threads created in the last year.
 
 ### Deployment
 

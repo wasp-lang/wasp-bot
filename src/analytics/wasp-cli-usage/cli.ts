@@ -1,13 +1,13 @@
 import fs from "fs";
 import os from "os";
 import logger from "../../utils/logger";
-import * as reports from "../reports";
+import * as reports from "./reports";
 import {
   AllTimePeriodReport,
   ChartReport,
   ImageChartsReport,
   TextReport,
-} from "../reports/reports";
+} from "./reports/reports";
 
 async function cliReport(): Promise<void> {
   const events = await reports.fetchEventsForReportGenerator();

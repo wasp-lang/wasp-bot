@@ -1,10 +1,10 @@
 import _ from "lodash";
 
-import logger from "../../utils/logger";
+import logger from "../../../utils/logger";
 import { addEventContextValueIfMissing } from "../eventContext";
 import { type PosthogEvent, tryToFetchAllCliEvents } from "../events";
 import { executionEnvs } from "../executionEnvs";
-import moment from "../moment";
+import moment from "../../moment";
 
 /**
  * @returns All Posthog events, sorted by time (starting with oldest), with events caused by Wasp team members

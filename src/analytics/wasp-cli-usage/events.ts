@@ -2,8 +2,8 @@ import retry from "async-retry";
 import axios from "axios";
 import { config as dotenvConfig } from "dotenv";
 import { promises as fs } from "fs";
-import logger from "../utils/logger";
-import moment from "./moment";
+import logger from "../../utils/logger";
+import moment from "../moment";
 
 dotenvConfig();
 
