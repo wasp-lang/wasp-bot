@@ -83,10 +83,15 @@ async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
   // and save the current progress after each batch.
   logger.info("Fetching events newer than the cache...");
   let initialBatchHasEvents = true;
-  while (initialBatchHasEvents) {
+  let currentBatchBeforeDate;
+  const currentDate = new Date();
+  while (
+    initialBatchHasEvents ||
+    (currentBatchBeforeDate && currentBatchBeforeDate < currentDate)
+  ) {
     let currentBatchAllEventsFetched = false;
     const currentBatchEvents = [];
-    const currentBatchBeforeDate = moment(getNewestEventTimestamp(events))
+    currentBatchBeforeDate = moment(getNewestEventTimestamp(events))
       .add(6, "hours")
       .toDate();
     let currentBatchOffset = 0;
@@ -105,7 +110,7 @@ async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
       currentBatchAllEventsFetched = !isThereMore;
     }
 
-    logger.debug(`Fetching newer events batch: ${currentBatchEvents.length}`);
+    logger.debug(`Fetched ${currentBatchEvents.length} events in batch`);
     events.unshift(...currentBatchEvents);
     await saveCachedEvents(events);
   }
