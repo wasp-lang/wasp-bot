@@ -138,19 +138,26 @@ async function createCohortRetentionHeatMap(
   const maxCohortSize = Math.max(...cohorts.map((cohort) => cohort[0]));
   const maxCohortRetentionPercentage: number = Math.max(
     ...cohorts.flatMap((cohort) =>
-      cohort.slice(1).map((value) => value / cohort[0]),
+      cohort.slice(1).map((value) => {
+        if (cohort[0] == 0) return 0;
+        return value / cohort[0];
+      }),
     ),
   );
 
   const chartData: CohortRetentionHeatMapPoint[] = cohorts.flatMap(
     (cohort, cohortIndex) => {
       const cohortInitialSize = cohort[0];
-      return cohort.map((cohortSize, periodIndex) => ({
-        x: periodIndex,
-        y: cohortIndex,
-        cohortSize,
-        retentionPercentage: cohortSize / cohortInitialSize,
-      }));
+      return cohort.map((cohortSize, periodIndex) => {
+        const retentionPercentage =
+          cohortInitialSize == 0 ? 0 : cohortSize / cohortInitialSize;
+        return {
+          x: periodIndex,
+          y: cohortIndex,
+          cohortSize,
+          retentionPercentage,
+        };
+      });
     },
   );
 
@@ -164,10 +171,18 @@ async function createCohortRetentionHeatMap(
       const point = context.dataset.data[context.dataIndex];
 
       if (point.x === 0) {
-        const ratio = point.cohortSize / maxCohortSize;
+        let ratio = point.cohortSize / maxCohortSize;
+        if (isNaN(ratio)) {
+          ratio = 0;
+        }
+
         return firstColumnColorInterpolator(ratio);
       } else {
-        const ratio = point.retentionPercentage / maxCohortRetentionPercentage;
+        let ratio = point.retentionPercentage / maxCohortRetentionPercentage;
+        if (isNaN(ratio)) {
+          ratio = 0;
+        }
+
         return otherColumnsColorInterpolator(ratio);
       }
     },
