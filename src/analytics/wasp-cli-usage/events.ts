@@ -10,6 +10,7 @@ dotenvConfig();
 const POSTHOG_KEY = process.env.WASP_POSTHOG_KEY;
 // POSTHOG_PROJECT_API_KEY is public, so it can be here.
 const POSTHOG_PROJECT_API_KEY = "CdDd2A0jKTI2vFAsrI9JWm3MqpOcgHz1bMyogAcwsE4";
+const POSTHOG_TIMESTAMP_FORMAT = "YYYY-MM-DDTHH:mm:ss.SSSSSSZ";
 const OLDEST_EVENT_TIMESTAMP = "2021-01-22T19:42:56.684632+00:00";
 const CACHE_FILE_PATH =
   process.env.WASP_ANALYTICS_CACHED_EVENTS_JSON_PATH ??
@@ -207,10 +208,10 @@ async function fetchEvents({
     token: POSTHOG_PROJECT_API_KEY,
     ...(eventType && { event: eventType }),
     ...(after && {
-      after: moment(after).format("YYYY-MM-DDTHH:mm:ss.SSSSSSZ"),
+      after: moment(after).format(POSTHOG_TIMESTAMP_FORMAT),
     }),
     ...(before && {
-      before: moment(before).format("YYYY-MM-DDTHH:mm:ss.SSSSSSZ"),
+      before: moment(before).format(POSTHOG_TIMESTAMP_FORMAT),
     }),
     ...(offset && { offset: offset.toString() }),
   };
