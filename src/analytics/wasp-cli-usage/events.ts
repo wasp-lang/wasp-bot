@@ -10,6 +10,7 @@ dotenvConfig();
 const POSTHOG_KEY = process.env.WASP_POSTHOG_KEY;
 // POSTHOG_PROJECT_API_KEY is public, so it can be here.
 const POSTHOG_PROJECT_API_KEY = "CdDd2A0jKTI2vFAsrI9JWm3MqpOcgHz1bMyogAcwsE4";
+const POSTHOG_TIMESTAMP_FORMAT = "YYYY-MM-DDTHH:mm:ss.SSSSSSZ";
 const OLDEST_EVENT_TIMESTAMP = "2021-01-22T19:42:56.684632+00:00";
 const CACHE_FILE_PATH =
   process.env.WASP_ANALYTICS_CACHED_EVENTS_JSON_PATH ??
@@ -29,6 +30,12 @@ export interface PosthogEvent {
     $ip?: string;
   };
 }
+
+/**
+ * PosthogEvent type which is JSON friendly.
+ * Used when reading/writing the events in JSON format.
+ */
+type RawPosthogEvent = Omit<PosthogEvent, "timestamp"> & { timestamp: string };
 
 /**
  * Tries to fetch all CLI events from Posthog, retrying in case of failure.
@@ -56,10 +63,8 @@ export async function tryToFetchAllCliEvents(): Promise<PosthogEvent[]> {
 async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
   logger.info("Fetching all CLI events...");
 
-  const cachedEvents = await loadCachedEvents();
-  logger.info("Number of already locally cached events: ", cachedEvents.length);
-
-  let events = cachedEvents;
+  const events = await loadCachedEvents();
+  logger.info("Number of already locally cached events: ", events.length);
 
   // We fetch any events older than the currently oldest event we already have.
   // If we have no events already, we just start from the newest ones.
@@ -68,32 +73,55 @@ async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
   logger.info("Fetching events older than the cache...");
   let allOldEventsFetched = false;
   while (!allOldEventsFetched) {
-    const { isThereMore, events: fetchedEvents } = await fetchEvents({
+    const { isThereMore, rawEvents: fetchedRawEvents } = await fetchEvents({
       eventType: "cli",
       before: getOldestEventTimestamp(events),
     });
-    events = [...events, ...fetchedEvents];
+
+    events.push(...fetchedRawEvents.map(toPosthogEvent));
     await saveCachedEvents(events);
+
     allOldEventsFetched = !isThereMore;
   }
 
   // We fetch any events newer than the currently newest event we already have.
-  // They are fetched starting with the newest ones and going backwards.
-  // Only once we fetch all of them, we add them to the cache. This is done to guarantee continuity of cached events.
+  // As PostHog always returns newest possible events in the given time interval,
+  // and we want to fetch newer events incrementally (to save the progress),
+  // we fetch the events in incremental time interval batches.
+  //
+  // We create a time interval by adding time (e.g. 6 hours) to the current newest event.
+  // We fetch events in those intervals starting from newest, and moving towards
+  // older ones by increasing the current `offset`.
+  //
+  //                          current batch time interval
+  //                       after -> |<--------->| <- before
+  // [##############################|----<<#####|--------------------------]
+  // fetched events                        |<-->|           unfetched events
+  //                                 current batch offset
   logger.info("Fetching events newer than the cache...");
-  let newEvents: PosthogEvent[] = [];
-  let allNewEventsFetched = false;
-  while (!allNewEventsFetched) {
-    const { isThereMore, events: fetchedEvents } = await fetchEvents({
+  const currentTimestamp = new Date();
+  while (true) {
+    const currentNewestEvent = getNewestEventTimestamp(events)!;
+    const timeInterval = {
+      after: currentNewestEvent,
+      before: moment(currentNewestEvent).add(6, "hours").toDate(),
+    };
+
+    const currentBatchEvents = await fetchAllEventsInTimeInterval({
       eventType: "cli",
-      after: getNewestEventTimestamp(events),
-      before: getOldestEventTimestamp(newEvents),
+      ...timeInterval,
     });
-    newEvents = [...newEvents, ...fetchedEvents];
-    allNewEventsFetched = !isThereMore;
+    logger.debug(`Fetched ${currentBatchEvents.length} events in batch`);
+
+    events.unshift(...currentBatchEvents.map(toPosthogEvent));
+    await saveCachedEvents(events);
+
+    // If we fetched all events in a time interval which includes
+    // the current timestamp, we fetched all newer events.
+    if (timeInterval.before > currentTimestamp) {
+      break;
+    }
   }
-  events = [...newEvents, ...events];
-  await saveCachedEvents(events);
 
   // NOTE: Sometimes, likely due to rate limiting from PostHog side, `isThereMore` will falsely be
   //   set to `false` even when there is more data. To handle that, we check here if we actually got
@@ -115,68 +143,22 @@ async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
 }
 
 /**
- * Fetches events from PostHog.
- * If there is a lot of events, it will return only a portion of them (the newest ones)
- * and let us know there is more to fetch. This limit is defined by PostHog, but is usually
- * set at 100 events, meaning each fetch will retrieve 100 or less events.
- * To continue fetching the rest of events, you can call fetchEvents() with `before` set to the
- * timestamp of the oldest event that was returned in the previous call to fetchEvents().
- * All of the arguments are optional.
- * If `after` or `before` are not provided, then corresponding restriction on age of events is not set.
- * NOTE: We are using old PostHog API here, and while it works, sometimes it will return `null` for `next`
- *   even though there actually is more data left. So it gives incorrect response in that sense!
- *   When that happens, `isThereMore` will be `false` even though it should be `true`.
- *   This usually happens after we did a fair amount of requests, so it is probably happening because
- *   of the rate limiting from their side, but it manifests in this weird/bad way.
- *   TODO: We should switch to newer API.
- */
-async function fetchEvents({
-  eventType = undefined,
-  after = undefined,
-  before = undefined,
-}: {
-  eventType?: string;
-  after?: Date;
-  before?: Date;
-}): Promise<{ events: PosthogEvent[]; isThereMore: boolean }> {
-  // `token=` here specifies from which project to pull the events from.
-  const params = {
-    token: POSTHOG_PROJECT_API_KEY,
-    ...(eventType && { event: eventType }),
-    ...(after && { after: after.toString() }),
-    ...(before && { before: before.toString() }),
-  };
-  const url = `https://app.posthog.com/api/event/?${new URLSearchParams(
-    params,
-  ).toString()}`;
-
-  logger.info(`Fetching: ${url}`);
-  const response = await axios.get(url, {
-    headers: {
-      Authorization: `Bearer ${POSTHOG_KEY}`,
-    },
-  });
-
-  const { next, results: events } = response.data;
-  return {
-    events,
-    isThereMore: !!next,
-  };
-}
-
-/**
  * Loads cached PostHog events from a JSON file.
  *
  * @returns An array of PostHog events where:
- *   - Events are guaranteed to be continuous, with no missing events between the cached events
- *   - Newest event is first (index 0), and oldest event is last
- *   - No events are missing between the oldest and newest cached events
- *   - There might be missing events before or after the cached range
+ *   - Events are guaranteed to be continuous, with no missing events between the cached events.
+ *   - Newest event is first (index 0), and oldest event is last.
+ *   - There might be missing events before or after the cached range.
  */
 async function loadCachedEvents(): Promise<PosthogEvent[]> {
   try {
-    const cacheFileContent = await fs.readFile(CACHE_FILE_PATH, "utf-8");
-    return JSON.parse(cacheFileContent);
+    const rawCache = await fs.readFile(CACHE_FILE_PATH, "utf-8");
+    return JSON.parse(rawCache, (key, value) => {
+      if (key === "timestamp") {
+        return new Date(value);
+      }
+      return value;
+    }) as PosthogEvent[];
   } catch (error: unknown) {
     logger.warn(error);
     logger.warn("Failed to read the cache file.");
@@ -188,7 +170,122 @@ async function loadCachedEvents(): Promise<PosthogEvent[]> {
  * Expects events that follow the same rules as the ones returned by `loadCachedEvents()`.
  */
 async function saveCachedEvents(events: PosthogEvent[]): Promise<void> {
+  logger.debug(`Saving a new cache with ${events.length} events.`);
   await fs.writeFile(CACHE_FILE_PATH, JSON.stringify(events), "utf-8");
+}
+
+async function fetchAllEventsInTimeInterval({
+  eventType,
+  after,
+  before,
+}: {
+  eventType?: string;
+  after: Date;
+  before: Date;
+}): Promise<RawPosthogEvent[]> {
+  const timeIntervalEvents = [];
+  let areAllEventsFetched = false;
+  let currentOffset = 0;
+
+  while (!areAllEventsFetched) {
+    const { isThereMore, rawEvents: fetchedRawEvents } = await fetchEvents({
+      eventType,
+      after,
+      before,
+      offset: currentOffset,
+    });
+    timeIntervalEvents.push(...fetchedRawEvents);
+
+    currentOffset += fetchedRawEvents.length;
+    areAllEventsFetched = !isThereMore;
+  }
+
+  return timeIntervalEvents;
+}
+
+/**
+ * Fetches events from PostHog.
+ * PostHog always returns newest events in the given constrainsts.
+ * If there is a lot of events (more than 100), it will return
+ * only a portion of them and let us know if there is more to fetch.
+ *
+ * To fetch something other than newest events:
+ *   1. You can use `before` and `after` to set the time interval of events you want to fetch.
+ *   2. You can use `offset` to skip a number of events in the currently selected time interval.
+ *      Meaning that PostHog will skip `offset` number of newest events and return older ones.
+ *
+ * NOTE: We are using old PostHog API here, and while it works, sometimes it will return `null` for `next`
+ *   even though there actually is more data left. So it gives incorrect response in that sense!
+ *   When that happens, `isThereMore` will be `false` even though it should be `true`.
+ *   This usually happens after we did a fair amount of requests, so it is probably happening because
+ *   of the rate limiting from their side, but it manifests in this weird/bad way.
+ *   TODO: We should switch to newer API.
+ */
+async function fetchEvents({
+  eventType = undefined,
+  after = undefined,
+  before = undefined,
+  offset = undefined,
+}: {
+  eventType?: string;
+  after?: Date;
+  before?: Date;
+  offset?: number;
+}): Promise<{ rawEvents: RawPosthogEvent[]; isThereMore: boolean }> {
+  // `token=` here specifies from which project to pull the events from.
+  const params = {
+    token: POSTHOG_PROJECT_API_KEY,
+    ...(eventType && { event: eventType }),
+    ...(after && {
+      after: moment(after).format(POSTHOG_TIMESTAMP_FORMAT),
+    }),
+    ...(before && {
+      before: moment(before).format(POSTHOG_TIMESTAMP_FORMAT),
+    }),
+    ...(offset && { offset: offset.toString() }),
+  };
+  const url = `https://app.posthog.com/api/event/?${new URLSearchParams(
+    params,
+  ).toString()}`;
+
+  logger.info(`Fetching: ${url}`);
+  const response = await axios.get<{
+    next: boolean;
+    results: RawPosthogEvent[];
+  }>(url, {
+    headers: {
+      Authorization: `Bearer ${POSTHOG_KEY}`,
+    },
+  });
+  logger.debug(`Fetched ${response.data.results.length} events`);
+
+  const { next, results: events } = response.data;
+  return {
+    rawEvents: events,
+    isThereMore: !!next,
+  };
+}
+
+function toPosthogEvent(rawPosthogEvent: RawPosthogEvent): PosthogEvent {
+  let properties: PosthogEvent["properties"];
+  if (rawPosthogEvent.properties) {
+    properties = {
+      os: rawPosthogEvent.properties.os,
+      is_build: rawPosthogEvent.properties.is_build,
+      wasp_version: rawPosthogEvent.properties.wasp_version,
+      project_hash: rawPosthogEvent.properties.project_hash,
+      deploy_cmd_args: rawPosthogEvent.properties.deploy_cmd_args,
+      context: rawPosthogEvent.properties.context,
+      $ip: rawPosthogEvent.properties.$ip,
+    };
+  }
+
+  return {
+    distinct_id: rawPosthogEvent.distinct_id,
+    timestamp: new Date(rawPosthogEvent.timestamp),
+    event: rawPosthogEvent.event,
+    properties,
+  };
 }
 
 function getOldestEventTimestamp(events: PosthogEvent[]): Date | undefined {
