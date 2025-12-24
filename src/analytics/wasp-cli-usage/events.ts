@@ -209,7 +209,7 @@ async function fetchAllEventsInTimeInterval({
  * If there is a lot of events (more than 100), it will return
  * only a portion of them and let us know if there is more to fetch.
  *
- * To fetch something other than nevewest events:
+ * To fetch something other than newest events:
  *   1. You can use `before` and `after` to set the time interval of events you want to fetch.
  *   2. You can use `offset` to skip a number of events in the currently selected time interval.
  *      Meaning that PostHog will skip `offset` number of newest events and return older ones.
