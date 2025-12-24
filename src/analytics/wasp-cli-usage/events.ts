@@ -174,13 +174,16 @@ async function saveCachedEvents(events: PosthogEvent[]): Promise<void> {
 
 /**
  * Fetches events from PostHog.
- * If there is a lot of events, it will return only a portion of them (the newest ones)
- * and let us know there is more to fetch. This limit is defined by PostHog, but is usually
- * set at 100 events, meaning each fetch will retrieve 100 or less events.
- * To continue fetching the rest of events, you can call fetchEvents() with `before` set to the
- * timestamp of the oldest event that was returned in the previous call to fetchEvents().
- * All of the arguments are optional.
- * If `after` or `before` are not provided, then corresponding restriction on age of events is not set.
+ * PostHog always returns the newest events in the given constrainsts.
+ * If there is a lot of events (more than 100), it will return
+ * only a portion of them and let us know if there is more to fetch.
+ * In short, each fetch will retrieve 100 or less events.
+ *
+ * To fetch something other than nevewest events:
+ *   1. You can use `before` and `after` to set the temporal region of events you want to fetch.
+ *   2. You can use `offset` to skip a number of events in the currently selected temporal region.
+ *      Meaning that PostHog will skip `offset` number of newest events and return older ones.
+ *
  * NOTE: We are using old PostHog API here, and while it works, sometimes it will return `null` for `next`
  *   even though there actually is more data left. So it gives incorrect response in that sense!
  *   When that happens, `isThereMore` will be `false` even though it should be `true`.
