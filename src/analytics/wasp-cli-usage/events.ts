@@ -89,7 +89,7 @@ async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
   // and we want to fetch newer events incrementally (to save the progress),
   // we fetch the events in incremental time interval batches.
   //
-  // We create the time intrval by adding time (e.g. 6 hours) to the current newest event.
+  // We create a time interval by adding time (e.g. 6 hours) to the current newest event.
   // We fetch events in those intervals starting from newest, and moving towards
   // older ones by increasing the current `offset`.
   //
