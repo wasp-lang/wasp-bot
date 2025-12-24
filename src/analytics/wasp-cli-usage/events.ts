@@ -248,21 +248,6 @@ function toWaspPosthogEvent(rawPosthogEvent: PosthogEvent): PosthogEvent {
   };
 }
 
-export interface PosthogEvent {
-  distinct_id: string;
-  timestamp: Date;
-  event?: string;
-  properties?: {
-    os?: string;
-    is_build?: boolean;
-    wasp_version?: string;
-    project_hash?: string;
-    deploy_cmd_args?: string;
-    context?: string;
-    $ip?: string;
-  };
-}
-
 function getOldestEventTimestamp(events: PosthogEvent[]): Date | undefined {
   return events.at(-1)?.timestamp;
 }
