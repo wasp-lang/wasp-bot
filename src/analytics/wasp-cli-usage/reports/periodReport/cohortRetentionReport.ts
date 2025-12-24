@@ -168,11 +168,15 @@ async function createCohortRetentionHeatMap(
 
       if (point.x === 0) {
         let ratio = point.cohortSize / maxCohortSize;
-        if (isNaN(ratio)) ratio = 0;
+        if (isNaN(ratio)) {
+          ratio = 0;
+        }
         return firstColumnColorInterpolator(ratio);
       } else {
         let ratio = point.retentionPercentage / maxCohortRetentionPercentage;
-        if (isNaN(ratio)) ratio = 0;
+        if (isNaN(ratio)) {
+          ratio = 0;
+        }
         return otherColumnsColorInterpolator(ratio);
       }
     },
