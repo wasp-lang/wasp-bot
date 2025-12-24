@@ -96,7 +96,7 @@ async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
   //                          current batch time interval
   //                       after -> |<--------->| <- before
   // [##############################|----<<#####|--------------------------]
-  // fetched events                        |<-->|         unfetched events
+  // fetched events                        |<-->|           unfetched events
   //                                 current batch offset
   logger.info("Fetching events newer than the cache...");
   const currentTimestamp = new Date();
