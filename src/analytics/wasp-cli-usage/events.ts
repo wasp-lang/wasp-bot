@@ -31,6 +31,12 @@ export interface PosthogEvent {
 }
 
 /**
+ * PosthogEvent type which is JSON friendly.
+ * Used when reading/writing the events in JSON format.
+ */
+type RawPosthogEvent = Omit<PosthogEvent, "timestamp"> & { timestamp: string };
+
+/**
  * Tries to fetch all CLI events from Posthog, retrying in case of failure.
  * It caches the fetched events, so each retry continues from where it left off.
  */
@@ -66,12 +72,12 @@ async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
   logger.info("Fetching events older than the cache...");
   let allOldEventsFetched = false;
   while (!allOldEventsFetched) {
-    const { isThereMore, events: fetchedEvents } = await fetchEvents({
+    const { isThereMore, rawEvents: fetchedRawEvents } = await fetchEvents({
       eventType: "cli",
       before: getOldestEventTimestamp(events),
     });
 
-    events.push(...fetchedEvents.map(toWaspPosthogEvent));
+    events.push(...fetchedRawEvents.map(toPosthogEvent));
     await saveCachedEvents(events);
 
     allOldEventsFetched = !isThereMore;
@@ -96,17 +102,17 @@ async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
       .toDate();
     let currentBatchOffset = 0;
     while (!currentBatchAllEventsFetched) {
-      const { isThereMore, events: fetchedEvents } = await fetchEvents({
+      const { isThereMore, rawEvents: fetchedRawEvents } = await fetchEvents({
         eventType: "cli",
         after: getNewestEventTimestamp(events),
         before: currentBatchBeforeDate,
         offset: currentBatchOffset,
       });
-      currentBatchEvents.push(...fetchedEvents);
+      currentBatchEvents.push(...fetchedRawEvents.map(toPosthogEvent));
 
       if (currentBatchOffset === 0)
-        initialBatchHasEvents = fetchedEvents.length !== 0;
-      currentBatchOffset += fetchedEvents.length;
+        initialBatchHasEvents = fetchedRawEvents.length !== 0;
+      currentBatchOffset += fetchedRawEvents.length;
       currentBatchAllEventsFetched = !isThereMore;
     }
 
@@ -145,11 +151,12 @@ async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
 async function loadCachedEvents(): Promise<PosthogEvent[]> {
   try {
     const rawCache = await fs.readFile(CACHE_FILE_PATH, "utf-8");
-    const parsedCache = JSON.parse(rawCache) as PosthogEvent[];
-    for (const event of parsedCache) {
-      event.timestamp = new Date(event.timestamp);
-    }
-    return parsedCache;
+    return JSON.parse(rawCache, (key, value) => {
+      if (key === "timestamp") {
+        return new Date(value);
+      }
+      return value;
+    }) as PosthogEvent[];
   } catch (error: unknown) {
     logger.warn(error);
     logger.warn("Failed to read the cache file.");
@@ -191,7 +198,7 @@ async function fetchEvents({
   after?: Date;
   before?: Date;
   offset?: number;
-}): Promise<{ events: PosthogEvent[]; isThereMore: boolean }> {
+}): Promise<{ rawEvents: RawPosthogEvent[]; isThereMore: boolean }> {
   // `token=` here specifies from which project to pull the events from.
   const params = {
     token: POSTHOG_PROJECT_API_KEY,
@@ -211,7 +218,7 @@ async function fetchEvents({
   logger.info(`Fetching: ${url}`);
   const response = await axios.get<{
     next: boolean;
-    results: PosthogEvent[];
+    results: RawPosthogEvent[];
   }>(url, {
     headers: {
       Authorization: `Bearer ${POSTHOG_KEY}`,
@@ -221,12 +228,12 @@ async function fetchEvents({
 
   const { next, results: events } = response.data;
   return {
-    events,
+    rawEvents: events,
     isThereMore: !!next,
   };
 }
 
-function toWaspPosthogEvent(rawPosthogEvent: PosthogEvent): PosthogEvent {
+function toPosthogEvent(rawPosthogEvent: RawPosthogEvent): PosthogEvent {
   let properties: PosthogEvent["properties"];
   if (rawPosthogEvent.properties) {
     properties = {
