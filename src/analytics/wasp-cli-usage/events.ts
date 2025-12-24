@@ -205,10 +205,9 @@ async function fetchAllEventsInTimeInterval({
 
 /**
  * Fetches events from PostHog.
- * PostHog always returns the newest events in the given constrainsts.
+ * PostHog always returns newest events in the given constrainsts.
  * If there is a lot of events (more than 100), it will return
  * only a portion of them and let us know if there is more to fetch.
- * In short, each fetch will retrieve 100 or less events.
  *
  * To fetch something other than nevewest events:
  *   1. You can use `before` and `after` to set the time interval of events you want to fetch.
