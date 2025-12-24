@@ -85,34 +85,41 @@ async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
   }
 
   // We fetch any events newer than the currently newest event we already have.
-  // Posthog always returns newest possible events in the given date range.
-  // Because of that, we fetch results in time interval batches,
-  // and save the current progress after each batch.
+  // As PostHog always returns newest possible events in the given time interval,
+  // and we want to fetch newer events incrementally (to save the progress),
+  // we fetch the events in incremental time interval batches.
+  //
+  // We create the time intrval by adding time (e.g. 6 hours) to the current newest event.
+  // We fetch events in those intervals starting from newest, and moving towards
+  // older ones by increasing the current `offset`.
+  //
+  //                          current batch time interval
+  //                       after -> |<--------->| <- before
+  // [##############################|----<<#####|--------------------------]
+  // fetched events                        |<-->|         unfetched events
+  //                                 current batch offset
   logger.info("Fetching events newer than the cache...");
-  let initialBatchHasEvents = true;
-  let currentBatchBeforeDate;
+  let lastFetchHadEvents = true;
+  let currentBatchMaxDate = new Date(0);
   const currentDate = new Date();
-  while (
-    initialBatchHasEvents ||
-    (currentBatchBeforeDate && currentBatchBeforeDate < currentDate)
-  ) {
+  while (lastFetchHadEvents || currentBatchMaxDate < currentDate) {
     let currentBatchAllEventsFetched = false;
+    let currentBatchOffset = 0;
     const currentBatchEvents = [];
-    currentBatchBeforeDate = moment(getNewestEventTimestamp(events))
+    currentBatchMaxDate = moment(getNewestEventTimestamp(events))
       .add(6, "hours")
       .toDate();
-    let currentBatchOffset = 0;
+
     while (!currentBatchAllEventsFetched) {
       const { isThereMore, rawEvents: fetchedRawEvents } = await fetchEvents({
         eventType: "cli",
         after: getNewestEventTimestamp(events),
-        before: currentBatchBeforeDate,
+        before: currentBatchMaxDate,
         offset: currentBatchOffset,
       });
       currentBatchEvents.push(...fetchedRawEvents.map(toPosthogEvent));
 
-      if (currentBatchOffset === 0)
-        initialBatchHasEvents = fetchedRawEvents.length !== 0;
+      lastFetchHadEvents = fetchedRawEvents.length !== 0;
       currentBatchOffset += fetchedRawEvents.length;
       currentBatchAllEventsFetched = !isThereMore;
     }
@@ -181,8 +188,8 @@ async function saveCachedEvents(events: PosthogEvent[]): Promise<void> {
  * In short, each fetch will retrieve 100 or less events.
  *
  * To fetch something other than nevewest events:
- *   1. You can use `before` and `after` to set the temporal region of events you want to fetch.
- *   2. You can use `offset` to skip a number of events in the currently selected temporal region.
+ *   1. You can use `before` and `after` to set the time interval of events you want to fetch.
+ *   2. You can use `offset` to skip a number of events in the currently selected time interval.
  *      Meaning that PostHog will skip `offset` number of newest events and return older ones.
  *
  * NOTE: We are using old PostHog API here, and while it works, sometimes it will return `null` for `next`
