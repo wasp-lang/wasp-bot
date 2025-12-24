@@ -99,34 +99,28 @@ async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
   // fetched events                        |<-->|         unfetched events
   //                                 current batch offset
   logger.info("Fetching events newer than the cache...");
-  let lastFetchHadEvents = true;
-  let currentBatchMaxDate = new Date(0);
-  const currentDate = new Date();
-  while (lastFetchHadEvents || currentBatchMaxDate < currentDate) {
-    let currentBatchAllEventsFetched = false;
-    let currentBatchOffset = 0;
-    const currentBatchEvents = [];
-    currentBatchMaxDate = moment(getNewestEventTimestamp(events))
-      .add(6, "hours")
-      .toDate();
+  const currentTimestamp = new Date();
+  while (true) {
+    const currentNewestEvent = getNewestEventTimestamp(events)!;
+    const timeInterval = {
+      after: currentNewestEvent,
+      before: moment(currentNewestEvent).add(6, "hours").toDate(),
+    };
 
-    while (!currentBatchAllEventsFetched) {
-      const { isThereMore, rawEvents: fetchedRawEvents } = await fetchEvents({
-        eventType: "cli",
-        after: getNewestEventTimestamp(events),
-        before: currentBatchMaxDate,
-        offset: currentBatchOffset,
-      });
-      currentBatchEvents.push(...fetchedRawEvents.map(toPosthogEvent));
-
-      lastFetchHadEvents = fetchedRawEvents.length !== 0;
-      currentBatchOffset += fetchedRawEvents.length;
-      currentBatchAllEventsFetched = !isThereMore;
-    }
-
+    const currentBatchEvents = await fetchAllEventsInTimeInterval({
+      eventType: "cli",
+      ...timeInterval,
+    });
     logger.debug(`Fetched ${currentBatchEvents.length} events in batch`);
-    events.unshift(...currentBatchEvents);
+
+    events.unshift(...currentBatchEvents.map(toPosthogEvent));
     await saveCachedEvents(events);
+
+    // If we fetched all events in a time interval which includes
+    // the current timestamp, we fetched all newer events.
+    if (timeInterval.before > currentTimestamp) {
+      break;
+    }
   }
 
   // NOTE: Sometimes, likely due to rate limiting from PostHog side, `isThereMore` will falsely be
@@ -178,6 +172,35 @@ async function loadCachedEvents(): Promise<PosthogEvent[]> {
 async function saveCachedEvents(events: PosthogEvent[]): Promise<void> {
   logger.debug(`Saving a new cache with ${events.length} events.`);
   await fs.writeFile(CACHE_FILE_PATH, JSON.stringify(events), "utf-8");
+}
+
+async function fetchAllEventsInTimeInterval({
+  eventType,
+  after,
+  before,
+}: {
+  eventType?: string;
+  after: Date;
+  before: Date;
+}): Promise<RawPosthogEvent[]> {
+  const timeIntervalEvents = [];
+  let areAllEventsFetched = false;
+  let currentOffset = 0;
+
+  while (!areAllEventsFetched) {
+    const { isThereMore, rawEvents: fetchedRawEvents } = await fetchEvents({
+      eventType,
+      after,
+      before,
+      offset: currentOffset,
+    });
+    timeIntervalEvents.push(...fetchedRawEvents);
+
+    currentOffset += fetchedRawEvents.length;
+    areAllEventsFetched = !isThereMore;
+  }
+
+  return timeIntervalEvents;
 }
 
 /**
