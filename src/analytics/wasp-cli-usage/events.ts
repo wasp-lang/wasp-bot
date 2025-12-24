@@ -138,10 +138,9 @@ async function fetchAllCliEvents(): Promise<PosthogEvent[]> {
  * Loads cached PostHog events from a JSON file.
  *
  * @returns An array of PostHog events where:
- *   - Events are guaranteed to be continuous, with no missing events between the cached events
- *   - Newest event is first (index 0), and oldest event is last
- *   - No events are missing between the oldest and newest cached events
- *   - There might be missing events before or after the cached range
+ *   - Events are guaranteed to be continuous, with no missing events between the cached events.
+ *   - Newest event is first (index 0), and oldest event is last.
+ *   - There might be missing events before or after the cached range.
  */
 async function loadCachedEvents(): Promise<PosthogEvent[]> {
   try {
